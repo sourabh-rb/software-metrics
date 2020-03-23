@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DynamicHasher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.bloomfilter.hasher</a> &gt; <span class="el_source">DynamicHasher.java</span></div><h1>DynamicHasher.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.collections4.bloomfilter.hasher;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.PrimitiveIterator;
+
+/**
+ * The class that performs hashing on demand.
+ * @since 4.5
+ */
+public class DynamicHasher implements Hasher {
+
+    /**
+     * The builder for DynamicHashers.
+     * @since 4.5
+     */
+    public static class Builder implements Hasher.Builder {
+
+        /**
+         * The list of byte[] that are to be hashed.
+         */
+        private final List&lt;byte[]&gt; buffers;
+
+        /**
+         * The function that the resulting DynamicHasher will use.
+         */
+        private final HashFunction function;
+
+        /**
+         * Constructs a DynamicHasher builder.
+         *
+         * @param function the function implementation.
+         */
+<span class="fc" id="L52">        public Builder(final HashFunction function) {</span>
+<span class="fc" id="L53">            this.function = function;</span>
+<span class="fc" id="L54">            this.buffers = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L55">        }</span>
+
+        /**
+         * Builds the hasher.
+         *
+         * @return A DynamicHasher with the specified name, function and buffers.
+         */
+        @Override
+        public DynamicHasher build() throws IllegalArgumentException {
+<span class="fc" id="L64">            return new DynamicHasher(function, buffers);</span>
+        }
+
+        @Override
+        public final Builder with(final byte property) {
+<span class="fc" id="L69">            return with(new byte[] {property});</span>
+        }
+
+        @Override
+        public final Builder with(final byte[] property) {
+<span class="fc" id="L74">            buffers.add(property);</span>
+<span class="fc" id="L75">            return this;</span>
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * &lt;p&gt;The string is converted to a byte array using the UTF-8 Character set.
+         */
+        @Override
+        public final Builder with(final String property) {
+<span class="fc" id="L85">            return with(property.getBytes(StandardCharsets.UTF_8));</span>
+        }
+    }
+
+    /**
+     * The iterator of integers.
+     */
+    private class Iterator implements PrimitiveIterator.OfInt {
+<span class="fc" id="L93">        private int buffer = 0;</span>
+<span class="fc" id="L94">        private int funcCount = 0;</span>
+        private final Shape shape;
+
+        /**
+         * Constructs iterator with the specified shape.
+         *
+         * @param shape
+         */
+<span class="fc" id="L102">        private Iterator(final Shape shape) {</span>
+<span class="fc" id="L103">            this.shape = shape;</span>
+<span class="fc" id="L104">        }</span>
+
+        @Override
+        public boolean hasNext() {
+            // Note: This iterator is only used when buffers.size() is not zero
+<span class="fc bfc" id="L109" title="All 4 branches covered.">            return buffer &lt; buffers.size() - 1 || funcCount &lt; shape.getNumberOfHashFunctions();</span>
+        }
+
+        @Override
+        public int nextInt() {
+<span class="fc bfc" id="L114" title="All 2 branches covered.">            if (hasNext()) {</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">                if (funcCount &gt;= shape.getNumberOfHashFunctions()) {</span>
+<span class="fc" id="L116">                    funcCount = 0;</span>
+<span class="fc" id="L117">                    buffer++;</span>
+                }
+<span class="fc" id="L119">                return (int) Math.floorMod(function.apply(buffers.get(buffer), funcCount++),</span>
+                    // Cast to long to workaround a bug in animal-sniffer.
+<span class="fc" id="L121">                    (long) shape.getNumberOfBits());</span>
+            }
+<span class="fc" id="L123">            throw new NoSuchElementException();</span>
+        }
+    }
+
+    /**
+     * An iterator of integers to use then there are no values.
+     */
+    private static class NoValuesIterator implements PrimitiveIterator.OfInt {
+        /** The singleton instance. */
+<span class="fc" id="L132">        private static final NoValuesIterator INSTANCE = new NoValuesIterator();</span>
+
+        /**
+         * Empty constructor.
+         */
+        private NoValuesIterator() {}
+
+        @Override
+        public boolean hasNext() {
+<span class="fc" id="L141">            return false;</span>
+        }
+
+        @Override
+        public int nextInt() {
+<span class="nc" id="L146">            throw new NoSuchElementException();</span>
+        }
+    }
+
+    /**
+     * The list of byte arrays that are to be hashed.
+     */
+    private final List&lt;byte[]&gt; buffers;
+
+    /**
+     * The function to hash the buffers.
+     */
+    private final HashFunction function;
+
+    /**
+     * Constructs a DynamicHasher.
+     *
+     * @param function the function to use.
+     * @param buffers the byte buffers that will be hashed.
+     */
+<span class="fc" id="L166">    public DynamicHasher(final HashFunction function, final List&lt;byte[]&gt; buffers) {</span>
+<span class="fc" id="L167">        this.buffers = new ArrayList&lt;&gt;(buffers);</span>
+<span class="fc" id="L168">        this.function = function;</span>
+<span class="fc" id="L169">    }</span>
+
+    @Override
+    public PrimitiveIterator.OfInt iterator(final Shape shape) {
+<span class="fc" id="L173">        HashFunctionValidator.checkAreEqual(getHashFunctionIdentity(),</span>
+<span class="fc" id="L174">                                            shape.getHashFunctionIdentity());</span>
+        // Use optimised iterator for no values
+<span class="fc bfc" id="L176" title="All 2 branches covered.">        return buffers.isEmpty() ? NoValuesIterator.INSTANCE : new Iterator(shape);</span>
+    }
+
+    @Override
+    public HashFunctionIdentity getHashFunctionIdentity() {
+<span class="fc" id="L181">        return function;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>
