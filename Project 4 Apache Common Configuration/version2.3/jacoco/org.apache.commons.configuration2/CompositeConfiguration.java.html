@@ -1,0 +1,670 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompositeConfiguration.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Configuration</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.configuration2</a> &gt; <span class="el_source">CompositeConfiguration.java</span></div><h1>CompositeConfiguration.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.configuration2;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Set;
+
+import org.apache.commons.configuration2.convert.ListDelimiterHandler;
+import org.apache.commons.configuration2.ex.ConfigurationRuntimeException;
+
+/**
+ * &lt;p&gt;{@code CompositeConfiguration} allows you to add multiple {@code Configuration}
+ * objects to an aggregated configuration. If you add Configuration1, and then Configuration2,
+ * any properties shared will mean that the value defined by Configuration1
+ * will be returned. If Configuration1 doesn't have the property, then
+ * Configuration2 will be checked. You can add multiple different types or the
+ * same type of properties file.&lt;/p&gt;
+ * &lt;p&gt;When querying properties the order in which child configurations have been
+ * added is relevant. To deal with property updates, a so-called &lt;em&gt;in-memory
+ * configuration&lt;/em&gt; is used. Per default, such a configuration is created
+ * automatically. All property writes target this special configuration. There
+ * are constructors which allow you to provide a specific in-memory configuration.
+ * If used that way, the in-memory configuration is always the last one in the
+ * list of child configurations. This means that for query operations all other
+ * configurations take precedence.&lt;/p&gt;
+ * &lt;p&gt;Alternatively it is possible to mark a child configuration as in-memory
+ * configuration when it is added. In this case the treatment of the in-memory
+ * configuration is slightly different: it remains in the list of child
+ * configurations at the position it was added, i.e. its priority for property
+ * queries can be defined by adding the child configurations in the correct
+ * order.&lt;/p&gt;
+ * &lt;p&gt;
+ * This configuration class uses a {@code Synchronizer} to control concurrent
+ * access. While all methods for reading and writing configuration properties
+ * make use of this {@code Synchronizer} per default, the methods for managing
+ * the list of child configurations and the in-memory configuration
+ * ({@code addConfiguration(), getNumberOfConfigurations(), removeConfiguration(),
+ * getConfiguration(), getInMemoryConfiguration()}) are guarded, too. Because
+ * most methods for accessing configuration data delegate to the list of child
+ * configurations, the thread-safety of a {@code CompositeConfiguration}
+ * object also depends on the {@code Synchronizer} objects used by these
+ * children.
+ * &lt;/p&gt;
+ *
+ * @author &lt;a href=&quot;mailto:epugh@upstate.com&quot;&gt;Eric Pugh&lt;/a&gt;
+ * @author &lt;a href=&quot;mailto:hps@intermeta.de&quot;&gt;Henning P. Schmiedehausen&lt;/a&gt;
+ * @version $Id: CompositeConfiguration.java 1831806 2018-05-17 20:15:12Z oheger $
+ */
+public class CompositeConfiguration extends AbstractConfiguration
+implements Cloneable
+{
+    /** List holding all the configuration */
+<span class="nc" id="L74">    private List&lt;Configuration&gt; configList = new LinkedList&lt;&gt;();</span>
+
+    /**
+     * Configuration that holds in memory stuff.  Inserted as first so any
+     * setProperty() override anything else added.
+     */
+    private Configuration inMemoryConfiguration;
+
+    /**
+     * Stores a flag whether the current in-memory configuration is also a
+     * child configuration.
+     */
+    private boolean inMemoryConfigIsChild;
+
+    /**
+     * Creates an empty CompositeConfiguration object which can then
+     * be added some other Configuration files
+     */
+    public CompositeConfiguration()
+<span class="nc" id="L93">    {</span>
+<span class="nc" id="L94">        clear();</span>
+<span class="nc" id="L95">    }</span>
+
+    /**
+     * Creates a CompositeConfiguration object with a specified &lt;em&gt;in-memory
+     * configuration&lt;/em&gt;. This configuration will store any changes made to the
+     * {@code CompositeConfiguration}. Note: Use this constructor if you want to
+     * set a special type of in-memory configuration. If you have a
+     * configuration which should act as both a child configuration and as
+     * in-memory configuration, use
+     * {@link #addConfiguration(Configuration, boolean)} with a value of
+     * &lt;b&gt;true&lt;/b&gt; instead.
+     *
+     * @param inMemoryConfiguration the in memory configuration to use
+     */
+    public CompositeConfiguration(Configuration inMemoryConfiguration)
+<span class="nc" id="L110">    {</span>
+<span class="nc" id="L111">        configList.clear();</span>
+<span class="nc" id="L112">        this.inMemoryConfiguration = inMemoryConfiguration;</span>
+<span class="nc" id="L113">        configList.add(inMemoryConfiguration);</span>
+<span class="nc" id="L114">    }</span>
+
+    /**
+     * Create a CompositeConfiguration with an empty in memory configuration
+     * and adds the collection of configurations specified.
+     *
+     * @param configurations the collection of configurations to add
+     */
+    public CompositeConfiguration(Collection&lt;? extends Configuration&gt; configurations)
+    {
+<span class="nc" id="L124">        this(new BaseConfiguration(), configurations);</span>
+<span class="nc" id="L125">    }</span>
+
+    /**
+     * Creates a CompositeConfiguration with a specified &lt;em&gt;in-memory
+     * configuration&lt;/em&gt;, and then adds the given collection of configurations.
+     *
+     * @param inMemoryConfiguration the in memory configuration to use
+     * @param configurations        the collection of configurations to add
+     * @see #CompositeConfiguration(Configuration)
+     */
+    public CompositeConfiguration(Configuration inMemoryConfiguration,
+            Collection&lt;? extends Configuration&gt; configurations)
+    {
+<span class="nc" id="L138">        this(inMemoryConfiguration);</span>
+
+<span class="nc bnc" id="L140" title="All 2 branches missed.">        if (configurations != null)</span>
+        {
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            for (Configuration c : configurations)</span>
+            {
+<span class="nc" id="L144">                addConfiguration(c);</span>
+<span class="nc" id="L145">            }</span>
+        }
+<span class="nc" id="L147">    }</span>
+
+    /**
+     * Add a configuration.
+     *
+     * @param config the configuration to add
+     */
+    public void addConfiguration(Configuration config)
+    {
+<span class="nc" id="L156">        addConfiguration(config, false);</span>
+<span class="nc" id="L157">    }</span>
+
+    /**
+     * Adds a child configuration and optionally makes it the &lt;em&gt;in-memory
+     * configuration&lt;/em&gt;. This means that all future property write operations
+     * are executed on this configuration. Note that the current in-memory
+     * configuration is replaced by the new one. If it was created automatically
+     * or passed to the constructor, it is removed from the list of child
+     * configurations! Otherwise, it stays in the list of child configurations
+     * at its current position, but it passes its role as in-memory
+     * configuration to the new one.
+     *
+     * @param config the configuration to be added
+     * @param asInMemory &lt;b&gt;true&lt;/b&gt; if this configuration becomes the new
+     *        &lt;em&gt;in-memory&lt;/em&gt; configuration, &lt;b&gt;false&lt;/b&gt; otherwise
+     * @since 1.8
+     */
+    public void addConfiguration(Configuration config, boolean asInMemory)
+    {
+<span class="nc" id="L176">        beginWrite(false);</span>
+        try
+        {
+<span class="nc bnc" id="L179" title="All 2 branches missed.">            if (!configList.contains(config))</span>
+            {
+<span class="nc bnc" id="L181" title="All 2 branches missed.">                if (asInMemory)</span>
+                {
+<span class="nc" id="L183">                    replaceInMemoryConfiguration(config);</span>
+<span class="nc" id="L184">                    inMemoryConfigIsChild = true;</span>
+                }
+
+<span class="nc bnc" id="L187" title="All 2 branches missed.">                if (!inMemoryConfigIsChild)</span>
+                {
+                    // As the inMemoryConfiguration contains all manually added
+                    // keys, we must make sure that it is always last. &quot;Normal&quot;, non
+                    // composed configurations add their keys at the end of the
+                    // configuration and we want to mimic this behavior.
+<span class="nc" id="L193">                    configList.add(configList.indexOf(inMemoryConfiguration),</span>
+                            config);
+                }
+                else
+                {
+                    // However, if the in-memory configuration is a regular child,
+                    // only the order in which child configurations are added is relevant
+<span class="nc" id="L200">                    configList.add(config);</span>
+                }
+
+<span class="nc bnc" id="L203" title="All 2 branches missed.">                if (config instanceof AbstractConfiguration)</span>
+                {
+<span class="nc" id="L205">                    ((AbstractConfiguration) config)</span>
+<span class="nc" id="L206">                            .setThrowExceptionOnMissing(isThrowExceptionOnMissing());</span>
+                }
+            }
+        }
+        finally
+        {
+<span class="nc" id="L212">            endWrite();</span>
+        }
+<span class="nc" id="L214">    }</span>
+
+    /**
+     * Add a configuration to the start of the list of child configurations.
+     *
+     * @param config the configuration to add
+     * @since 2.3
+     */
+    public void addConfigurationFirst(Configuration config)
+    {
+<span class="nc" id="L224">        addConfigurationFirst(config, false);</span>
+<span class="nc" id="L225">    }</span>
+
+    /**
+     * Adds a child configuration to the start of the collection and optionally
+     * makes it the &lt;em&gt;in-memory configuration&lt;/em&gt;. This means that all future
+     * property write operations are executed on this configuration. Note that
+     * the current in-memory configuration is replaced by the new one. If it was
+     * created automatically or passed to the constructor, it is removed from the
+     * list of child configurations! Otherwise, it stays in the list of child configurations
+     * at its current position, but it passes its role as in-memory configuration to the new one.
+     *
+     * @param config the configuration to be added
+     * @param asInMemory &lt;b&gt;true&lt;/b&gt; if this configuration becomes the new
+     *        &lt;em&gt;in-memory&lt;/em&gt; configuration, &lt;b&gt;false&lt;/b&gt; otherwise
+     * @since 2.3
+     */
+    public void addConfigurationFirst(Configuration config, boolean asInMemory)
+    {
+<span class="nc" id="L243">        beginWrite(false);</span>
+        try
+        {
+<span class="nc bnc" id="L246" title="All 2 branches missed.">            if (!configList.contains(config))</span>
+            {
+<span class="nc bnc" id="L248" title="All 2 branches missed.">                if (asInMemory)</span>
+                {
+<span class="nc" id="L250">                    replaceInMemoryConfiguration(config);</span>
+<span class="nc" id="L251">                    inMemoryConfigIsChild = true;</span>
+                }
+<span class="nc" id="L253">                configList.add(0, config);</span>
+
+<span class="nc bnc" id="L255" title="All 2 branches missed.">                if (config instanceof AbstractConfiguration)</span>
+                {
+<span class="nc" id="L257">                    ((AbstractConfiguration) config)</span>
+<span class="nc" id="L258">                            .setThrowExceptionOnMissing(isThrowExceptionOnMissing());</span>
+                }
+            }
+        }
+        finally
+        {
+<span class="nc" id="L264">            endWrite();</span>
+        }
+<span class="nc" id="L266">    }</span>
+
+    /**
+     * Remove a configuration. The in memory configuration cannot be removed.
+     *
+     * @param config The configuration to remove
+     */
+    public void removeConfiguration(Configuration config)
+    {
+<span class="nc" id="L275">        beginWrite(false);</span>
+        try
+        {
+            // Make sure that you can't remove the inMemoryConfiguration from
+            // the CompositeConfiguration object
+<span class="nc bnc" id="L280" title="All 2 branches missed.">            if (!config.equals(inMemoryConfiguration))</span>
+            {
+<span class="nc" id="L282">                configList.remove(config);</span>
+            }
+        }
+        finally
+        {
+<span class="nc" id="L287">            endWrite();</span>
+        }
+<span class="nc" id="L289">    }</span>
+
+    /**
+     * Return the number of configurations.
+     *
+     * @return the number of configuration
+     */
+    public int getNumberOfConfigurations()
+    {
+<span class="nc" id="L298">        beginRead(false);</span>
+        try
+        {
+<span class="nc" id="L301">            return configList.size();</span>
+        }
+        finally
+        {
+<span class="nc" id="L305">            endRead();</span>
+        }
+    }
+
+    /**
+     * Removes all child configurations and reinitializes the &lt;em&gt;in-memory
+     * configuration&lt;/em&gt;. &lt;strong&gt;Attention:&lt;/strong&gt; A new in-memory
+     * configuration is created; the old one is lost.
+     */
+    @Override
+    protected void clearInternal()
+    {
+<span class="nc" id="L317">        configList.clear();</span>
+        // recreate the in memory configuration
+<span class="nc" id="L319">        inMemoryConfiguration = new BaseConfiguration();</span>
+<span class="nc" id="L320">        ((BaseConfiguration) inMemoryConfiguration).setThrowExceptionOnMissing(isThrowExceptionOnMissing());</span>
+<span class="nc" id="L321">        ((BaseConfiguration) inMemoryConfiguration).setListDelimiterHandler(getListDelimiterHandler());</span>
+<span class="nc" id="L322">        configList.add(inMemoryConfiguration);</span>
+<span class="nc" id="L323">        inMemoryConfigIsChild = false;</span>
+<span class="nc" id="L324">    }</span>
+
+    /**
+     * Add this property to the in-memory Configuration.
+     *
+     * @param key The Key to add the property to.
+     * @param token The Value to add.
+     */
+    @Override
+    protected void addPropertyDirect(String key, Object token)
+    {
+<span class="nc" id="L335">        inMemoryConfiguration.addProperty(key, token);</span>
+<span class="nc" id="L336">    }</span>
+
+    /**
+     * Read property from underlying composite
+     *
+     * @param key key to use for mapping
+     *
+     * @return object associated with the given configuration key.
+     */
+    @Override
+    protected Object getPropertyInternal(String key)
+    {
+<span class="nc" id="L348">        Configuration firstMatchingConfiguration = null;</span>
+<span class="nc bnc" id="L349" title="All 2 branches missed.">        for (Configuration config : configList)</span>
+        {
+<span class="nc bnc" id="L351" title="All 2 branches missed.">            if (config.containsKey(key))</span>
+            {
+<span class="nc" id="L353">                firstMatchingConfiguration = config;</span>
+<span class="nc" id="L354">                break;</span>
+            }
+<span class="nc" id="L356">        }</span>
+
+<span class="nc bnc" id="L358" title="All 2 branches missed.">        if (firstMatchingConfiguration != null)</span>
+        {
+<span class="nc" id="L360">            return firstMatchingConfiguration.getProperty(key);</span>
+        }
+        else
+        {
+<span class="nc" id="L364">            return null;</span>
+        }
+    }
+
+    @Override
+    protected Iterator&lt;String&gt; getKeysInternal()
+    {
+<span class="nc" id="L371">        Set&lt;String&gt; keys = new LinkedHashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L372" title="All 2 branches missed.">        for (Configuration config : configList)</span>
+        {
+<span class="nc bnc" id="L374" title="All 2 branches missed.">            for (Iterator&lt;String&gt; it = config.getKeys(); it.hasNext();)</span>
+            {
+<span class="nc" id="L376">                keys.add(it.next());</span>
+            }
+<span class="nc" id="L378">        }</span>
+
+<span class="nc" id="L380">        return keys.iterator();</span>
+    }
+
+    @Override
+    protected Iterator&lt;String&gt; getKeysInternal(String key)
+    {
+<span class="nc" id="L386">        Set&lt;String&gt; keys = new LinkedHashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L387" title="All 2 branches missed.">        for (Configuration config : configList)</span>
+        {
+<span class="nc bnc" id="L389" title="All 2 branches missed.">            for (Iterator&lt;String&gt; it = config.getKeys(key); it.hasNext();)</span>
+            {
+<span class="nc" id="L391">                keys.add(it.next());</span>
+            }
+<span class="nc" id="L393">        }</span>
+
+<span class="nc" id="L395">        return keys.iterator();</span>
+    }
+
+    @Override
+    protected boolean isEmptyInternal()
+    {
+<span class="nc bnc" id="L401" title="All 2 branches missed.">        for (Configuration config : configList)</span>
+        {
+<span class="nc bnc" id="L403" title="All 2 branches missed.">            if (!config.isEmpty())</span>
+            {
+<span class="nc" id="L405">                return false;</span>
+            }
+<span class="nc" id="L407">        }</span>
+
+<span class="nc" id="L409">        return true;</span>
+    }
+
+    @Override
+    protected void clearPropertyDirect(String key)
+    {
+<span class="nc bnc" id="L415" title="All 2 branches missed.">        for (Configuration config : configList)</span>
+        {
+<span class="nc" id="L417">            config.clearProperty(key);</span>
+<span class="nc" id="L418">        }</span>
+<span class="nc" id="L419">    }</span>
+
+    @Override
+    protected boolean containsKeyInternal(String key)
+    {
+<span class="nc bnc" id="L424" title="All 2 branches missed.">        for (Configuration config : configList)</span>
+        {
+<span class="nc bnc" id="L426" title="All 2 branches missed.">            if (config.containsKey(key))</span>
+            {
+<span class="nc" id="L428">                return true;</span>
+            }
+<span class="nc" id="L430">        }</span>
+<span class="nc" id="L431">        return false;</span>
+    }
+
+    @Override
+    public List&lt;Object&gt; getList(String key, List&lt;?&gt; defaultValue)
+    {
+<span class="nc" id="L437">        List&lt;Object&gt; list = new ArrayList&lt;&gt;();</span>
+
+        // add all elements from the first configuration containing the requested key
+<span class="nc" id="L440">        Iterator&lt;Configuration&gt; it = configList.iterator();</span>
+<span class="nc bnc" id="L441" title="All 4 branches missed.">        while (it.hasNext() &amp;&amp; list.isEmpty())</span>
+        {
+<span class="nc" id="L443">            Configuration config = it.next();</span>
+<span class="nc bnc" id="L444" title="All 4 branches missed.">            if (config != inMemoryConfiguration &amp;&amp; config.containsKey(key))</span>
+            {
+<span class="nc" id="L446">                appendListProperty(list, config, key);</span>
+            }
+<span class="nc" id="L448">        }</span>
+
+        // add all elements from the in memory configuration
+<span class="nc" id="L451">        appendListProperty(list, inMemoryConfiguration, key);</span>
+
+<span class="nc bnc" id="L453" title="All 2 branches missed.">        if (list.isEmpty())</span>
+        {
+            // This is okay because we just return this list to the caller
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L457">            List&lt;Object&gt; resultList = (List&lt;Object&gt;) defaultValue;</span>
+<span class="nc" id="L458">            return resultList;</span>
+        }
+
+<span class="nc" id="L461">        ListIterator&lt;Object&gt; lit = list.listIterator();</span>
+<span class="nc bnc" id="L462" title="All 2 branches missed.">        while (lit.hasNext())</span>
+        {
+<span class="nc" id="L464">            lit.set(interpolate(lit.next()));</span>
+        }
+
+<span class="nc" id="L467">        return list;</span>
+    }
+
+    @Override
+    public String[] getStringArray(String key)
+    {
+<span class="nc" id="L473">        List&lt;Object&gt; list = getList(key);</span>
+
+        // transform property values into strings
+<span class="nc" id="L476">        String[] tokens = new String[list.size()];</span>
+
+<span class="nc bnc" id="L478" title="All 2 branches missed.">        for (int i = 0; i &lt; tokens.length; i++)</span>
+        {
+<span class="nc" id="L480">            tokens[i] = String.valueOf(list.get(i));</span>
+        }
+
+<span class="nc" id="L483">        return tokens;</span>
+    }
+
+    /**
+     * Return the configuration at the specified index.
+     *
+     * @param index The index of the configuration to retrieve
+     * @return the configuration at this index
+     */
+    public Configuration getConfiguration(int index)
+    {
+<span class="nc" id="L494">        beginRead(false);</span>
+        try
+        {
+<span class="nc" id="L497">            return configList.get(index);</span>
+        }
+        finally
+        {
+<span class="nc" id="L501">            endRead();</span>
+        }
+    }
+
+    /**
+     * Returns the &amp;quot;in memory configuration&amp;quot;. In this configuration
+     * changes are stored.
+     *
+     * @return the in memory configuration
+     */
+    public Configuration getInMemoryConfiguration()
+    {
+<span class="nc" id="L513">        beginRead(false);</span>
+        try
+        {
+<span class="nc" id="L516">            return inMemoryConfiguration;</span>
+        }
+        finally
+        {
+<span class="nc" id="L520">            endRead();</span>
+        }
+    }
+
+    /**
+     * Returns a copy of this object. This implementation will create a deep
+     * clone, i.e. all configurations contained in this composite will also be
+     * cloned. This only works if all contained configurations support cloning;
+     * otherwise a runtime exception will be thrown. Registered event handlers
+     * won't get cloned.
+     *
+     * @return the copy
+     * @since 1.3
+     */
+    @Override
+    public Object clone()
+    {
+        try
+        {
+<span class="nc" id="L539">            CompositeConfiguration copy = (CompositeConfiguration) super</span>
+<span class="nc" id="L540">                    .clone();</span>
+<span class="nc" id="L541">            copy.configList = new LinkedList&lt;&gt;();</span>
+<span class="nc" id="L542">            copy.inMemoryConfiguration = ConfigurationUtils</span>
+<span class="nc" id="L543">                    .cloneConfiguration(getInMemoryConfiguration());</span>
+<span class="nc" id="L544">            copy.configList.add(copy.inMemoryConfiguration);</span>
+
+<span class="nc bnc" id="L546" title="All 2 branches missed.">            for (Configuration config : configList)</span>
+            {
+<span class="nc bnc" id="L548" title="All 2 branches missed.">                if (config != getInMemoryConfiguration())</span>
+                {
+<span class="nc" id="L550">                    copy.addConfiguration(ConfigurationUtils</span>
+<span class="nc" id="L551">                            .cloneConfiguration(config));</span>
+                }
+<span class="nc" id="L553">            }</span>
+
+<span class="nc" id="L555">            copy.cloneInterpolator(this);</span>
+<span class="nc" id="L556">            return copy;</span>
+        }
+<span class="nc" id="L558">        catch (CloneNotSupportedException cnex)</span>
+        {
+            // cannot happen
+<span class="nc" id="L561">            throw new ConfigurationRuntimeException(cnex);</span>
+        }
+    }
+
+    /**
+     * {@inheritDoc} This implementation ensures that the in memory
+     * configuration is correctly initialized.
+     */
+    @Override
+    public void setListDelimiterHandler(
+            ListDelimiterHandler listDelimiterHandler)
+    {
+<span class="nc bnc" id="L573" title="All 2 branches missed.">        if (inMemoryConfiguration instanceof AbstractConfiguration)</span>
+        {
+<span class="nc" id="L575">            ((AbstractConfiguration) inMemoryConfiguration)</span>
+<span class="nc" id="L576">                    .setListDelimiterHandler(listDelimiterHandler);</span>
+        }
+<span class="nc" id="L578">        super.setListDelimiterHandler(listDelimiterHandler);</span>
+<span class="nc" id="L579">    }</span>
+
+    /**
+     * Returns the configuration source, in which the specified key is defined.
+     * This method will iterate over all existing child configurations and check
+     * whether they contain the specified key. The following constellations are
+     * possible:
+     * &lt;ul&gt;
+     * &lt;li&gt;If exactly one child configuration contains the key, this
+     * configuration is returned as the source configuration. This may be the
+     * &lt;em&gt;in memory configuration&lt;/em&gt; (this has to be explicitly checked by
+     * the calling application).&lt;/li&gt;
+     * &lt;li&gt;If none of the child configurations contain the key, &lt;b&gt;null&lt;/b&gt; is
+     * returned.&lt;/li&gt;
+     * &lt;li&gt;If the key is contained in multiple child configurations or if the
+     * key is &lt;b&gt;null&lt;/b&gt;, a {@code IllegalArgumentException} is thrown.
+     * In this case the source configuration cannot be determined.&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @param key the key to be checked
+     * @return the source configuration of this key
+     * @throws IllegalArgumentException if the source configuration cannot be
+     * determined
+     * @since 1.5
+     */
+    public Configuration getSource(String key)
+    {
+<span class="nc bnc" id="L606" title="All 2 branches missed.">        if (key == null)</span>
+        {
+<span class="nc" id="L608">            throw new IllegalArgumentException(&quot;Key must not be null!&quot;);</span>
+        }
+
+<span class="nc" id="L611">        Configuration source = null;</span>
+<span class="nc bnc" id="L612" title="All 2 branches missed.">        for (Configuration conf : configList)</span>
+        {
+<span class="nc bnc" id="L614" title="All 2 branches missed.">            if (conf.containsKey(key))</span>
+            {
+<span class="nc bnc" id="L616" title="All 2 branches missed.">                if (source != null)</span>
+                {
+<span class="nc" id="L618">                    throw new IllegalArgumentException(&quot;The key &quot; + key</span>
+                            + &quot; is defined by multiple sources!&quot;);
+                }
+<span class="nc" id="L621">                source = conf;</span>
+            }
+<span class="nc" id="L623">        }</span>
+
+<span class="nc" id="L625">        return source;</span>
+    }
+
+    /**
+     * Replaces the current in-memory configuration by the given one.
+     *
+     * @param config the new in-memory configuration
+     */
+    private void replaceInMemoryConfiguration(Configuration config)
+    {
+<span class="nc bnc" id="L635" title="All 2 branches missed.">        if (!inMemoryConfigIsChild)</span>
+        {
+            // remove current in-memory configuration
+<span class="nc" id="L638">            configList.remove(inMemoryConfiguration);</span>
+        }
+<span class="nc" id="L640">        inMemoryConfiguration = config;</span>
+<span class="nc" id="L641">    }</span>
+
+    /**
+     * Adds the value of a property to the given list. This method is used by
+     * {@code getList()} for gathering property values from the child
+     * configurations.
+     *
+     * @param dest the list for collecting the data
+     * @param config the configuration to query
+     * @param key the key of the property
+     */
+    private  void appendListProperty(List&lt;Object&gt; dest, Configuration config,
+            String key)
+    {
+<span class="nc" id="L655">        Object value = interpolate(config.getProperty(key));</span>
+<span class="nc bnc" id="L656" title="All 2 branches missed.">        if (value != null)</span>
+        {
+<span class="nc bnc" id="L658" title="All 2 branches missed.">            if (value instanceof Collection)</span>
+            {
+<span class="nc" id="L660">                Collection&lt;?&gt; col = (Collection&lt;?&gt;) value;</span>
+<span class="nc" id="L661">                dest.addAll(col);</span>
+<span class="nc" id="L662">            }</span>
+            else
+            {
+<span class="nc" id="L665">                dest.add(value);</span>
+            }
+        }
+<span class="nc" id="L668">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

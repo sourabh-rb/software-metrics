@@ -36,8 +36,8 @@
 ```
 #### After adding dependency, do `mvn clean`, `mvn compile`, `mvn test`, report will be generated after the test.
 
-## PITest (Metric 3):
-Add maven dependency to pol.xml
+## PITest (Metric 3 only for Version 2.6):
+#### Add maven dependency to pom.xml
 ```xml
 <properties>
 <pitest.version>1.4.10</pitest.version>
@@ -71,7 +71,7 @@ Add maven dependency to pol.xml
 - The whole mutation test is super long, around **40 minutes**.
 
 ## Jdepend (Metric 5):
-Add maven dependency to pom.xml
+####Add maven dependency to pom.xml
 ```xml
 <plugin>
         <groupId>org.codehaus.mojo</groupId>
