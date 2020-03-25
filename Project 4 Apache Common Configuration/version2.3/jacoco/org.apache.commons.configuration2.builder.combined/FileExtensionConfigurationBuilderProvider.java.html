@@ -84,21 +84,21 @@ public class FileExtensionConfigurationBuilderProvider extends
             String reloadBldrCls, String matchingConfigCls,
             String defConfigClass, String ext, Collection&lt;String&gt; paramCls)
     {
-<span class="nc" id="L87">        super(bldrCls, reloadBldrCls, defConfigClass, paramCls);</span>
-<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (matchingConfigCls == null)</span>
+<span class="fc" id="L87">        super(bldrCls, reloadBldrCls, defConfigClass, paramCls);</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (matchingConfigCls == null)</span>
         {
-<span class="nc" id="L90">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L90">            throw new IllegalArgumentException(</span>
                     &quot;Matching configuration class must not be null!&quot;);
         }
-<span class="nc bnc" id="L93" title="All 2 branches missed.">        if (ext == null)</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (ext == null)</span>
         {
-<span class="nc" id="L95">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L95">            throw new IllegalArgumentException(</span>
                     &quot;File extension must not be null!&quot;);
         }
 
-<span class="nc" id="L99">        matchingConfigurationClass = matchingConfigCls;</span>
-<span class="nc" id="L100">        extension = ext;</span>
-<span class="nc" id="L101">    }</span>
+<span class="fc" id="L99">        matchingConfigurationClass = matchingConfigCls;</span>
+<span class="fc" id="L100">        extension = ext;</span>
+<span class="fc" id="L101">    }</span>
 
     /**
      * Returns the name of the matching configuration class. This class is used
@@ -108,7 +108,7 @@ public class FileExtensionConfigurationBuilderProvider extends
      */
     public String getMatchingConfigurationClass()
     {
-<span class="nc" id="L111">        return matchingConfigurationClass;</span>
+<span class="fc" id="L111">        return matchingConfigurationClass;</span>
     }
 
     /**
@@ -118,7 +118,7 @@ public class FileExtensionConfigurationBuilderProvider extends
      */
     public String getExtension()
     {
-<span class="nc" id="L121">        return extension;</span>
+<span class="fc" id="L121">        return extension;</span>
     }
 
     /**
@@ -132,9 +132,9 @@ public class FileExtensionConfigurationBuilderProvider extends
     protected String determineConfigurationClass(ConfigurationDeclaration decl,
             Collection&lt;BuilderParameters&gt; params) throws ConfigurationException
     {
-<span class="nc" id="L135">        String currentExt = extractExtension(fetchCurrentFileName(params));</span>
-<span class="nc bnc" id="L136" title="All 2 branches missed.">        return getExtension().equalsIgnoreCase(currentExt) ? getMatchingConfigurationClass()</span>
-<span class="nc" id="L137">                : getConfigurationClass();</span>
+<span class="fc" id="L135">        String currentExt = extractExtension(fetchCurrentFileName(params));</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        return getExtension().equalsIgnoreCase(currentExt) ? getMatchingConfigurationClass()</span>
+<span class="fc" id="L137">                : getConfigurationClass();</span>
     }
 
     /**
@@ -147,15 +147,15 @@ public class FileExtensionConfigurationBuilderProvider extends
     private static String fetchCurrentFileName(
             Collection&lt;BuilderParameters&gt; params)
     {
-<span class="nc bnc" id="L150" title="All 2 branches missed.">        for (BuilderParameters p : params)</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        for (BuilderParameters p : params)</span>
         {
-<span class="nc bnc" id="L152" title="All 2 branches missed.">            if (p instanceof FileBasedBuilderParametersImpl)</span>
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">            if (p instanceof FileBasedBuilderParametersImpl)</span>
             {
-<span class="nc" id="L154">                FileBasedBuilderParametersImpl fp = (FileBasedBuilderParametersImpl) p;</span>
-<span class="nc" id="L155">                return fp.getFileHandler().getFileName();</span>
+<span class="fc" id="L154">                FileBasedBuilderParametersImpl fp = (FileBasedBuilderParametersImpl) p;</span>
+<span class="fc" id="L155">                return fp.getFileHandler().getFileName();</span>
             }
 <span class="nc" id="L157">        }</span>
-<span class="nc" id="L158">        return null;</span>
+<span class="fc" id="L158">        return null;</span>
     }
 
     /**
@@ -167,13 +167,13 @@ public class FileExtensionConfigurationBuilderProvider extends
      */
     private static String extractExtension(String fileName)
     {
-<span class="nc bnc" id="L170" title="All 2 branches missed.">        if (fileName == null)</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        if (fileName == null)</span>
         {
-<span class="nc" id="L172">            return null;</span>
+<span class="fc" id="L172">            return null;</span>
         }
 
-<span class="nc" id="L175">        int pos = fileName.lastIndexOf(EXT_SEPARATOR);</span>
-<span class="nc bnc" id="L176" title="All 2 branches missed.">        return (pos &lt; 0) ? null : fileName.substring(pos + 1);</span>
+<span class="fc" id="L175">        int pos = fileName.lastIndexOf(EXT_SEPARATOR);</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">        return (pos &lt; 0) ? null : fileName.substring(pos + 1);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

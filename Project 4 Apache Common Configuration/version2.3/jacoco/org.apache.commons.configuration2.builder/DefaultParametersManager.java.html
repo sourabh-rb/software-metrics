@@ -55,9 +55,9 @@ public class DefaultParametersManager
      * Creates a new instance of {@code DefaultParametersManager}.
      */
     public DefaultParametersManager()
-<span class="nc" id="L58">    {</span>
-<span class="nc" id="L59">        defaultHandlers = new CopyOnWriteArrayList&lt;&gt;();</span>
-<span class="nc" id="L60">    }</span>
+<span class="fc" id="L58">    {</span>
+<span class="fc" id="L59">        defaultHandlers = new CopyOnWriteArrayList&lt;&gt;();</span>
+<span class="fc" id="L60">    }</span>
 
     /**
      * Registers the specified {@code DefaultParametersHandler} object for the
@@ -80,8 +80,8 @@ public class DefaultParametersManager
     public &lt;T&gt; void registerDefaultsHandler(Class&lt;T&gt; paramsClass,
             DefaultParametersHandler&lt;? super T&gt; handler)
     {
-<span class="nc" id="L83">        registerDefaultsHandler(paramsClass, handler, null);</span>
-<span class="nc" id="L84">    }</span>
+<span class="fc" id="L83">        registerDefaultsHandler(paramsClass, handler, null);</span>
+<span class="fc" id="L84">    }</span>
 
     /**
      * Registers the specified {@code DefaultParametersHandler} object for the
@@ -129,19 +129,19 @@ public class DefaultParametersManager
     public &lt;T&gt; void registerDefaultsHandler(Class&lt;T&gt; paramsClass,
             DefaultParametersHandler&lt;? super T&gt; handler, Class&lt;?&gt; startClass)
     {
-<span class="nc bnc" id="L132" title="All 2 branches missed.">        if (paramsClass == null)</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        if (paramsClass == null)</span>
         {
-<span class="nc" id="L134">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L134">            throw new IllegalArgumentException(</span>
                     &quot;Parameters class must not be null!&quot;);
         }
-<span class="nc bnc" id="L137" title="All 2 branches missed.">        if (handler == null)</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (handler == null)</span>
         {
-<span class="nc" id="L139">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L139">            throw new IllegalArgumentException(</span>
                     &quot;DefaultParametersHandler must not be null!&quot;);
         }
-<span class="nc" id="L142">        defaultHandlers.add(new DefaultHandlerData(handler, paramsClass,</span>
+<span class="fc" id="L142">        defaultHandlers.add(new DefaultHandlerData(handler, paramsClass,</span>
                 startClass));
-<span class="nc" id="L144">    }</span>
+<span class="fc" id="L144">    }</span>
 
     /**
      * Removes the specified {@code DefaultParametersHandler} from this
@@ -152,8 +152,8 @@ public class DefaultParametersManager
      */
     public void unregisterDefaultsHandler(DefaultParametersHandler&lt;?&gt; handler)
     {
-<span class="nc" id="L155">        unregisterDefaultsHandler(handler, null);</span>
-<span class="nc" id="L156">    }</span>
+<span class="fc" id="L155">        unregisterDefaultsHandler(handler, null);</span>
+<span class="fc" id="L156">    }</span>
 
     /**
      * Removes the specified {@code DefaultParametersHandler} from this instance
@@ -169,18 +169,18 @@ public class DefaultParametersManager
     public void unregisterDefaultsHandler(DefaultParametersHandler&lt;?&gt; handler,
             Class&lt;?&gt; startClass)
     {
-<span class="nc" id="L172">        Collection&lt;DefaultHandlerData&gt; toRemove =</span>
+<span class="fc" id="L172">        Collection&lt;DefaultHandlerData&gt; toRemove =</span>
                 new LinkedList&lt;&gt;();
-<span class="nc bnc" id="L174" title="All 2 branches missed.">        for (DefaultHandlerData dhd : defaultHandlers)</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        for (DefaultHandlerData dhd : defaultHandlers)</span>
         {
-<span class="nc bnc" id="L176" title="All 2 branches missed.">            if (dhd.isOccurrence(handler, startClass))</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">            if (dhd.isOccurrence(handler, startClass))</span>
             {
-<span class="nc" id="L178">                toRemove.add(dhd);</span>
+<span class="fc" id="L178">                toRemove.add(dhd);</span>
             }
-<span class="nc" id="L180">        }</span>
+<span class="fc" id="L180">        }</span>
 
-<span class="nc" id="L182">        defaultHandlers.removeAll(toRemove);</span>
-<span class="nc" id="L183">    }</span>
+<span class="fc" id="L182">        defaultHandlers.removeAll(toRemove);</span>
+<span class="fc" id="L183">    }</span>
 
     /**
      * Initializes the passed in {@code BuilderParameters} object by applying
@@ -193,14 +193,14 @@ public class DefaultParametersManager
      */
     public void initializeParameters(BuilderParameters params)
     {
-<span class="nc bnc" id="L196" title="All 2 branches missed.">        if (params != null)</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">        if (params != null)</span>
         {
-<span class="nc bnc" id="L198" title="All 2 branches missed.">            for (DefaultHandlerData dhd : defaultHandlers)</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">            for (DefaultHandlerData dhd : defaultHandlers)</span>
             {
-<span class="nc" id="L200">                dhd.applyHandlerIfMatching(params);</span>
-<span class="nc" id="L201">            }</span>
+<span class="fc" id="L200">                dhd.applyHandlerIfMatching(params);</span>
+<span class="fc" id="L201">            }</span>
         }
-<span class="nc" id="L203">    }</span>
+<span class="fc" id="L203">    }</span>
 
     /**
      * A data class storing information about {@code DefaultParametersHandler}
@@ -228,11 +228,11 @@ public class DefaultParametersManager
          */
         public DefaultHandlerData(DefaultParametersHandler&lt;?&gt; h, Class&lt;?&gt; cls,
                 Class&lt;?&gt; startCls)
-<span class="nc" id="L231">        {</span>
-<span class="nc" id="L232">            handler = h;</span>
-<span class="nc" id="L233">            parameterClass = cls;</span>
-<span class="nc" id="L234">            startClass = startCls;</span>
-<span class="nc" id="L235">        }</span>
+<span class="fc" id="L231">        {</span>
+<span class="fc" id="L232">            handler = h;</span>
+<span class="fc" id="L233">            parameterClass = cls;</span>
+<span class="fc" id="L234">            startClass = startCls;</span>
+<span class="fc" id="L235">        }</span>
 
         /**
          * Checks whether the managed {@code DefaultParametersHandler} can be
@@ -246,14 +246,14 @@ public class DefaultParametersManager
         // ClassCastExceptions
         public void applyHandlerIfMatching(BuilderParameters obj)
         {
-<span class="nc bnc" id="L249" title="All 4 branches missed.">            if (parameterClass.isInstance(obj)</span>
-<span class="nc bnc" id="L250" title="All 2 branches missed.">                    &amp;&amp; (startClass == null || startClass.isInstance(obj)))</span>
+<span class="fc bfc" id="L249" title="All 4 branches covered.">            if (parameterClass.isInstance(obj)</span>
+<span class="fc bfc" id="L250" title="All 2 branches covered.">                    &amp;&amp; (startClass == null || startClass.isInstance(obj)))</span>
             {
                 @SuppressWarnings(&quot;rawtypes&quot;)
-<span class="nc" id="L253">                DefaultParametersHandler handlerUntyped = handler;</span>
-<span class="nc" id="L254">                handlerUntyped.initializeDefaults(obj);</span>
+<span class="fc" id="L253">                DefaultParametersHandler handlerUntyped = handler;</span>
+<span class="fc" id="L254">                handlerUntyped.initializeDefaults(obj);</span>
             }
-<span class="nc" id="L256">        }</span>
+<span class="fc" id="L256">        }</span>
 
         /**
          * Tests whether this instance refers to the specified occurrence of a
@@ -267,8 +267,8 @@ public class DefaultParametersManager
         public boolean isOccurrence(DefaultParametersHandler&lt;?&gt; h,
                 Class&lt;?&gt; startCls)
         {
-<span class="nc bnc" id="L270" title="All 4 branches missed.">            return h == handler</span>
-<span class="nc bnc" id="L271" title="All 2 branches missed.">                    &amp;&amp; (startCls == null || startCls.equals(startClass));</span>
+<span class="pc bpc" id="L270" title="1 of 4 branches missed.">            return h == handler</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">                    &amp;&amp; (startCls == null || startCls.equals(startClass));</span>
         }
     }
 }

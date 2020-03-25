@@ -33,7 +33,7 @@ import org.apache.commons.configuration2.reloading.ReloadingDetector;
  * @version $Id: DefaultReloadingDetectorFactory.java 1624601 2014-09-12 18:04:36Z oheger $
  * @since 2.0
  */
-<span class="nc" id="L36">public class DefaultReloadingDetectorFactory implements</span>
+<span class="fc" id="L36">public class DefaultReloadingDetectorFactory implements</span>
         ReloadingDetectorFactory
 {
     @Override
@@ -41,9 +41,9 @@ import org.apache.commons.configuration2.reloading.ReloadingDetector;
             FileBasedBuilderParametersImpl params)
             throws ConfigurationException
     {
-<span class="nc" id="L44">        Long refreshDelay = params.getReloadingRefreshDelay();</span>
-<span class="nc bnc" id="L45" title="All 2 branches missed.">        return (refreshDelay != null) ? new FileHandlerReloadingDetector(</span>
-<span class="nc" id="L46">                handler, refreshDelay) : new FileHandlerReloadingDetector(</span>
+<span class="fc" id="L44">        Long refreshDelay = params.getReloadingRefreshDelay();</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        return (refreshDelay != null) ? new FileHandlerReloadingDetector(</span>
+<span class="fc" id="L46">                handler, refreshDelay) : new FileHandlerReloadingDetector(</span>
                 handler);
     }
 }

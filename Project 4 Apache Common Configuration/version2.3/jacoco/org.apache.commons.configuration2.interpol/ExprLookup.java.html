@@ -85,16 +85,16 @@ public class ExprLookup implements Lookup
     private ConfigurationLogger logger;
 
     /** The engine. */
-<span class="nc" id="L88">    private final JexlEngine engine = new JexlEngine();</span>
+<span class="pc" id="L88">    private final JexlEngine engine = new JexlEngine();</span>
 
     /** The variables maintained by this object. */
     private Variables variables;
 
     /** The String to use to start subordinate lookup expressions */
-<span class="nc" id="L94">    private String prefixMatcher = DEFAULT_PREFIX;</span>
+<span class="pc" id="L94">    private String prefixMatcher = DEFAULT_PREFIX;</span>
 
     /** The String to use to terminate subordinate lookup expressions */
-<span class="nc" id="L97">    private String suffixMatcher = DEFAULT_SUFFIX;</span>
+<span class="pc" id="L97">    private String suffixMatcher = DEFAULT_SUFFIX;</span>
 
     /**
      * The default constructor. Will get used when the Lookup is constructed via
@@ -109,9 +109,9 @@ public class ExprLookup implements Lookup
      * @param list The list of objects to be accessible in expressions.
      */
     public ExprLookup(Variables list)
-<span class="nc" id="L112">    {</span>
-<span class="nc" id="L113">        setVariables(list);</span>
-<span class="nc" id="L114">    }</span>
+<span class="fc" id="L112">    {</span>
+<span class="fc" id="L113">        setVariables(list);</span>
+<span class="fc" id="L114">    }</span>
 
     /**
      * Constructor for use by applications.
@@ -152,8 +152,8 @@ public class ExprLookup implements Lookup
      */
     public void setVariables(Variables list)
     {
-<span class="nc" id="L155">        variables = new Variables(list);</span>
-<span class="nc" id="L156">    }</span>
+<span class="fc" id="L155">        variables = new Variables(list);</span>
+<span class="fc" id="L156">    }</span>
 
     /**
      * Returns the list of Variables that are accessible within expressions.
@@ -164,7 +164,7 @@ public class ExprLookup implements Lookup
      */
     public Variables getVariables()
     {
-<span class="nc" id="L167">        return new Variables(variables);</span>
+<span class="fc" id="L167">        return new Variables(variables);</span>
     }
 
     /**
@@ -187,8 +187,8 @@ public class ExprLookup implements Lookup
      */
     public void setLogger(ConfigurationLogger logger)
     {
-<span class="nc" id="L190">        this.logger = logger;</span>
-<span class="nc" id="L191">    }</span>
+<span class="fc" id="L190">        this.logger = logger;</span>
+<span class="fc" id="L191">    }</span>
 
     /**
      * Returns the {@code ConfigurationInterpolator} used by this object.
@@ -210,9 +210,9 @@ public class ExprLookup implements Lookup
      */
     public void setInterpolator(ConfigurationInterpolator interpolator)
     {
-<span class="nc" id="L213">        this.interpolator = interpolator;</span>
-<span class="nc" id="L214">        installSubstitutor(interpolator);</span>
-<span class="nc" id="L215">    }</span>
+<span class="fc" id="L213">        this.interpolator = interpolator;</span>
+<span class="fc" id="L214">        installSubstitutor(interpolator);</span>
+<span class="fc" id="L215">    }</span>
 
     /**
      * Evaluates the expression.
@@ -222,17 +222,17 @@ public class ExprLookup implements Lookup
     @Override
     public String lookup(String var)
     {
-<span class="nc bnc" id="L225" title="All 2 branches missed.">        if (substitutor == null)</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">        if (substitutor == null)</span>
         {
-<span class="nc" id="L227">            return var;</span>
+<span class="fc" id="L227">            return var;</span>
         }
 
-<span class="nc" id="L230">        String result = substitutor.replace(var);</span>
+<span class="fc" id="L230">        String result = substitutor.replace(var);</span>
         try
         {
-<span class="nc" id="L233">            Expression exp = engine.createExpression(result);</span>
-<span class="nc" id="L234">            Object exprResult = exp.evaluate(createContext());</span>
-<span class="nc bnc" id="L235" title="All 2 branches missed.">            result = (exprResult != null) ? String.valueOf(exprResult) : null;</span>
+<span class="fc" id="L233">            Expression exp = engine.createExpression(result);</span>
+<span class="fc" id="L234">            Object exprResult = exp.evaluate(createContext());</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">            result = (exprResult != null) ? String.valueOf(exprResult) : null;</span>
         }
 <span class="nc" id="L237">        catch (Exception e)</span>
         {
@@ -241,9 +241,9 @@ public class ExprLookup implements Lookup
             {
 <span class="nc" id="L242">                l.debug(&quot;Error encountered evaluating &quot; + result + &quot;: &quot; + e);</span>
             }
-<span class="nc" id="L244">        }</span>
+<span class="fc" id="L244">        }</span>
 
-<span class="nc" id="L246">        return result;</span>
+<span class="fc" id="L246">        return result;</span>
     }
 
     /**
@@ -254,26 +254,26 @@ public class ExprLookup implements Lookup
      */
     private void installSubstitutor(final ConfigurationInterpolator ip)
     {
-<span class="nc bnc" id="L257" title="All 2 branches missed.">        if (ip == null)</span>
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">        if (ip == null)</span>
         {
 <span class="nc" id="L259">            substitutor = null;</span>
         }
         else
         {
-<span class="nc" id="L263">            StrLookup&lt;String&gt; variableResolver = new StrLookup&lt;String&gt;()</span>
-<span class="nc" id="L264">            {</span>
+<span class="fc" id="L263">            StrLookup&lt;String&gt; variableResolver = new StrLookup&lt;String&gt;()</span>
+<span class="fc" id="L264">            {</span>
                 @Override
                 public String lookup(String key)
                 {
-<span class="nc" id="L268">                    Object value = ip.resolve(key);</span>
-<span class="nc bnc" id="L269" title="All 2 branches missed.">                    return (value != null) ? value.toString() : null;</span>
+<span class="fc" id="L268">                    Object value = ip.resolve(key);</span>
+<span class="pc bpc" id="L269" title="1 of 2 branches missed.">                    return (value != null) ? value.toString() : null;</span>
                 }
             };
-<span class="nc" id="L272">            substitutor =</span>
+<span class="fc" id="L272">            substitutor =</span>
                     new StrSubstitutor(variableResolver, prefixMatcher,
                             suffixMatcher, StrSubstitutor.DEFAULT_ESCAPE);
         }
-<span class="nc" id="L276">    }</span>
+<span class="fc" id="L276">    }</span>
 
     /**
      * Creates a new {@code JexlContext} and initializes it with the variables
@@ -283,9 +283,9 @@ public class ExprLookup implements Lookup
      */
     private JexlContext createContext()
     {
-<span class="nc" id="L286">        JexlContext ctx = new MapContext();</span>
-<span class="nc" id="L287">        initializeContext(ctx);</span>
-<span class="nc" id="L288">        return ctx;</span>
+<span class="fc" id="L286">        JexlContext ctx = new MapContext();</span>
+<span class="fc" id="L287">        initializeContext(ctx);</span>
+<span class="fc" id="L288">        return ctx;</span>
     }
 
     /**
@@ -296,11 +296,11 @@ public class ExprLookup implements Lookup
      */
     private void initializeContext(JexlContext ctx)
     {
-<span class="nc bnc" id="L299" title="All 2 branches missed.">        for (Variable var : variables)</span>
+<span class="fc bfc" id="L299" title="All 2 branches covered.">        for (Variable var : variables)</span>
         {
-<span class="nc" id="L301">            ctx.set(var.getName(), var.getValue());</span>
-<span class="nc" id="L302">        }</span>
-<span class="nc" id="L303">    }</span>
+<span class="fc" id="L301">            ctx.set(var.getName(), var.getValue());</span>
+<span class="fc" id="L302">        }</span>
+<span class="fc" id="L303">    }</span>
 
     /**
      * List wrapper used to allow the Variables list to be created as beans in
@@ -318,8 +318,8 @@ public class ExprLookup implements Lookup
          */
         public Variables()
         {
-<span class="nc" id="L321">            super();</span>
-<span class="nc" id="L322">        }</span>
+<span class="fc" id="L321">            super();</span>
+<span class="fc" id="L322">        }</span>
 
         /**
          * Creates a new instance of {@code Variables} and copies the content of
@@ -329,8 +329,8 @@ public class ExprLookup implements Lookup
          */
         public Variables(Variables vars)
         {
-<span class="nc" id="L332">            super(vars);</span>
-<span class="nc" id="L333">        }</span>
+<span class="fc" id="L332">            super(vars);</span>
+<span class="fc" id="L333">        }</span>
 
         public Variable getVariable()
         {
@@ -363,53 +363,53 @@ public class ExprLookup implements Lookup
 <span class="nc" id="L363">        }</span>
 
         public Variable(String name, Object value)
-<span class="nc" id="L366">        {</span>
-<span class="nc" id="L367">            setName(name);</span>
-<span class="nc" id="L368">            setValue(value);</span>
-<span class="nc" id="L369">        }</span>
+<span class="fc" id="L366">        {</span>
+<span class="fc" id="L367">            setName(name);</span>
+<span class="fc" id="L368">            setValue(value);</span>
+<span class="fc" id="L369">        }</span>
 
         public String getName()
         {
-<span class="nc" id="L373">            return key;</span>
+<span class="fc" id="L373">            return key;</span>
         }
 
         public void setName(String name)
         {
-<span class="nc" id="L378">            this.key = name;</span>
-<span class="nc" id="L379">        }</span>
+<span class="fc" id="L378">            this.key = name;</span>
+<span class="fc" id="L379">        }</span>
 
         public Object getValue()
         {
-<span class="nc" id="L383">            return value;</span>
+<span class="fc" id="L383">            return value;</span>
         }
 
         public void setValue(Object value) throws ConfigurationRuntimeException
         {
             try
             {
-<span class="nc bnc" id="L390" title="All 2 branches missed.">                if (!(value instanceof String))</span>
+<span class="fc bfc" id="L390" title="All 2 branches covered.">                if (!(value instanceof String))</span>
                 {
-<span class="nc" id="L392">                    this.value = value;</span>
-<span class="nc" id="L393">                    return;</span>
+<span class="fc" id="L392">                    this.value = value;</span>
+<span class="fc" id="L393">                    return;</span>
                 }
-<span class="nc" id="L395">                String val = (String) value;</span>
-<span class="nc" id="L396">                String name = StringUtils.removeStartIgnoreCase(val, CLASS);</span>
-<span class="nc" id="L397">                Class&lt;?&gt; clazz = ClassUtils.getClass(name);</span>
-<span class="nc bnc" id="L398" title="All 2 branches missed.">                if (name.length() == val.length())</span>
+<span class="fc" id="L395">                String val = (String) value;</span>
+<span class="fc" id="L396">                String name = StringUtils.removeStartIgnoreCase(val, CLASS);</span>
+<span class="fc" id="L397">                Class&lt;?&gt; clazz = ClassUtils.getClass(name);</span>
+<span class="pc bpc" id="L398" title="1 of 2 branches missed.">                if (name.length() == val.length())</span>
                 {
 <span class="nc" id="L400">                    this.value = clazz.newInstance();</span>
                 }
                 else
                 {
-<span class="nc" id="L404">                    this.value = clazz;</span>
+<span class="fc" id="L404">                    this.value = clazz;</span>
                 }
             }
 <span class="nc" id="L407">            catch (Exception e)</span>
             {
 <span class="nc" id="L409">                throw new ConfigurationRuntimeException(&quot;Unable to create &quot; + value, e);</span>
-<span class="nc" id="L410">            }</span>
+<span class="fc" id="L410">            }</span>
 
-<span class="nc" id="L412">        }</span>
+<span class="fc" id="L412">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

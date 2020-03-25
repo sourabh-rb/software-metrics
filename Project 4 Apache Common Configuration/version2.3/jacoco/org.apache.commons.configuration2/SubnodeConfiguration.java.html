@@ -126,20 +126,20 @@ public class SubnodeConfiguration extends BaseHierarchicalConfiguration
     public SubnodeConfiguration(BaseHierarchicalConfiguration parent,
                                 TrackedNodeModel model)
     {
-<span class="nc" id="L129">        super(model);</span>
-<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (parent == null)</span>
+<span class="fc" id="L129">        super(model);</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        if (parent == null)</span>
         {
-<span class="nc" id="L132">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L132">            throw new IllegalArgumentException(</span>
                     &quot;Parent configuration must not be null!&quot;);
         }
-<span class="nc bnc" id="L135" title="All 2 branches missed.">        if (model == null)</span>
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        if (model == null)</span>
         {
-<span class="nc" id="L137">            throw new IllegalArgumentException(&quot;Node model must not be null!&quot;);</span>
+<span class="fc" id="L137">            throw new IllegalArgumentException(&quot;Node model must not be null!&quot;);</span>
         }
 
-<span class="nc" id="L140">        this.parent = parent;</span>
-<span class="nc" id="L141">        rootSelector = model.getSelector();</span>
-<span class="nc" id="L142">    }</span>
+<span class="fc" id="L140">        this.parent = parent;</span>
+<span class="fc" id="L141">        rootSelector = model.getSelector();</span>
+<span class="fc" id="L142">    }</span>
 
     /**
      * Returns the parent configuration of this subnode configuration.
@@ -148,7 +148,7 @@ public class SubnodeConfiguration extends BaseHierarchicalConfiguration
      */
     public BaseHierarchicalConfiguration getParent()
     {
-<span class="nc" id="L151">        return parent;</span>
+<span class="fc" id="L151">        return parent;</span>
     }
 
     /**
@@ -158,7 +158,7 @@ public class SubnodeConfiguration extends BaseHierarchicalConfiguration
      */
     public NodeSelector getRootSelector()
     {
-<span class="nc" id="L161">        return rootSelector;</span>
+<span class="fc" id="L161">        return rootSelector;</span>
     }
 
     /**
@@ -171,8 +171,8 @@ public class SubnodeConfiguration extends BaseHierarchicalConfiguration
      */
     public void close()
     {
-<span class="nc" id="L174">        (getTrackedModel()).close();</span>
-<span class="nc" id="L175">    }</span>
+<span class="fc" id="L174">        (getTrackedModel()).close();</span>
+<span class="fc" id="L175">    }</span>
 
     /**
      * {@inheritDoc} This implementation returns a newly created node model
@@ -184,9 +184,9 @@ public class SubnodeConfiguration extends BaseHierarchicalConfiguration
     @Override
     public InMemoryNodeModel getNodeModel()
     {
-<span class="nc" id="L187">        ImmutableNode root =</span>
-<span class="nc" id="L188">                getParent().getNodeModel().getTrackedNode(getRootSelector());</span>
-<span class="nc" id="L189">        return new InMemoryNodeModel(root);</span>
+<span class="fc" id="L187">        ImmutableNode root =</span>
+<span class="fc" id="L188">                getParent().getNodeModel().getTrackedNode(getRootSelector());</span>
+<span class="fc" id="L189">        return new InMemoryNodeModel(root);</span>
     }
 
     /**
@@ -203,13 +203,13 @@ public class SubnodeConfiguration extends BaseHierarchicalConfiguration
      */
     public InMemoryNodeModel getRootNodeModel()
     {
-<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (getParent() instanceof SubnodeConfiguration)</span>
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (getParent() instanceof SubnodeConfiguration)</span>
         {
-<span class="nc" id="L208">            return ((SubnodeConfiguration) getParent()).getRootNodeModel();</span>
+<span class="fc" id="L208">            return ((SubnodeConfiguration) getParent()).getRootNodeModel();</span>
         }
         else
         {
-<span class="nc" id="L212">            return getParent().getNodeModel();</span>
+<span class="fc" id="L212">            return getParent().getNodeModel();</span>
         }
     }
 
@@ -223,10 +223,10 @@ public class SubnodeConfiguration extends BaseHierarchicalConfiguration
     @Override
     protected NodeModel&lt;ImmutableNode&gt; cloneNodeModel()
     {
-<span class="nc" id="L226">        InMemoryNodeModel parentModel =</span>
-<span class="nc" id="L227">                (InMemoryNodeModel) getParent().getModel();</span>
-<span class="nc" id="L228">        parentModel.trackNode(getRootSelector(), getParent());</span>
-<span class="nc" id="L229">        return new TrackedNodeModel(getParent(), getRootSelector(), true);</span>
+<span class="fc" id="L226">        InMemoryNodeModel parentModel =</span>
+<span class="fc" id="L227">                (InMemoryNodeModel) getParent().getModel();</span>
+<span class="fc" id="L228">        parentModel.trackNode(getRootSelector(), getParent());</span>
+<span class="fc" id="L229">        return new TrackedNodeModel(getParent(), getRootSelector(), true);</span>
     }
 
     /**
@@ -236,7 +236,7 @@ public class SubnodeConfiguration extends BaseHierarchicalConfiguration
     @Override
     protected NodeSelector getSubConfigurationNodeSelector(String key)
     {
-<span class="nc" id="L239">        return getRootSelector().subSelector(key);</span>
+<span class="fc" id="L239">        return getRootSelector().subSelector(key);</span>
     }
 
     /**
@@ -246,7 +246,7 @@ public class SubnodeConfiguration extends BaseHierarchicalConfiguration
     @Override
     protected InMemoryNodeModel getSubConfigurationParentModel()
     {
-<span class="nc" id="L249">        return getTrackedModel().getParentModel();</span>
+<span class="fc" id="L249">        return getTrackedModel().getParentModel();</span>
     }
 
     /**
@@ -257,7 +257,7 @@ public class SubnodeConfiguration extends BaseHierarchicalConfiguration
     protected SubnodeConfiguration createSubConfigurationForTrackedNode(
             NodeSelector selector, InMemoryNodeModelSupport parentModelSupport)
     {
-<span class="nc" id="L260">        return super.createSubConfigurationForTrackedNode(selector, getParent());</span>
+<span class="fc" id="L260">        return super.createSubConfigurationForTrackedNode(selector, getParent());</span>
     }
 
     /**
@@ -268,7 +268,7 @@ public class SubnodeConfiguration extends BaseHierarchicalConfiguration
      */
     private TrackedNodeModel getTrackedModel()
     {
-<span class="nc" id="L271">        return (TrackedNodeModel) getModel();</span>
+<span class="fc" id="L271">        return (TrackedNodeModel) getModel();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

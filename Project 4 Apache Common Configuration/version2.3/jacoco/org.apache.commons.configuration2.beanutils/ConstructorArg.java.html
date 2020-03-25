@@ -55,11 +55,11 @@ public final class ConstructorArg
      * @param type the type name
      */
     private ConstructorArg(BeanDeclaration decl, Object val, String type)
-<span class="nc" id="L58">    {</span>
-<span class="nc" id="L59">        beanDeclaration = decl;</span>
-<span class="nc" id="L60">        value = val;</span>
-<span class="nc" id="L61">        typeName = type;</span>
-<span class="nc" id="L62">    }</span>
+<span class="fc" id="L58">    {</span>
+<span class="fc" id="L59">        beanDeclaration = decl;</span>
+<span class="fc" id="L60">        value = val;</span>
+<span class="fc" id="L61">        typeName = type;</span>
+<span class="fc" id="L62">    }</span>
 
     /**
      * Creates a new instance of {@code ConstructorArg} for the specified
@@ -73,7 +73,7 @@ public final class ConstructorArg
      */
     public static ConstructorArg forBeanDeclaration(BeanDeclaration decl)
     {
-<span class="nc" id="L76">        return forBeanDeclaration(decl, null);</span>
+<span class="fc" id="L76">        return forBeanDeclaration(decl, null);</span>
     }
 
     /**
@@ -91,11 +91,11 @@ public final class ConstructorArg
     public static ConstructorArg forBeanDeclaration(BeanDeclaration decl,
             String typeName)
     {
-<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (decl == null)</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        if (decl == null)</span>
         {
-<span class="nc" id="L96">            throw new NullPointerException(&quot;BeanDeclaration must not be null!&quot;);</span>
+<span class="fc" id="L96">            throw new NullPointerException(&quot;BeanDeclaration must not be null!&quot;);</span>
         }
-<span class="nc" id="L98">        return new ConstructorArg(decl, null, typeName);</span>
+<span class="fc" id="L98">        return new ConstructorArg(decl, null, typeName);</span>
     }
 
     /**
@@ -107,7 +107,7 @@ public final class ConstructorArg
      */
     public static ConstructorArg forValue(Object value)
     {
-<span class="nc" id="L110">        return forValue(value, null);</span>
+<span class="fc" id="L110">        return forValue(value, null);</span>
     }
 
     /**
@@ -122,7 +122,7 @@ public final class ConstructorArg
      */
     public static ConstructorArg forValue(Object value, String typeName)
     {
-<span class="nc" id="L125">        return new ConstructorArg(null, value, typeName);</span>
+<span class="fc" id="L125">        return new ConstructorArg(null, value, typeName);</span>
     }
 
     /**
@@ -135,7 +135,7 @@ public final class ConstructorArg
      */
     public BeanDeclaration getBeanDeclaration()
     {
-<span class="nc" id="L138">        return beanDeclaration;</span>
+<span class="fc" id="L138">        return beanDeclaration;</span>
     }
 
     /**
@@ -150,7 +150,7 @@ public final class ConstructorArg
      */
     public boolean isNestedBeanDeclaration()
     {
-<span class="nc bnc" id="L153" title="All 2 branches missed.">        return getBeanDeclaration() != null;</span>
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        return getBeanDeclaration() != null;</span>
     }
 
     /**
@@ -163,7 +163,7 @@ public final class ConstructorArg
      */
     public Object getValue()
     {
-<span class="nc" id="L166">        return value;</span>
+<span class="fc" id="L166">        return value;</span>
     }
 
     /**
@@ -178,7 +178,7 @@ public final class ConstructorArg
      */
     public String getTypeName()
     {
-<span class="nc" id="L181">        return typeName;</span>
+<span class="fc" id="L181">        return typeName;</span>
     }
 
     /**
@@ -198,12 +198,12 @@ public final class ConstructorArg
      */
     public boolean matches(Class&lt;?&gt; argCls)
     {
-<span class="nc bnc" id="L201" title="All 2 branches missed.">        if (argCls == null)</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        if (argCls == null)</span>
         {
-<span class="nc" id="L203">            return false;</span>
+<span class="fc" id="L203">            return false;</span>
         }
 
-<span class="nc bnc" id="L206" title="All 4 branches missed.">        return getTypeName() == null || getTypeName().equals(argCls.getName());</span>
+<span class="fc bfc" id="L206" title="All 4 branches covered.">        return getTypeName() == null || getTypeName().equals(argCls.getName());</span>
     }
 
     /**
@@ -215,17 +215,17 @@ public final class ConstructorArg
     @Override
     public String toString()
     {
-<span class="nc" id="L218">        StringBuilder buf = new StringBuilder();</span>
-<span class="nc" id="L219">        buf.append(getClass().getSimpleName());</span>
-<span class="nc" id="L220">        buf.append(&quot; [ value = &quot;);</span>
-<span class="nc bnc" id="L221" title="All 2 branches missed.">        buf.append(isNestedBeanDeclaration() ? getBeanDeclaration()</span>
-<span class="nc" id="L222">                : getValue());</span>
-<span class="nc bnc" id="L223" title="All 2 branches missed.">        if (getTypeName() != null)</span>
+<span class="fc" id="L218">        StringBuilder buf = new StringBuilder();</span>
+<span class="fc" id="L219">        buf.append(getClass().getSimpleName());</span>
+<span class="fc" id="L220">        buf.append(&quot; [ value = &quot;);</span>
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">        buf.append(isNestedBeanDeclaration() ? getBeanDeclaration()</span>
+<span class="fc" id="L222">                : getValue());</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">        if (getTypeName() != null)</span>
         {
-<span class="nc" id="L225">            buf.append(&quot; (&quot;).append(getTypeName()).append(')');</span>
+<span class="fc" id="L225">            buf.append(&quot; (&quot;).append(getTypeName()).append(')');</span>
         }
-<span class="nc" id="L227">        buf.append(&quot; ]&quot;);</span>
-<span class="nc" id="L228">        return buf.toString();</span>
+<span class="fc" id="L227">        buf.append(&quot; ]&quot;);</span>
+<span class="fc" id="L228">        return buf.toString();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

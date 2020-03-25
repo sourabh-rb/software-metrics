@@ -62,9 +62,9 @@ public class CombinedBeanDeclaration implements BeanDeclaration
      *         &lt;b&gt;null&lt;/b&gt;
      */
     public CombinedBeanDeclaration(BeanDeclaration... decl)
-<span class="nc" id="L65">    {</span>
-<span class="nc" id="L66">        childDeclarations = new ArrayList&lt;&gt;(Arrays.asList(decl));</span>
-<span class="nc" id="L67">    }</span>
+<span class="fc" id="L65">    {</span>
+<span class="fc" id="L66">        childDeclarations = new ArrayList&lt;&gt;(Arrays.asList(decl));</span>
+<span class="fc" id="L67">    }</span>
 
     /**
      * {@inheritDoc} This implementation iterates over the list of child
@@ -75,15 +75,15 @@ public class CombinedBeanDeclaration implements BeanDeclaration
     @Override
     public String getBeanFactoryName()
     {
-<span class="nc bnc" id="L78" title="All 2 branches missed.">        for (BeanDeclaration d : childDeclarations)</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        for (BeanDeclaration d : childDeclarations)</span>
         {
-<span class="nc" id="L80">            String factoryName = d.getBeanFactoryName();</span>
-<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (factoryName != null)</span>
+<span class="fc" id="L80">            String factoryName = d.getBeanFactoryName();</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            if (factoryName != null)</span>
             {
-<span class="nc" id="L83">                return factoryName;</span>
+<span class="fc" id="L83">                return factoryName;</span>
             }
-<span class="nc" id="L85">        }</span>
-<span class="nc" id="L86">        return null;</span>
+<span class="fc" id="L85">        }</span>
+<span class="fc" id="L86">        return null;</span>
     }
 
     /**
@@ -95,15 +95,15 @@ public class CombinedBeanDeclaration implements BeanDeclaration
     @Override
     public Object getBeanFactoryParameter()
     {
-<span class="nc bnc" id="L98" title="All 2 branches missed.">        for (BeanDeclaration d : childDeclarations)</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        for (BeanDeclaration d : childDeclarations)</span>
         {
-<span class="nc" id="L100">            Object factoryParam = d.getBeanFactoryParameter();</span>
-<span class="nc bnc" id="L101" title="All 2 branches missed.">            if (factoryParam != null)</span>
+<span class="fc" id="L100">            Object factoryParam = d.getBeanFactoryParameter();</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">            if (factoryParam != null)</span>
             {
-<span class="nc" id="L103">                return factoryParam;</span>
+<span class="fc" id="L103">                return factoryParam;</span>
             }
-<span class="nc" id="L105">        }</span>
-<span class="nc" id="L106">        return null;</span>
+<span class="fc" id="L105">        }</span>
+<span class="fc" id="L106">        return null;</span>
     }
 
     /**
@@ -115,15 +115,15 @@ public class CombinedBeanDeclaration implements BeanDeclaration
     @Override
     public String getBeanClassName()
     {
-<span class="nc bnc" id="L118" title="All 2 branches missed.">        for (BeanDeclaration d : childDeclarations)</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        for (BeanDeclaration d : childDeclarations)</span>
         {
-<span class="nc" id="L120">            String beanClassName = d.getBeanClassName();</span>
-<span class="nc bnc" id="L121" title="All 2 branches missed.">            if (beanClassName != null)</span>
+<span class="fc" id="L120">            String beanClassName = d.getBeanClassName();</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">            if (beanClassName != null)</span>
             {
-<span class="nc" id="L123">                return beanClassName;</span>
+<span class="fc" id="L123">                return beanClassName;</span>
             }
-<span class="nc" id="L125">        }</span>
-<span class="nc" id="L126">        return null;</span>
+<span class="fc" id="L125">        }</span>
+<span class="fc" id="L126">        return null;</span>
     }
 
     /**
@@ -135,17 +135,17 @@ public class CombinedBeanDeclaration implements BeanDeclaration
     @Override
     public Map&lt;String, Object&gt; getBeanProperties()
     {
-<span class="nc" id="L138">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L139" title="All 2 branches missed.">        for (int i = childDeclarations.size() - 1; i &gt;= 0; i--)</span>
+<span class="fc" id="L138">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        for (int i = childDeclarations.size() - 1; i &gt;= 0; i--)</span>
         {
-<span class="nc" id="L141">            Map&lt;String, Object&gt; props =</span>
-<span class="nc" id="L142">                    childDeclarations.get(i).getBeanProperties();</span>
-<span class="nc bnc" id="L143" title="All 2 branches missed.">            if (props != null)</span>
+<span class="fc" id="L141">            Map&lt;String, Object&gt; props =</span>
+<span class="fc" id="L142">                    childDeclarations.get(i).getBeanProperties();</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">            if (props != null)</span>
             {
-<span class="nc" id="L145">                result.putAll(props);</span>
+<span class="fc" id="L145">                result.putAll(props);</span>
             }
         }
-<span class="nc" id="L148">        return result;</span>
+<span class="fc" id="L148">        return result;</span>
     }
 
     /**
@@ -157,17 +157,17 @@ public class CombinedBeanDeclaration implements BeanDeclaration
     @Override
     public Map&lt;String, Object&gt; getNestedBeanDeclarations()
     {
-<span class="nc" id="L160">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L161" title="All 2 branches missed.">        for (int i = childDeclarations.size() - 1; i &gt;= 0; i--)</span>
+<span class="fc" id="L160">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        for (int i = childDeclarations.size() - 1; i &gt;= 0; i--)</span>
         {
-<span class="nc" id="L163">            Map&lt;String, Object&gt; decls =</span>
-<span class="nc" id="L164">                    childDeclarations.get(i).getNestedBeanDeclarations();</span>
-<span class="nc bnc" id="L165" title="All 2 branches missed.">            if (decls != null)</span>
+<span class="fc" id="L163">            Map&lt;String, Object&gt; decls =</span>
+<span class="fc" id="L164">                    childDeclarations.get(i).getNestedBeanDeclarations();</span>
+<span class="fc bfc" id="L165" title="All 2 branches covered.">            if (decls != null)</span>
             {
-<span class="nc" id="L167">                result.putAll(decls);</span>
+<span class="fc" id="L167">                result.putAll(decls);</span>
             }
         }
-<span class="nc" id="L170">        return result;</span>
+<span class="fc" id="L170">        return result;</span>
     }
 
     /**
@@ -180,15 +180,15 @@ public class CombinedBeanDeclaration implements BeanDeclaration
     @Override
     public Collection&lt;ConstructorArg&gt; getConstructorArgs()
     {
-<span class="nc bnc" id="L183" title="All 2 branches missed.">        for (BeanDeclaration d : childDeclarations)</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">        for (BeanDeclaration d : childDeclarations)</span>
         {
-<span class="nc" id="L185">            Collection&lt;ConstructorArg&gt; args = d.getConstructorArgs();</span>
-<span class="nc bnc" id="L186" title="All 4 branches missed.">            if (args != null &amp;&amp; !args.isEmpty())</span>
+<span class="fc" id="L185">            Collection&lt;ConstructorArg&gt; args = d.getConstructorArgs();</span>
+<span class="fc bfc" id="L186" title="All 4 branches covered.">            if (args != null &amp;&amp; !args.isEmpty())</span>
             {
-<span class="nc" id="L188">                return args;</span>
+<span class="fc" id="L188">                return args;</span>
             }
-<span class="nc" id="L190">        }</span>
-<span class="nc" id="L191">        return Collections.emptyList();</span>
+<span class="fc" id="L190">        }</span>
+<span class="fc" id="L191">        return Collections.emptyList();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

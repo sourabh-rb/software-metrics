@@ -77,8 +77,8 @@ public class FileBasedBuilderParametersImpl extends BasicBuilderParameters
      */
     public FileBasedBuilderParametersImpl()
     {
-<span class="nc" id="L80">        this(null);</span>
-<span class="nc" id="L81">    }</span>
+<span class="fc" id="L80">        this(null);</span>
+<span class="fc" id="L81">    }</span>
 
     /**
      * Creates a new instance of {@code FileBasedBuilderParametersImpl} and
@@ -88,9 +88,9 @@ public class FileBasedBuilderParametersImpl extends BasicBuilderParameters
      * @param handler the associated {@code FileHandler} (can be &lt;b&gt;null&lt;/b&gt;)
      */
     public FileBasedBuilderParametersImpl(FileHandler handler)
-<span class="nc" id="L91">    {</span>
-<span class="nc bnc" id="L92" title="All 2 branches missed.">        fileHandler = (handler != null) ? handler : new FileHandler();</span>
-<span class="nc" id="L93">    }</span>
+<span class="fc" id="L91">    {</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        fileHandler = (handler != null) ? handler : new FileHandler();</span>
+<span class="fc" id="L93">    }</span>
 
     /**
      * Looks up an instance of this class in the specified parameters map. This
@@ -103,7 +103,7 @@ public class FileBasedBuilderParametersImpl extends BasicBuilderParameters
     public static FileBasedBuilderParametersImpl fromParameters(
             Map&lt;String, ?&gt; params)
     {
-<span class="nc" id="L106">        return fromParameters(params, false);</span>
+<span class="fc" id="L106">        return fromParameters(params, false);</span>
     }
 
     /**
@@ -122,19 +122,19 @@ public class FileBasedBuilderParametersImpl extends BasicBuilderParameters
     public static FileBasedBuilderParametersImpl fromParameters(
             Map&lt;String, ?&gt; params, boolean createIfMissing)
     {
-<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (params == null)</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if (params == null)</span>
         {
-<span class="nc" id="L127">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L127">            throw new IllegalArgumentException(</span>
                     &quot;Parameters map must not be null!&quot;);
         }
 
-<span class="nc" id="L131">        FileBasedBuilderParametersImpl instance =</span>
-<span class="nc" id="L132">                (FileBasedBuilderParametersImpl) params.get(PARAM_KEY);</span>
-<span class="nc bnc" id="L133" title="All 4 branches missed.">        if (instance == null &amp;&amp; createIfMissing)</span>
+<span class="fc" id="L131">        FileBasedBuilderParametersImpl instance =</span>
+<span class="fc" id="L132">                (FileBasedBuilderParametersImpl) params.get(PARAM_KEY);</span>
+<span class="fc bfc" id="L133" title="All 4 branches covered.">        if (instance == null &amp;&amp; createIfMissing)</span>
         {
-<span class="nc" id="L135">            instance = new FileBasedBuilderParametersImpl();</span>
+<span class="fc" id="L135">            instance = new FileBasedBuilderParametersImpl();</span>
         }
-<span class="nc" id="L137">        return instance;</span>
+<span class="fc" id="L137">        return instance;</span>
     }
 
     /**
@@ -152,15 +152,15 @@ public class FileBasedBuilderParametersImpl extends BasicBuilderParameters
      */
     public static FileBasedBuilderParametersImpl fromMap(Map&lt;String, ?&gt; map)
     {
-<span class="nc" id="L155">        FileBasedBuilderParametersImpl params =</span>
-<span class="nc" id="L156">                new FileBasedBuilderParametersImpl(FileHandler.fromMap(map));</span>
-<span class="nc bnc" id="L157" title="All 2 branches missed.">        if (map != null)</span>
+<span class="fc" id="L155">        FileBasedBuilderParametersImpl params =</span>
+<span class="fc" id="L156">                new FileBasedBuilderParametersImpl(FileHandler.fromMap(map));</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        if (map != null)</span>
         {
-<span class="nc" id="L159">            params.setReloadingRefreshDelay((Long) map.get(PROP_REFRESH_DELAY));</span>
-<span class="nc" id="L160">            params.setReloadingDetectorFactory((ReloadingDetectorFactory) map</span>
-<span class="nc" id="L161">                    .get(PROP_DETECTOR_FACTORY));</span>
+<span class="fc" id="L159">            params.setReloadingRefreshDelay((Long) map.get(PROP_REFRESH_DELAY));</span>
+<span class="fc" id="L160">            params.setReloadingDetectorFactory((ReloadingDetectorFactory) map</span>
+<span class="fc" id="L161">                    .get(PROP_DETECTOR_FACTORY));</span>
         }
-<span class="nc" id="L163">        return params;</span>
+<span class="fc" id="L163">        return params;</span>
     }
 
     /**
@@ -170,29 +170,29 @@ public class FileBasedBuilderParametersImpl extends BasicBuilderParameters
     @Override
     public void inheritFrom(Map&lt;String, ?&gt; source)
     {
-<span class="nc" id="L173">        super.inheritFrom(source);</span>
+<span class="fc" id="L173">        super.inheritFrom(source);</span>
 
-<span class="nc" id="L175">        FileBasedBuilderParametersImpl srcParams = fromParameters(source);</span>
-<span class="nc bnc" id="L176" title="All 2 branches missed.">        if (srcParams != null)</span>
+<span class="fc" id="L175">        FileBasedBuilderParametersImpl srcParams = fromParameters(source);</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">        if (srcParams != null)</span>
         {
-<span class="nc" id="L178">            setFileSystem(srcParams.getFileHandler().getFileSystem());</span>
-<span class="nc" id="L179">            setLocationStrategy(</span>
-<span class="nc" id="L180">                    srcParams.getFileHandler().getLocationStrategy());</span>
-<span class="nc bnc" id="L181" title="All 2 branches missed.">            if (srcParams.getFileHandler().getEncoding() != null)</span>
+<span class="fc" id="L178">            setFileSystem(srcParams.getFileHandler().getFileSystem());</span>
+<span class="fc" id="L179">            setLocationStrategy(</span>
+<span class="fc" id="L180">                    srcParams.getFileHandler().getLocationStrategy());</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">            if (srcParams.getFileHandler().getEncoding() != null)</span>
             {
-<span class="nc" id="L183">                setEncoding(srcParams.getFileHandler().getEncoding());</span>
+<span class="fc" id="L183">                setEncoding(srcParams.getFileHandler().getEncoding());</span>
             }
-<span class="nc bnc" id="L185" title="All 2 branches missed.">            if (srcParams.getReloadingDetectorFactory() != null)</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">            if (srcParams.getReloadingDetectorFactory() != null)</span>
             {
-<span class="nc" id="L187">                setReloadingDetectorFactory(</span>
-<span class="nc" id="L188">                        srcParams.getReloadingDetectorFactory());</span>
+<span class="fc" id="L187">                setReloadingDetectorFactory(</span>
+<span class="fc" id="L188">                        srcParams.getReloadingDetectorFactory());</span>
             }
-<span class="nc bnc" id="L190" title="All 2 branches missed.">            if (srcParams.getReloadingRefreshDelay() != null)</span>
+<span class="fc bfc" id="L190" title="All 2 branches covered.">            if (srcParams.getReloadingRefreshDelay() != null)</span>
             {
-<span class="nc" id="L192">                setReloadingRefreshDelay(srcParams.getReloadingRefreshDelay());</span>
+<span class="fc" id="L192">                setReloadingRefreshDelay(srcParams.getReloadingRefreshDelay());</span>
             }
         }
-<span class="nc" id="L195">    }</span>
+<span class="fc" id="L195">    }</span>
 
     /**
      * Returns the {@code FileHandler} managed by this object. This object is
@@ -202,7 +202,7 @@ public class FileBasedBuilderParametersImpl extends BasicBuilderParameters
      */
     public FileHandler getFileHandler()
     {
-<span class="nc" id="L205">        return fileHandler;</span>
+<span class="fc" id="L205">        return fileHandler;</span>
     }
 
     /**
@@ -213,15 +213,15 @@ public class FileBasedBuilderParametersImpl extends BasicBuilderParameters
      */
     public Long getReloadingRefreshDelay()
     {
-<span class="nc" id="L216">        return reloadingRefreshDelay;</span>
+<span class="fc" id="L216">        return reloadingRefreshDelay;</span>
     }
 
     @Override
     public FileBasedBuilderParametersImpl setReloadingRefreshDelay(
             Long reloadingRefreshDelay)
     {
-<span class="nc" id="L223">        this.reloadingRefreshDelay = reloadingRefreshDelay;</span>
-<span class="nc" id="L224">        return this;</span>
+<span class="fc" id="L223">        this.reloadingRefreshDelay = reloadingRefreshDelay;</span>
+<span class="fc" id="L224">        return this;</span>
     }
 
     /**
@@ -232,72 +232,72 @@ public class FileBasedBuilderParametersImpl extends BasicBuilderParameters
      */
     public ReloadingDetectorFactory getReloadingDetectorFactory()
     {
-<span class="nc" id="L235">        return reloadingDetectorFactory;</span>
+<span class="fc" id="L235">        return reloadingDetectorFactory;</span>
     }
 
     @Override
     public FileBasedBuilderParametersImpl setReloadingDetectorFactory(
             ReloadingDetectorFactory reloadingDetectorFactory)
     {
-<span class="nc" id="L242">        this.reloadingDetectorFactory = reloadingDetectorFactory;</span>
-<span class="nc" id="L243">        return this;</span>
+<span class="fc" id="L242">        this.reloadingDetectorFactory = reloadingDetectorFactory;</span>
+<span class="fc" id="L243">        return this;</span>
     }
 
     @Override
     public FileBasedBuilderParametersImpl setFile(File file)
     {
-<span class="nc" id="L249">        getFileHandler().setFile(file);</span>
-<span class="nc" id="L250">        return this;</span>
+<span class="fc" id="L249">        getFileHandler().setFile(file);</span>
+<span class="fc" id="L250">        return this;</span>
     }
 
     @Override
     public FileBasedBuilderParametersImpl setURL(URL url)
     {
-<span class="nc" id="L256">        getFileHandler().setURL(url);</span>
-<span class="nc" id="L257">        return this;</span>
+<span class="fc" id="L256">        getFileHandler().setURL(url);</span>
+<span class="fc" id="L257">        return this;</span>
     }
 
     @Override
     public FileBasedBuilderParametersImpl setPath(String path)
     {
-<span class="nc" id="L263">        getFileHandler().setPath(path);</span>
-<span class="nc" id="L264">        return this;</span>
+<span class="fc" id="L263">        getFileHandler().setPath(path);</span>
+<span class="fc" id="L264">        return this;</span>
     }
 
     @Override
     public FileBasedBuilderParametersImpl setFileName(String name)
     {
-<span class="nc" id="L270">        getFileHandler().setFileName(name);</span>
-<span class="nc" id="L271">        return this;</span>
+<span class="fc" id="L270">        getFileHandler().setFileName(name);</span>
+<span class="fc" id="L271">        return this;</span>
     }
 
     @Override
     public FileBasedBuilderParametersImpl setBasePath(String path)
     {
-<span class="nc" id="L277">        getFileHandler().setBasePath(path);</span>
-<span class="nc" id="L278">        return this;</span>
+<span class="fc" id="L277">        getFileHandler().setBasePath(path);</span>
+<span class="fc" id="L278">        return this;</span>
     }
 
     @Override
     public FileBasedBuilderParametersImpl setFileSystem(FileSystem fs)
     {
-<span class="nc" id="L284">        getFileHandler().setFileSystem(fs);</span>
-<span class="nc" id="L285">        return this;</span>
+<span class="fc" id="L284">        getFileHandler().setFileSystem(fs);</span>
+<span class="fc" id="L285">        return this;</span>
     }
 
     @Override
     public FileBasedBuilderParametersImpl setLocationStrategy(
             FileLocationStrategy strategy)
     {
-<span class="nc" id="L292">        getFileHandler().setLocationStrategy(strategy);</span>
-<span class="nc" id="L293">        return this;</span>
+<span class="fc" id="L292">        getFileHandler().setLocationStrategy(strategy);</span>
+<span class="fc" id="L293">        return this;</span>
     }
 
     @Override
     public FileBasedBuilderParametersImpl setEncoding(String enc)
     {
-<span class="nc" id="L299">        getFileHandler().setEncoding(enc);</span>
-<span class="nc" id="L300">        return this;</span>
+<span class="fc" id="L299">        getFileHandler().setEncoding(enc);</span>
+<span class="fc" id="L300">        return this;</span>
     }
 
     /**
@@ -310,9 +310,9 @@ public class FileBasedBuilderParametersImpl extends BasicBuilderParameters
     @Override
     public Map&lt;String, Object&gt; getParameters()
     {
-<span class="nc" id="L313">        Map&lt;String, Object&gt; params = super.getParameters();</span>
-<span class="nc" id="L314">        params.put(PARAM_KEY, this);</span>
-<span class="nc" id="L315">        return params;</span>
+<span class="fc" id="L313">        Map&lt;String, Object&gt; params = super.getParameters();</span>
+<span class="fc" id="L314">        params.put(PARAM_KEY, this);</span>
+<span class="fc" id="L315">        return params;</span>
     }
 
     /**
@@ -322,11 +322,11 @@ public class FileBasedBuilderParametersImpl extends BasicBuilderParameters
     @Override
     public FileBasedBuilderParametersImpl clone()
     {
-<span class="nc" id="L325">        FileBasedBuilderParametersImpl copy =</span>
-<span class="nc" id="L326">                (FileBasedBuilderParametersImpl) super.clone();</span>
-<span class="nc" id="L327">        copy.fileHandler =</span>
-<span class="nc" id="L328">                new FileHandler(fileHandler.getContent(), fileHandler);</span>
-<span class="nc" id="L329">        return copy;</span>
+<span class="fc" id="L325">        FileBasedBuilderParametersImpl copy =</span>
+<span class="fc" id="L326">                (FileBasedBuilderParametersImpl) super.clone();</span>
+<span class="fc" id="L327">        copy.fileHandler =</span>
+<span class="fc" id="L328">                new FileHandler(fileHandler.getContent(), fileHandler);</span>
+<span class="fc" id="L329">        return copy;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

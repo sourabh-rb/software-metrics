@@ -55,7 +55,7 @@ import java.util.Collections;
 public class CombinedReloadingController extends ReloadingController
 {
     /** Constant for a dummy reloading detector. */
-<span class="nc" id="L58">    private static final ReloadingDetector DUMMY =</span>
+<span class="fc" id="L58">    private static final ReloadingDetector DUMMY =</span>
             new MultiReloadingControllerDetector(null);
 
     /** The collection with managed reloading controllers. */
@@ -77,10 +77,10 @@ public class CombinedReloadingController extends ReloadingController
     public CombinedReloadingController(
             Collection&lt;? extends ReloadingController&gt; subCtrls)
     {
-<span class="nc" id="L80">        super(DUMMY);</span>
-<span class="nc" id="L81">        controllers = checkManagedControllers(subCtrls);</span>
-<span class="nc" id="L82">        detector = new MultiReloadingControllerDetector(this);</span>
-<span class="nc" id="L83">    }</span>
+<span class="fc" id="L80">        super(DUMMY);</span>
+<span class="fc" id="L81">        controllers = checkManagedControllers(subCtrls);</span>
+<span class="fc" id="L82">        detector = new MultiReloadingControllerDetector(this);</span>
+<span class="fc" id="L83">    }</span>
 
     /**
      * Returns a (unmodifiable) collection with the sub controllers managed by
@@ -90,7 +90,7 @@ public class CombinedReloadingController extends ReloadingController
      */
     public Collection&lt;ReloadingController&gt; getSubControllers()
     {
-<span class="nc" id="L93">        return controllers;</span>
+<span class="fc" id="L93">        return controllers;</span>
     }
 
     /**
@@ -100,7 +100,7 @@ public class CombinedReloadingController extends ReloadingController
     @Override
     public ReloadingDetector getDetector()
     {
-<span class="nc" id="L103">        return detector;</span>
+<span class="fc" id="L103">        return detector;</span>
     }
 
     /**
@@ -113,8 +113,8 @@ public class CombinedReloadingController extends ReloadingController
      */
     public void resetInitialReloadingState()
     {
-<span class="nc" id="L116">        getDetector().reloadingPerformed();</span>
-<span class="nc" id="L117">    }</span>
+<span class="fc" id="L116">        getDetector().reloadingPerformed();</span>
+<span class="fc" id="L117">    }</span>
 
     /**
      * Checks the collection with the passed in sub controllers and creates a
@@ -129,23 +129,23 @@ public class CombinedReloadingController extends ReloadingController
     private static Collection&lt;ReloadingController&gt; checkManagedControllers(
             Collection&lt;? extends ReloadingController&gt; subCtrls)
     {
-<span class="nc bnc" id="L132" title="All 2 branches missed.">        if (subCtrls == null)</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        if (subCtrls == null)</span>
         {
-<span class="nc" id="L134">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L134">            throw new IllegalArgumentException(</span>
                     &quot;Collection with sub controllers must not be null!&quot;);
         }
-<span class="nc" id="L137">        Collection&lt;ReloadingController&gt; ctrls =</span>
+<span class="fc" id="L137">        Collection&lt;ReloadingController&gt; ctrls =</span>
                 new ArrayList&lt;&gt;(subCtrls);
-<span class="nc bnc" id="L139" title="All 2 branches missed.">        for (ReloadingController rc : ctrls)</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        for (ReloadingController rc : ctrls)</span>
         {
-<span class="nc bnc" id="L141" title="All 2 branches missed.">            if (rc == null)</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">            if (rc == null)</span>
             {
-<span class="nc" id="L143">                throw new IllegalArgumentException(</span>
+<span class="fc" id="L143">                throw new IllegalArgumentException(</span>
                         &quot;Collection with sub controllers contains a null entry!&quot;);
             }
-<span class="nc" id="L146">        }</span>
+<span class="fc" id="L146">        }</span>
 
-<span class="nc" id="L148">        return Collections.unmodifiableCollection(ctrls);</span>
+<span class="fc" id="L148">        return Collections.unmodifiableCollection(ctrls);</span>
     }
 
     /**
@@ -166,9 +166,9 @@ public class CombinedReloadingController extends ReloadingController
          * @param o the owner
          */
         public MultiReloadingControllerDetector(CombinedReloadingController o)
-<span class="nc" id="L169">        {</span>
-<span class="nc" id="L170">            owner = o;</span>
-<span class="nc" id="L171">        }</span>
+<span class="fc" id="L169">        {</span>
+<span class="fc" id="L170">            owner = o;</span>
+<span class="fc" id="L171">        }</span>
 
         /**
          * {@inheritDoc} This implementation delegates to the managed
@@ -180,15 +180,15 @@ public class CombinedReloadingController extends ReloadingController
         @Override
         public boolean isReloadingRequired()
         {
-<span class="nc" id="L183">            boolean result = false;</span>
-<span class="nc bnc" id="L184" title="All 2 branches missed.">            for (ReloadingController rc : owner.getSubControllers())</span>
+<span class="fc" id="L183">            boolean result = false;</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">            for (ReloadingController rc : owner.getSubControllers())</span>
             {
-<span class="nc bnc" id="L186" title="All 2 branches missed.">                if (rc.checkForReloading(null))</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">                if (rc.checkForReloading(null))</span>
                 {
-<span class="nc" id="L188">                    result = true;</span>
+<span class="fc" id="L188">                    result = true;</span>
                 }
-<span class="nc" id="L190">            }</span>
-<span class="nc" id="L191">            return result;</span>
+<span class="fc" id="L190">            }</span>
+<span class="fc" id="L191">            return result;</span>
         }
 
         /**
@@ -198,11 +198,11 @@ public class CombinedReloadingController extends ReloadingController
         @Override
         public void reloadingPerformed()
         {
-<span class="nc bnc" id="L201" title="All 2 branches missed.">            for (ReloadingController rc : owner.getSubControllers())</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">            for (ReloadingController rc : owner.getSubControllers())</span>
             {
-<span class="nc" id="L203">                rc.resetReloadingState();</span>
-<span class="nc" id="L204">            }</span>
-<span class="nc" id="L205">        }</span>
+<span class="fc" id="L203">                rc.resetReloadingState();</span>
+<span class="fc" id="L204">            }</span>
+<span class="fc" id="L205">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

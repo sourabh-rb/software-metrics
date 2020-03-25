@@ -226,7 +226,7 @@ public class PropertiesConfiguration extends BaseConfiguration
      * Constant for the default {@code IOFactory}. This instance is used
      * when no specific factory was set.
      */
-<span class="nc" id="L229">    private static final IOFactory DEFAULT_IO_FACTORY = new DefaultIOFactory();</span>
+<span class="fc" id="L229">    private static final IOFactory DEFAULT_IO_FACTORY = new DefaultIOFactory();</span>
 
     /**
      * A string with special characters that need to be unescaped when reading
@@ -239,16 +239,16 @@ public class PropertiesConfiguration extends BaseConfiguration
      * This is the name of the property that can point to other
      * properties file for including other properties files.
      */
-<span class="nc" id="L242">    private static String include = &quot;include&quot;;</span>
+<span class="fc" id="L242">    private static String include = &quot;include&quot;;</span>
 
     /** The list of possible key/value separators */
-<span class="nc" id="L245">    private static final char[] SEPARATORS = new char[] {'=', ':'};</span>
+<span class="fc" id="L245">    private static final char[] SEPARATORS = new char[] {'=', ':'};</span>
 
     /** The white space characters used as key/value separators. */
-<span class="nc" id="L248">    private static final char[] WHITE_SPACE = new char[]{' ', '\t', '\f'};</span>
+<span class="fc" id="L248">    private static final char[] WHITE_SPACE = new char[]{' ', '\t', '\f'};</span>
 
     /** Constant for the platform specific line separator.*/
-<span class="nc" id="L251">    private static final String LINE_SEPARATOR = System.getProperty(&quot;line.separator&quot;);</span>
+<span class="fc" id="L251">    private static final String LINE_SEPARATOR = System.getProperty(&quot;line.separator&quot;);</span>
 
     /** Constant for the radix of hex numbers.*/
     private static final int HEX_RADIX = 16;
@@ -266,7 +266,7 @@ public class PropertiesConfiguration extends BaseConfiguration
     private FileLocator locator;
 
     /** Allow file inclusion or not */
-<span class="nc" id="L269">    private boolean includesAllowed = true;</span>
+<span class="fc" id="L269">    private boolean includesAllowed = true;</span>
 
     /**
      * Creates an empty PropertyConfiguration object which can be
@@ -274,9 +274,9 @@ public class PropertiesConfiguration extends BaseConfiguration
      * then saving().
      */
     public PropertiesConfiguration()
-<span class="nc" id="L277">    {</span>
-<span class="nc" id="L278">        installLayout(createLayout());</span>
-<span class="nc" id="L279">    }</span>
+<span class="fc" id="L277">    {</span>
+<span class="fc" id="L278">        installLayout(createLayout());</span>
+<span class="fc" id="L279">    }</span>
 
     /**
      * Gets the property value for including other properties files.
@@ -286,7 +286,7 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     public static String getInclude()
     {
-<span class="nc" id="L289">        return PropertiesConfiguration.include;</span>
+<span class="fc" id="L289">        return PropertiesConfiguration.include;</span>
     }
 
     /**
@@ -297,8 +297,8 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     public static void setInclude(String inc)
     {
-<span class="nc" id="L300">        PropertiesConfiguration.include = inc;</span>
-<span class="nc" id="L301">    }</span>
+<span class="fc" id="L300">        PropertiesConfiguration.include = inc;</span>
+<span class="fc" id="L301">    }</span>
 
     /**
      * Controls whether additional files can be loaded by the {@code include = &lt;xxx&gt;}
@@ -308,8 +308,8 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     public void setIncludesAllowed(boolean includesAllowed)
     {
-<span class="nc" id="L311">        this.includesAllowed = includesAllowed;</span>
-<span class="nc" id="L312">    }</span>
+<span class="fc" id="L311">        this.includesAllowed = includesAllowed;</span>
+<span class="fc" id="L312">    }</span>
 
     /**
      * Reports the status of file inclusion.
@@ -318,7 +318,7 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     public boolean isIncludesAllowed()
     {
-<span class="nc" id="L321">        return this.includesAllowed;</span>
+<span class="fc" id="L321">        return this.includesAllowed;</span>
     }
 
     /**
@@ -329,14 +329,14 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     public String getHeader()
     {
-<span class="nc" id="L332">        beginRead(false);</span>
+<span class="fc" id="L332">        beginRead(false);</span>
         try
         {
-<span class="nc" id="L335">            return getLayout().getHeaderComment();</span>
+<span class="fc" id="L335">            return getLayout().getHeaderComment();</span>
         }
         finally
         {
-<span class="nc" id="L339">            endRead();</span>
+<span class="fc" id="L339">            endRead();</span>
         }
     }
 
@@ -348,16 +348,16 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     public void setHeader(String header)
     {
-<span class="nc" id="L351">        beginWrite(false);</span>
+<span class="fc" id="L351">        beginWrite(false);</span>
         try
         {
-<span class="nc" id="L354">            getLayout().setHeaderComment(header);</span>
+<span class="fc" id="L354">            getLayout().setHeaderComment(header);</span>
         }
         finally
         {
-<span class="nc" id="L358">            endWrite();</span>
+<span class="fc" id="L358">            endWrite();</span>
         }
-<span class="nc" id="L360">    }</span>
+<span class="fc" id="L360">    }</span>
 
     /**
      * Returns the footer comment. This is a comment at the very end of the
@@ -368,14 +368,14 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     public String getFooter()
     {
-<span class="nc" id="L371">        beginRead(false);</span>
+<span class="fc" id="L371">        beginRead(false);</span>
         try
         {
-<span class="nc" id="L374">            return getLayout().getFooterComment();</span>
+<span class="fc" id="L374">            return getLayout().getFooterComment();</span>
         }
         finally
         {
-<span class="nc" id="L378">            endRead();</span>
+<span class="fc" id="L378">            endRead();</span>
         }
     }
 
@@ -388,16 +388,16 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     public void setFooter(String footer)
     {
-<span class="nc" id="L391">        beginWrite(false);</span>
+<span class="fc" id="L391">        beginWrite(false);</span>
         try
         {
-<span class="nc" id="L394">            getLayout().setFooterComment(footer);</span>
+<span class="fc" id="L394">            getLayout().setFooterComment(footer);</span>
         }
         finally
         {
-<span class="nc" id="L398">            endWrite();</span>
+<span class="fc" id="L398">            endWrite();</span>
         }
-<span class="nc" id="L400">    }</span>
+<span class="fc" id="L400">    }</span>
 
     /**
      * Returns the associated layout object.
@@ -407,7 +407,7 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     public PropertiesConfigurationLayout getLayout()
     {
-<span class="nc" id="L410">        return layout;</span>
+<span class="fc" id="L410">        return layout;</span>
     }
 
     /**
@@ -419,8 +419,8 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     public void setLayout(PropertiesConfigurationLayout layout)
     {
-<span class="nc" id="L422">        installLayout(layout);</span>
-<span class="nc" id="L423">    }</span>
+<span class="fc" id="L422">        installLayout(layout);</span>
+<span class="fc" id="L423">    }</span>
 
     /**
      * Installs a layout object. It has to be ensured that the layout is
@@ -432,21 +432,21 @@ public class PropertiesConfiguration extends BaseConfiguration
     private void installLayout(PropertiesConfigurationLayout layout)
     {
         // only one layout must exist
-<span class="nc bnc" id="L435" title="All 2 branches missed.">        if (this.layout != null)</span>
+<span class="fc bfc" id="L435" title="All 2 branches covered.">        if (this.layout != null)</span>
         {
-<span class="nc" id="L437">            removeEventListener(ConfigurationEvent.ANY, this.layout);</span>
+<span class="fc" id="L437">            removeEventListener(ConfigurationEvent.ANY, this.layout);</span>
         }
 
-<span class="nc bnc" id="L440" title="All 2 branches missed.">        if (layout == null)</span>
+<span class="fc bfc" id="L440" title="All 2 branches covered.">        if (layout == null)</span>
         {
-<span class="nc" id="L442">            this.layout = createLayout();</span>
+<span class="fc" id="L442">            this.layout = createLayout();</span>
         }
         else
         {
-<span class="nc" id="L446">            this.layout = layout;</span>
+<span class="fc" id="L446">            this.layout = layout;</span>
         }
-<span class="nc" id="L448">        addEventListener(ConfigurationEvent.ANY, this.layout);</span>
-<span class="nc" id="L449">    }</span>
+<span class="fc" id="L448">        addEventListener(ConfigurationEvent.ANY, this.layout);</span>
+<span class="fc" id="L449">    }</span>
 
     /**
      * Creates a standard layout object. This configuration is initialized with
@@ -456,7 +456,7 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     private PropertiesConfigurationLayout createLayout()
     {
-<span class="nc" id="L459">        return new PropertiesConfigurationLayout();</span>
+<span class="fc" id="L459">        return new PropertiesConfigurationLayout();</span>
     }
 
     /**
@@ -468,7 +468,7 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     public IOFactory getIOFactory()
     {
-<span class="nc bnc" id="L471" title="All 2 branches missed.">        return (ioFactory != null) ? ioFactory : DEFAULT_IO_FACTORY;</span>
+<span class="fc bfc" id="L471" title="All 2 branches covered.">        return (ioFactory != null) ? ioFactory : DEFAULT_IO_FACTORY;</span>
     }
 
     /**
@@ -488,13 +488,13 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     public void setIOFactory(IOFactory ioFactory)
     {
-<span class="nc bnc" id="L491" title="All 2 branches missed.">        if (ioFactory == null)</span>
+<span class="fc bfc" id="L491" title="All 2 branches covered.">        if (ioFactory == null)</span>
         {
-<span class="nc" id="L493">            throw new IllegalArgumentException(&quot;IOFactory must not be null!&quot;);</span>
+<span class="fc" id="L493">            throw new IllegalArgumentException(&quot;IOFactory must not be null!&quot;);</span>
         }
 
-<span class="nc" id="L496">        this.ioFactory = ioFactory;</span>
-<span class="nc" id="L497">    }</span>
+<span class="fc" id="L496">        this.ioFactory = ioFactory;</span>
+<span class="fc" id="L497">    }</span>
 
     /**
      * Stores the current {@code FileLocator} for a following IO operation. The
@@ -507,8 +507,8 @@ public class PropertiesConfiguration extends BaseConfiguration
     @Override
     public void initFileLocator(FileLocator locator)
     {
-<span class="nc" id="L510">        this.locator = locator;</span>
-<span class="nc" id="L511">    }</span>
+<span class="fc" id="L510">        this.locator = locator;</span>
+<span class="fc" id="L511">    }</span>
 
     /**
      * {@inheritDoc} This implementation delegates to the associated layout
@@ -522,8 +522,8 @@ public class PropertiesConfiguration extends BaseConfiguration
     @Override
     public void read(Reader in) throws ConfigurationException, IOException
     {
-<span class="nc" id="L525">        getLayout().load(this, in);</span>
-<span class="nc" id="L526">    }</span>
+<span class="fc" id="L525">        getLayout().load(this, in);</span>
+<span class="fc" id="L526">    }</span>
 
     /**
      * {@inheritDoc} This implementation delegates to the associated layout
@@ -535,8 +535,8 @@ public class PropertiesConfiguration extends BaseConfiguration
     @Override
     public void write(Writer out) throws ConfigurationException, IOException
     {
-<span class="nc" id="L538">        getLayout().save(this, out);</span>
-<span class="nc" id="L539">    }</span>
+<span class="fc" id="L538">        getLayout().save(this, out);</span>
+<span class="fc" id="L539">    }</span>
 
     /**
      * Creates a copy of this object.
@@ -546,12 +546,12 @@ public class PropertiesConfiguration extends BaseConfiguration
     @Override
     public Object clone()
     {
-<span class="nc" id="L549">        PropertiesConfiguration copy = (PropertiesConfiguration) super.clone();</span>
-<span class="nc bnc" id="L550" title="All 2 branches missed.">        if (layout != null)</span>
+<span class="fc" id="L549">        PropertiesConfiguration copy = (PropertiesConfiguration) super.clone();</span>
+<span class="pc bpc" id="L550" title="1 of 2 branches missed.">        if (layout != null)</span>
         {
-<span class="nc" id="L552">            copy.setLayout(new PropertiesConfigurationLayout(layout));</span>
+<span class="fc" id="L552">            copy.setLayout(new PropertiesConfigurationLayout(layout));</span>
         }
-<span class="nc" id="L554">        return copy;</span>
+<span class="fc" id="L554">        return copy;</span>
     }
 
     /**
@@ -575,28 +575,28 @@ public class PropertiesConfiguration extends BaseConfiguration
     {
         boolean result;
 
-<span class="nc bnc" id="L578" title="All 2 branches missed.">        if (StringUtils.isNotEmpty(getInclude())</span>
-<span class="nc bnc" id="L579" title="All 2 branches missed.">                &amp;&amp; key.equalsIgnoreCase(getInclude()))</span>
+<span class="pc bpc" id="L578" title="1 of 2 branches missed.">        if (StringUtils.isNotEmpty(getInclude())</span>
+<span class="fc bfc" id="L579" title="All 2 branches covered.">                &amp;&amp; key.equalsIgnoreCase(getInclude()))</span>
         {
-<span class="nc bnc" id="L581" title="All 2 branches missed.">            if (isIncludesAllowed())</span>
+<span class="fc bfc" id="L581" title="All 2 branches covered.">            if (isIncludesAllowed())</span>
             {
-<span class="nc" id="L583">                Collection&lt;String&gt; files =</span>
-<span class="nc" id="L584">                        getListDelimiterHandler().split(value, true);</span>
-<span class="nc bnc" id="L585" title="All 2 branches missed.">                for (String f : files)</span>
+<span class="fc" id="L583">                Collection&lt;String&gt; files =</span>
+<span class="fc" id="L584">                        getListDelimiterHandler().split(value, true);</span>
+<span class="fc bfc" id="L585" title="All 2 branches covered.">                for (String f : files)</span>
                 {
-<span class="nc" id="L587">                    loadIncludeFile(interpolate(f));</span>
-<span class="nc" id="L588">                }</span>
+<span class="fc" id="L587">                    loadIncludeFile(interpolate(f));</span>
+<span class="fc" id="L588">                }</span>
             }
-<span class="nc" id="L590">            result = false;</span>
+<span class="fc" id="L590">            result = false;</span>
         }
 
         else
         {
-<span class="nc" id="L595">            addPropertyInternal(key, value);</span>
-<span class="nc" id="L596">            result = true;</span>
+<span class="fc" id="L595">            addPropertyInternal(key, value);</span>
+<span class="fc" id="L596">            result = true;</span>
         }
 
-<span class="nc" id="L599">        return result;</span>
+<span class="fc" id="L599">        return result;</span>
     }
 
     /**
@@ -609,9 +609,9 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     static boolean isCommentLine(String line)
     {
-<span class="nc" id="L612">        String s = line.trim();</span>
+<span class="fc" id="L612">        String s = line.trim();</span>
         // blanc lines are also treated as comment lines
-<span class="nc bnc" id="L614" title="All 4 branches missed.">        return s.length() &lt; 1 || COMMENT_CHARS.indexOf(s.charAt(0)) &gt;= 0;</span>
+<span class="fc bfc" id="L614" title="All 4 branches covered.">        return s.length() &lt; 1 || COMMENT_CHARS.indexOf(s.charAt(0)) &gt;= 0;</span>
     }
 
     /**
@@ -623,13 +623,13 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     private static int countTrailingBS(String line)
     {
-<span class="nc" id="L626">        int bsCount = 0;</span>
-<span class="nc bnc" id="L627" title="All 4 branches missed.">        for (int idx = line.length() - 1; idx &gt;= 0 &amp;&amp; line.charAt(idx) == '\\'; idx--)</span>
+<span class="fc" id="L626">        int bsCount = 0;</span>
+<span class="pc bpc" id="L627" title="1 of 4 branches missed.">        for (int idx = line.length() - 1; idx &gt;= 0 &amp;&amp; line.charAt(idx) == '\\'; idx--)</span>
         {
-<span class="nc" id="L629">            bsCount++;</span>
+<span class="fc" id="L629">            bsCount++;</span>
         }
 
-<span class="nc" id="L632">        return bsCount;</span>
+<span class="fc" id="L632">        return bsCount;</span>
     }
 
     /**
@@ -641,9 +641,9 @@ public class PropertiesConfiguration extends BaseConfiguration
     public static class PropertiesReader extends LineNumberReader
     {
         /** The regular expression to parse the key and the value of a property. */
-<span class="nc" id="L644">        private static final Pattern PROPERTY_PATTERN = Pattern</span>
-<span class="nc" id="L645">                .compile(&quot;(([\\S&amp;&amp;[^\\\\&quot; + new String(SEPARATORS)</span>
-<span class="nc" id="L646">                        + &quot;]]|\\\\.)*)(\\s*(\\s+|[&quot; + new String(SEPARATORS)</span>
+<span class="fc" id="L644">        private static final Pattern PROPERTY_PATTERN = Pattern</span>
+<span class="fc" id="L645">                .compile(&quot;(([\\S&amp;&amp;[^\\\\&quot; + new String(SEPARATORS)</span>
+<span class="fc" id="L646">                        + &quot;]]|\\\\.)*)(\\s*(\\s+|[&quot; + new String(SEPARATORS)</span>
                         + &quot;])\\s*)?(.*)&quot;);
 
         /** Constant for the index of the group for the key. */
@@ -665,7 +665,7 @@ public class PropertiesConfiguration extends BaseConfiguration
         private String propertyValue;
 
         /** Stores the property separator of the last read property.*/
-<span class="nc" id="L668">        private String propertySeparator = DEFAULT_SEPARATOR;</span>
+<span class="fc" id="L668">        private String propertySeparator = DEFAULT_SEPARATOR;</span>
 
         /**
          * Constructor.
@@ -674,9 +674,9 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public PropertiesReader(Reader reader)
         {
-<span class="nc" id="L677">            super(reader);</span>
-<span class="nc" id="L678">            commentLines = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L679">        }</span>
+<span class="fc" id="L677">            super(reader);</span>
+<span class="fc" id="L678">            commentLines = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L679">        }</span>
 
         /**
          * Reads a property line. Returns null if Stream is
@@ -691,38 +691,38 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public String readProperty() throws IOException
         {
-<span class="nc" id="L694">            commentLines.clear();</span>
-<span class="nc" id="L695">            StringBuilder buffer = new StringBuilder();</span>
+<span class="fc" id="L694">            commentLines.clear();</span>
+<span class="fc" id="L695">            StringBuilder buffer = new StringBuilder();</span>
 
             while (true)
             {
-<span class="nc" id="L699">                String line = readLine();</span>
-<span class="nc bnc" id="L700" title="All 2 branches missed.">                if (line == null)</span>
+<span class="fc" id="L699">                String line = readLine();</span>
+<span class="fc bfc" id="L700" title="All 2 branches covered.">                if (line == null)</span>
                 {
                     // EOF
-<span class="nc" id="L703">                    return null;</span>
+<span class="fc" id="L703">                    return null;</span>
                 }
 
-<span class="nc bnc" id="L706" title="All 2 branches missed.">                if (isCommentLine(line))</span>
+<span class="fc bfc" id="L706" title="All 2 branches covered.">                if (isCommentLine(line))</span>
                 {
-<span class="nc" id="L708">                    commentLines.add(line);</span>
-<span class="nc" id="L709">                    continue;</span>
+<span class="fc" id="L708">                    commentLines.add(line);</span>
+<span class="fc" id="L709">                    continue;</span>
                 }
 
-<span class="nc" id="L712">                line = line.trim();</span>
+<span class="fc" id="L712">                line = line.trim();</span>
 
-<span class="nc bnc" id="L714" title="All 2 branches missed.">                if (checkCombineLines(line))</span>
+<span class="fc bfc" id="L714" title="All 2 branches covered.">                if (checkCombineLines(line))</span>
                 {
-<span class="nc" id="L716">                    line = line.substring(0, line.length() - 1);</span>
-<span class="nc" id="L717">                    buffer.append(line);</span>
+<span class="fc" id="L716">                    line = line.substring(0, line.length() - 1);</span>
+<span class="fc" id="L717">                    buffer.append(line);</span>
                 }
                 else
                 {
-<span class="nc" id="L721">                    buffer.append(line);</span>
-<span class="nc" id="L722">                    break;</span>
+<span class="fc" id="L721">                    buffer.append(line);</span>
+<span class="fc" id="L722">                    break;</span>
                 }
-<span class="nc" id="L724">            }</span>
-<span class="nc" id="L725">            return buffer.toString();</span>
+<span class="fc" id="L724">            }</span>
+<span class="fc" id="L725">            return buffer.toString();</span>
         }
 
         /**
@@ -738,16 +738,16 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public boolean nextProperty() throws IOException
         {
-<span class="nc" id="L741">            String line = readProperty();</span>
+<span class="fc" id="L741">            String line = readProperty();</span>
 
-<span class="nc bnc" id="L743" title="All 2 branches missed.">            if (line == null)</span>
+<span class="fc bfc" id="L743" title="All 2 branches covered.">            if (line == null)</span>
             {
-<span class="nc" id="L745">                return false; // EOF</span>
+<span class="fc" id="L745">                return false; // EOF</span>
             }
 
             // parse the line
-<span class="nc" id="L749">            parseProperty(line);</span>
-<span class="nc" id="L750">            return true;</span>
+<span class="fc" id="L749">            parseProperty(line);</span>
+<span class="fc" id="L750">            return true;</span>
         }
 
         /**
@@ -759,7 +759,7 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public List&lt;String&gt; getCommentLines()
         {
-<span class="nc" id="L762">            return commentLines;</span>
+<span class="fc" id="L762">            return commentLines;</span>
         }
 
         /**
@@ -772,7 +772,7 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public String getPropertyName()
         {
-<span class="nc" id="L775">            return propertyName;</span>
+<span class="fc" id="L775">            return propertyName;</span>
         }
 
         /**
@@ -785,7 +785,7 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public String getPropertyValue()
         {
-<span class="nc" id="L788">            return propertyValue;</span>
+<span class="fc" id="L788">            return propertyValue;</span>
         }
 
         /**
@@ -798,7 +798,7 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public String getPropertySeparator()
         {
-<span class="nc" id="L801">            return propertySeparator;</span>
+<span class="fc" id="L801">            return propertySeparator;</span>
         }
 
         /**
@@ -813,11 +813,11 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         protected void parseProperty(String line)
         {
-<span class="nc" id="L816">            String[] property = doParseProperty(line);</span>
-<span class="nc" id="L817">            initPropertyName(property[0]);</span>
-<span class="nc" id="L818">            initPropertyValue(property[1]);</span>
-<span class="nc" id="L819">            initPropertySeparator(property[2]);</span>
-<span class="nc" id="L820">        }</span>
+<span class="fc" id="L816">            String[] property = doParseProperty(line);</span>
+<span class="fc" id="L817">            initPropertyName(property[0]);</span>
+<span class="fc" id="L818">            initPropertyValue(property[1]);</span>
+<span class="fc" id="L819">            initPropertySeparator(property[2]);</span>
+<span class="fc" id="L820">        }</span>
 
         /**
          * Sets the name of the current property. This method can be called by
@@ -830,8 +830,8 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         protected void initPropertyName(String name)
         {
-<span class="nc" id="L833">            propertyName = StringEscapeUtils.unescapeJava(name);</span>
-<span class="nc" id="L834">        }</span>
+<span class="fc" id="L833">            propertyName = StringEscapeUtils.unescapeJava(name);</span>
+<span class="fc" id="L834">        }</span>
 
         /**
          * Sets the value of the current property. This method can be called by
@@ -844,8 +844,8 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         protected void initPropertyValue(String value)
         {
-<span class="nc" id="L847">            propertyValue = unescapeJava(value);</span>
-<span class="nc" id="L848">        }</span>
+<span class="fc" id="L847">            propertyValue = unescapeJava(value);</span>
+<span class="fc" id="L848">        }</span>
 
         /**
          * Sets the separator of the current property. This method can be called
@@ -858,8 +858,8 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         protected void initPropertySeparator(String value)
         {
-<span class="nc" id="L861">            propertySeparator = value;</span>
-<span class="nc" id="L862">        }</span>
+<span class="fc" id="L861">            propertySeparator = value;</span>
+<span class="fc" id="L862">        }</span>
 
         /**
          * Checks if the passed in line should be combined with the following.
@@ -870,7 +870,7 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         private static boolean checkCombineLines(String line)
         {
-<span class="nc bnc" id="L873" title="All 2 branches missed.">            return countTrailingBS(line) % 2 != 0;</span>
+<span class="fc bfc" id="L873" title="All 2 branches covered.">            return countTrailingBS(line) % 2 != 0;</span>
         }
 
         /**
@@ -881,18 +881,18 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         private static String[] doParseProperty(String line)
         {
-<span class="nc" id="L884">            Matcher matcher = PROPERTY_PATTERN.matcher(line);</span>
+<span class="fc" id="L884">            Matcher matcher = PROPERTY_PATTERN.matcher(line);</span>
 
-<span class="nc" id="L886">            String[] result = {&quot;&quot;, &quot;&quot;, &quot;&quot;};</span>
+<span class="fc" id="L886">            String[] result = {&quot;&quot;, &quot;&quot;, &quot;&quot;};</span>
 
-<span class="nc bnc" id="L888" title="All 2 branches missed.">            if (matcher.matches())</span>
+<span class="pc bpc" id="L888" title="1 of 2 branches missed.">            if (matcher.matches())</span>
             {
-<span class="nc" id="L890">                result[0] = matcher.group(IDX_KEY).trim();</span>
-<span class="nc" id="L891">                result[1] = matcher.group(IDX_VALUE).trim();</span>
-<span class="nc" id="L892">                result[2] = matcher.group(IDX_SEPARATOR);</span>
+<span class="fc" id="L890">                result[0] = matcher.group(IDX_KEY).trim();</span>
+<span class="fc" id="L891">                result[1] = matcher.group(IDX_VALUE).trim();</span>
+<span class="fc" id="L892">                result[2] = matcher.group(IDX_SEPARATOR);</span>
             }
 
-<span class="nc" id="L895">            return result;</span>
+<span class="fc" id="L895">            return result;</span>
         }
     } // class PropertiesReader
 
@@ -908,25 +908,25 @@ public class PropertiesConfiguration extends BaseConfiguration
          * subset of transformations done by the ESCAPE_JAVA translator from
          * Commons Lang 3.
          */
-<span class="nc" id="L911">        private static final CharSequenceTranslator ESCAPE_PROPERTIES =</span>
+<span class="fc" id="L911">        private static final CharSequenceTranslator ESCAPE_PROPERTIES =</span>
                 new AggregateTranslator(new LookupTranslator(new String[][]{
                     {&quot;\\&quot;, &quot;\\\\&quot;}}),
-<span class="nc" id="L914">                        new LookupTranslator(EntityArrays.JAVA_CTRL_CHARS_ESCAPE()),</span>
-<span class="nc" id="L915">                        UnicodeEscaper.outsideOf(32, 0x7f));</span>
+<span class="fc" id="L914">                        new LookupTranslator(EntityArrays.JAVA_CTRL_CHARS_ESCAPE()),</span>
+<span class="fc" id="L915">                        UnicodeEscaper.outsideOf(32, 0x7f));</span>
 
         /**
          * A {@code ValueTransformer} implementation used to escape property
          * values. This implementation applies the transformation defined by the
          * {@link #ESCAPE_PROPERTIES} translator.
          */
-<span class="nc" id="L922">        private static final ValueTransformer TRANSFORMER =</span>
+<span class="fc" id="L922">        private static final ValueTransformer TRANSFORMER =</span>
                 new ValueTransformer()
-<span class="nc" id="L924">                {</span>
+<span class="fc" id="L924">                {</span>
                     @Override
                     public Object transformValue(Object value)
                     {
-<span class="nc" id="L928">                        String strVal = String.valueOf(value);</span>
-<span class="nc" id="L929">                        return ESCAPE_PROPERTIES.translate(strVal);</span>
+<span class="fc" id="L928">                        String strVal = String.valueOf(value);</span>
+<span class="fc" id="L929">                        return ESCAPE_PROPERTIES.translate(strVal);</span>
                     }
                 };
 
@@ -951,9 +951,9 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public PropertiesWriter(Writer writer, ListDelimiterHandler delHandler)
         {
-<span class="nc" id="L954">            super(writer);</span>
-<span class="nc" id="L955">            delimiterHandler = delHandler;</span>
-<span class="nc" id="L956">        }</span>
+<span class="fc" id="L954">            super(writer);</span>
+<span class="fc" id="L955">            delimiterHandler = delHandler;</span>
+<span class="fc" id="L956">        }</span>
 
         /**
          * Returns the delimiter handler for properties with multiple values.
@@ -965,7 +965,7 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public ListDelimiterHandler getDelimiterHandler()
         {
-<span class="nc" id="L968">            return delimiterHandler;</span>
+<span class="fc" id="L968">            return delimiterHandler;</span>
         }
 
         /**
@@ -976,7 +976,7 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public String getCurrentSeparator()
         {
-<span class="nc" id="L979">            return currentSeparator;</span>
+<span class="fc" id="L979">            return currentSeparator;</span>
         }
 
         /**
@@ -988,8 +988,8 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public void setCurrentSeparator(String currentSeparator)
         {
-<span class="nc" id="L991">            this.currentSeparator = currentSeparator;</span>
-<span class="nc" id="L992">        }</span>
+<span class="fc" id="L991">            this.currentSeparator = currentSeparator;</span>
+<span class="fc" id="L992">        }</span>
 
         /**
          * Returns the global property separator.
@@ -999,7 +999,7 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public String getGlobalSeparator()
         {
-<span class="nc" id="L1002">            return globalSeparator;</span>
+<span class="fc" id="L1002">            return globalSeparator;</span>
         }
 
         /**
@@ -1014,8 +1014,8 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public void setGlobalSeparator(String globalSeparator)
         {
-<span class="nc" id="L1017">            this.globalSeparator = globalSeparator;</span>
-<span class="nc" id="L1018">        }</span>
+<span class="fc" id="L1017">            this.globalSeparator = globalSeparator;</span>
+<span class="fc" id="L1018">        }</span>
 
         /**
          * Returns the line separator.
@@ -1025,7 +1025,7 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public String getLineSeparator()
         {
-<span class="nc bnc" id="L1028" title="All 2 branches missed.">            return (lineSeparator != null) ? lineSeparator : LINE_SEPARATOR;</span>
+<span class="fc bfc" id="L1028" title="All 2 branches covered.">            return (lineSeparator != null) ? lineSeparator : LINE_SEPARATOR;</span>
         }
 
         /**
@@ -1038,8 +1038,8 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public void setLineSeparator(String lineSeparator)
         {
-<span class="nc" id="L1041">            this.lineSeparator = lineSeparator;</span>
-<span class="nc" id="L1042">        }</span>
+<span class="fc" id="L1041">            this.lineSeparator = lineSeparator;</span>
+<span class="fc" id="L1042">        }</span>
 
         /**
          * Write a property.
@@ -1051,8 +1051,8 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public void writeProperty(String key, Object value) throws IOException
         {
-<span class="nc" id="L1054">            writeProperty(key, value, false);</span>
-<span class="nc" id="L1055">        }</span>
+<span class="fc" id="L1054">            writeProperty(key, value, false);</span>
+<span class="fc" id="L1055">        }</span>
 
         /**
          * Write a property.
@@ -1064,11 +1064,11 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public void writeProperty(String key, List&lt;?&gt; values) throws IOException
         {
-<span class="nc bnc" id="L1067" title="All 2 branches missed.">            for (int i = 0; i &lt; values.size(); i++)</span>
+<span class="fc bfc" id="L1067" title="All 2 branches covered.">            for (int i = 0; i &lt; values.size(); i++)</span>
             {
-<span class="nc" id="L1069">                writeProperty(key, values.get(i));</span>
+<span class="fc" id="L1069">                writeProperty(key, values.get(i));</span>
             }
-<span class="nc" id="L1071">        }</span>
+<span class="fc" id="L1071">        }</span>
 
         /**
          * Writes the given property and its value. If the value happens to be a
@@ -1087,40 +1087,40 @@ public class PropertiesConfiguration extends BaseConfiguration
         {
             String v;
 
-<span class="nc bnc" id="L1090" title="All 2 branches missed.">            if (value instanceof List)</span>
+<span class="fc bfc" id="L1090" title="All 2 branches covered.">            if (value instanceof List)</span>
             {
-<span class="nc" id="L1092">                v = null;</span>
-<span class="nc" id="L1093">                List&lt;?&gt; values = (List&lt;?&gt;) value;</span>
-<span class="nc bnc" id="L1094" title="All 2 branches missed.">                if (forceSingleLine)</span>
+<span class="fc" id="L1092">                v = null;</span>
+<span class="fc" id="L1093">                List&lt;?&gt; values = (List&lt;?&gt;) value;</span>
+<span class="fc bfc" id="L1094" title="All 2 branches covered.">                if (forceSingleLine)</span>
                 {
                     try
                     {
-<span class="nc" id="L1098">                        v = String.valueOf(getDelimiterHandler()</span>
-<span class="nc" id="L1099">                                        .escapeList(values, TRANSFORMER));</span>
+<span class="fc" id="L1098">                        v = String.valueOf(getDelimiterHandler()</span>
+<span class="fc" id="L1099">                                        .escapeList(values, TRANSFORMER));</span>
                     }
-<span class="nc" id="L1101">                    catch (UnsupportedOperationException uoex)</span>
+<span class="fc" id="L1101">                    catch (UnsupportedOperationException uoex)</span>
                     {
                         // the handler may not support escaping lists,
                         // then the list is written in multiple lines
-<span class="nc" id="L1105">                    }</span>
+<span class="fc" id="L1105">                    }</span>
                 }
-<span class="nc bnc" id="L1107" title="All 2 branches missed.">                if (v == null)</span>
+<span class="fc bfc" id="L1107" title="All 2 branches covered.">                if (v == null)</span>
                 {
-<span class="nc" id="L1109">                    writeProperty(key, values);</span>
-<span class="nc" id="L1110">                    return;</span>
+<span class="fc" id="L1109">                    writeProperty(key, values);</span>
+<span class="fc" id="L1110">                    return;</span>
                 }
-<span class="nc" id="L1112">            }</span>
+<span class="fc" id="L1112">            }</span>
             else
             {
-<span class="nc" id="L1115">                v = String.valueOf(getDelimiterHandler().escape(value, TRANSFORMER));</span>
+<span class="fc" id="L1115">                v = String.valueOf(getDelimiterHandler().escape(value, TRANSFORMER));</span>
             }
 
-<span class="nc" id="L1118">            write(escapeKey(key));</span>
-<span class="nc" id="L1119">            write(fetchSeparator(key, value));</span>
-<span class="nc" id="L1120">            write(v);</span>
+<span class="fc" id="L1118">            write(escapeKey(key));</span>
+<span class="fc" id="L1119">            write(fetchSeparator(key, value));</span>
+<span class="fc" id="L1120">            write(v);</span>
 
-<span class="nc" id="L1122">            writeln(null);</span>
-<span class="nc" id="L1123">        }</span>
+<span class="fc" id="L1122">            writeln(null);</span>
+<span class="fc" id="L1123">        }</span>
 
         /**
          * Write a comment.
@@ -1145,25 +1145,25 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         protected String escapeKey(String key)
         {
-<span class="nc" id="L1148">            StringBuilder newkey = new StringBuilder();</span>
+<span class="fc" id="L1148">            StringBuilder newkey = new StringBuilder();</span>
 
-<span class="nc bnc" id="L1150" title="All 2 branches missed.">            for (int i = 0; i &lt; key.length(); i++)</span>
+<span class="fc bfc" id="L1150" title="All 2 branches covered.">            for (int i = 0; i &lt; key.length(); i++)</span>
             {
-<span class="nc" id="L1152">                char c = key.charAt(i);</span>
+<span class="fc" id="L1152">                char c = key.charAt(i);</span>
 
-<span class="nc bnc" id="L1154" title="All 4 branches missed.">                if (ArrayUtils.contains(SEPARATORS, c) || ArrayUtils.contains(WHITE_SPACE, c))</span>
+<span class="fc bfc" id="L1154" title="All 4 branches covered.">                if (ArrayUtils.contains(SEPARATORS, c) || ArrayUtils.contains(WHITE_SPACE, c))</span>
                 {
                     // escape the separator
-<span class="nc" id="L1157">                    newkey.append('\\');</span>
-<span class="nc" id="L1158">                    newkey.append(c);</span>
+<span class="fc" id="L1157">                    newkey.append('\\');</span>
+<span class="fc" id="L1158">                    newkey.append(c);</span>
                 }
                 else
                 {
-<span class="nc" id="L1162">                    newkey.append(c);</span>
+<span class="fc" id="L1162">                    newkey.append(c);</span>
                 }
             }
 
-<span class="nc" id="L1166">            return newkey.toString();</span>
+<span class="fc" id="L1166">            return newkey.toString();</span>
         }
 
         /**
@@ -1176,12 +1176,12 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         public void writeln(String s) throws IOException
         {
-<span class="nc bnc" id="L1179" title="All 2 branches missed.">            if (s != null)</span>
+<span class="fc bfc" id="L1179" title="All 2 branches covered.">            if (s != null)</span>
             {
-<span class="nc" id="L1181">                write(s);</span>
+<span class="fc" id="L1181">                write(s);</span>
             }
-<span class="nc" id="L1183">            write(getLineSeparator());</span>
-<span class="nc" id="L1184">        }</span>
+<span class="fc" id="L1183">            write(getLineSeparator());</span>
+<span class="fc" id="L1184">        }</span>
 
         /**
          * Returns the separator to be used for the given property. This method
@@ -1200,8 +1200,8 @@ public class PropertiesConfiguration extends BaseConfiguration
          */
         protected String fetchSeparator(String key, Object value)
         {
-<span class="nc bnc" id="L1203" title="All 2 branches missed.">            return (getGlobalSeparator() != null) ? getGlobalSeparator()</span>
-<span class="nc" id="L1204">                    : StringUtils.defaultString(getCurrentSeparator());</span>
+<span class="fc bfc" id="L1203" title="All 2 branches covered.">            return (getGlobalSeparator() != null) ? getGlobalSeparator()</span>
+<span class="fc" id="L1204">                    : StringUtils.defaultString(getCurrentSeparator());</span>
         }
     } // class PropertiesWriter
 
@@ -1269,19 +1269,19 @@ public class PropertiesConfiguration extends BaseConfiguration
      *
      * @since 1.7
      */
-<span class="nc" id="L1272">    public static class DefaultIOFactory implements IOFactory</span>
+<span class="fc" id="L1272">    public static class DefaultIOFactory implements IOFactory</span>
     {
         @Override
         public PropertiesReader createPropertiesReader(Reader in)
         {
-<span class="nc" id="L1277">            return new PropertiesReader(in);</span>
+<span class="fc" id="L1277">            return new PropertiesReader(in);</span>
         }
 
         @Override
         public PropertiesWriter createPropertiesWriter(Writer out,
                 ListDelimiterHandler handler)
         {
-<span class="nc" id="L1284">            return new PropertiesWriter(out, handler);</span>
+<span class="fc" id="L1284">            return new PropertiesWriter(out, handler);</span>
         }
     }
 
@@ -1297,101 +1297,101 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     protected static String unescapeJava(String str)
     {
-<span class="nc bnc" id="L1300" title="All 2 branches missed.">        if (str == null)</span>
+<span class="pc bpc" id="L1300" title="1 of 2 branches missed.">        if (str == null)</span>
         {
 <span class="nc" id="L1302">            return null;</span>
         }
-<span class="nc" id="L1304">        int sz = str.length();</span>
-<span class="nc" id="L1305">        StringBuilder out = new StringBuilder(sz);</span>
-<span class="nc" id="L1306">        StringBuilder unicode = new StringBuilder(UNICODE_LEN);</span>
-<span class="nc" id="L1307">        boolean hadSlash = false;</span>
-<span class="nc" id="L1308">        boolean inUnicode = false;</span>
-<span class="nc bnc" id="L1309" title="All 2 branches missed.">        for (int i = 0; i &lt; sz; i++)</span>
+<span class="fc" id="L1304">        int sz = str.length();</span>
+<span class="fc" id="L1305">        StringBuilder out = new StringBuilder(sz);</span>
+<span class="fc" id="L1306">        StringBuilder unicode = new StringBuilder(UNICODE_LEN);</span>
+<span class="fc" id="L1307">        boolean hadSlash = false;</span>
+<span class="fc" id="L1308">        boolean inUnicode = false;</span>
+<span class="fc bfc" id="L1309" title="All 2 branches covered.">        for (int i = 0; i &lt; sz; i++)</span>
         {
-<span class="nc" id="L1311">            char ch = str.charAt(i);</span>
-<span class="nc bnc" id="L1312" title="All 2 branches missed.">            if (inUnicode)</span>
+<span class="fc" id="L1311">            char ch = str.charAt(i);</span>
+<span class="fc bfc" id="L1312" title="All 2 branches covered.">            if (inUnicode)</span>
             {
                 // if in unicode, then we're reading unicode
                 // values in somehow
-<span class="nc" id="L1316">                unicode.append(ch);</span>
-<span class="nc bnc" id="L1317" title="All 2 branches missed.">                if (unicode.length() == UNICODE_LEN)</span>
+<span class="fc" id="L1316">                unicode.append(ch);</span>
+<span class="fc bfc" id="L1317" title="All 2 branches covered.">                if (unicode.length() == UNICODE_LEN)</span>
                 {
                     // unicode now contains the four hex digits
                     // which represents our unicode character
                     try
                     {
-<span class="nc" id="L1323">                        int value = Integer.parseInt(unicode.toString(), HEX_RADIX);</span>
-<span class="nc" id="L1324">                        out.append((char) value);</span>
-<span class="nc" id="L1325">                        unicode.setLength(0);</span>
-<span class="nc" id="L1326">                        inUnicode = false;</span>
-<span class="nc" id="L1327">                        hadSlash = false;</span>
+<span class="fc" id="L1323">                        int value = Integer.parseInt(unicode.toString(), HEX_RADIX);</span>
+<span class="fc" id="L1324">                        out.append((char) value);</span>
+<span class="fc" id="L1325">                        unicode.setLength(0);</span>
+<span class="fc" id="L1326">                        inUnicode = false;</span>
+<span class="fc" id="L1327">                        hadSlash = false;</span>
                     }
 <span class="nc" id="L1329">                    catch (NumberFormatException nfe)</span>
                     {
 <span class="nc" id="L1331">                        throw new ConfigurationRuntimeException(&quot;Unable to parse unicode value: &quot; + unicode, nfe);</span>
-<span class="nc" id="L1332">                    }</span>
+<span class="fc" id="L1332">                    }</span>
                 }
                 continue;
             }
 
-<span class="nc bnc" id="L1337" title="All 2 branches missed.">            if (hadSlash)</span>
+<span class="fc bfc" id="L1337" title="All 2 branches covered.">            if (hadSlash)</span>
             {
                 // handle an escaped value
-<span class="nc" id="L1340">                hadSlash = false;</span>
+<span class="fc" id="L1340">                hadSlash = false;</span>
 
-<span class="nc bnc" id="L1342" title="All 2 branches missed.">                if (ch == 'r')</span>
+<span class="pc bpc" id="L1342" title="1 of 2 branches missed.">                if (ch == 'r')</span>
                 {
 <span class="nc" id="L1344">                    out.append('\r');</span>
                 }
-<span class="nc bnc" id="L1346" title="All 2 branches missed.">                else if (ch == 'f')</span>
+<span class="pc bpc" id="L1346" title="1 of 2 branches missed.">                else if (ch == 'f')</span>
                 {
 <span class="nc" id="L1348">                    out.append('\f');</span>
                 }
-<span class="nc bnc" id="L1350" title="All 2 branches missed.">                else if (ch == 't')</span>
+<span class="fc bfc" id="L1350" title="All 2 branches covered.">                else if (ch == 't')</span>
                 {
-<span class="nc" id="L1352">                    out.append('\t');</span>
+<span class="fc" id="L1352">                    out.append('\t');</span>
                 }
-<span class="nc bnc" id="L1354" title="All 2 branches missed.">                else if (ch == 'n')</span>
+<span class="fc bfc" id="L1354" title="All 2 branches covered.">                else if (ch == 'n')</span>
                 {
-<span class="nc" id="L1356">                    out.append('\n');</span>
+<span class="fc" id="L1356">                    out.append('\n');</span>
                 }
-<span class="nc bnc" id="L1358" title="All 2 branches missed.">                else if (ch == 'b')</span>
+<span class="pc bpc" id="L1358" title="1 of 2 branches missed.">                else if (ch == 'b')</span>
                 {
 <span class="nc" id="L1360">                    out.append('\b');</span>
                 }
-<span class="nc bnc" id="L1362" title="All 2 branches missed.">                else if (ch == 'u')</span>
+<span class="fc bfc" id="L1362" title="All 2 branches covered.">                else if (ch == 'u')</span>
                 {
                     // uh-oh, we're in unicode country....
-<span class="nc" id="L1365">                    inUnicode = true;</span>
+<span class="fc" id="L1365">                    inUnicode = true;</span>
                 }
-<span class="nc bnc" id="L1367" title="All 2 branches missed.">                else if (needsUnescape(ch))</span>
+<span class="fc bfc" id="L1367" title="All 2 branches covered.">                else if (needsUnescape(ch))</span>
                 {
-<span class="nc" id="L1369">                    out.append(ch);</span>
+<span class="fc" id="L1369">                    out.append(ch);</span>
                 }
                 else
                 {
-<span class="nc" id="L1373">                    out.append('\\');</span>
-<span class="nc" id="L1374">                    out.append(ch);</span>
+<span class="fc" id="L1373">                    out.append('\\');</span>
+<span class="fc" id="L1374">                    out.append(ch);</span>
                 }
 
-<span class="nc" id="L1377">                continue;</span>
+<span class="fc" id="L1377">                continue;</span>
             }
-<span class="nc bnc" id="L1379" title="All 2 branches missed.">            else if (ch == '\\')</span>
+<span class="fc bfc" id="L1379" title="All 2 branches covered.">            else if (ch == '\\')</span>
             {
-<span class="nc" id="L1381">                hadSlash = true;</span>
-<span class="nc" id="L1382">                continue;</span>
+<span class="fc" id="L1381">                hadSlash = true;</span>
+<span class="fc" id="L1382">                continue;</span>
             }
-<span class="nc" id="L1384">            out.append(ch);</span>
+<span class="fc" id="L1384">            out.append(ch);</span>
         }
 
-<span class="nc bnc" id="L1387" title="All 2 branches missed.">        if (hadSlash)</span>
+<span class="pc bpc" id="L1387" title="1 of 2 branches missed.">        if (hadSlash)</span>
         {
             // then we're in the weird case of a \ at the end of the
             // string, let's output it anyway.
 <span class="nc" id="L1391">            out.append('\\');</span>
         }
 
-<span class="nc" id="L1394">        return out.toString();</span>
+<span class="fc" id="L1394">        return out.toString();</span>
     }
 
     /**
@@ -1406,7 +1406,7 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     private static boolean needsUnescape(char ch)
     {
-<span class="nc bnc" id="L1409" title="All 2 branches missed.">        return UNESCAPE_CHARACTERS.indexOf(ch) &gt;= 0;</span>
+<span class="fc bfc" id="L1409" title="All 2 branches covered.">        return UNESCAPE_CHARACTERS.indexOf(ch) &gt;= 0;</span>
     }
 
     /**
@@ -1421,41 +1421,41 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     private void loadIncludeFile(String fileName) throws ConfigurationException
     {
-<span class="nc bnc" id="L1424" title="All 2 branches missed.">        if (locator == null)</span>
+<span class="fc bfc" id="L1424" title="All 2 branches covered.">        if (locator == null)</span>
         {
-<span class="nc" id="L1426">            throw new ConfigurationException(&quot;Load operation not properly &quot;</span>
+<span class="fc" id="L1426">            throw new ConfigurationException(&quot;Load operation not properly &quot;</span>
                     + &quot;initialized! Do not call read(InputStream) directly,&quot;
                     + &quot; but use a FileHandler to load a configuration.&quot;);
         }
 
-<span class="nc" id="L1431">        URL url = locateIncludeFile(locator.getBasePath(), fileName);</span>
-<span class="nc bnc" id="L1432" title="All 2 branches missed.">        if (url == null)</span>
+<span class="fc" id="L1431">        URL url = locateIncludeFile(locator.getBasePath(), fileName);</span>
+<span class="fc bfc" id="L1432" title="All 2 branches covered.">        if (url == null)</span>
         {
-<span class="nc" id="L1434">            URL baseURL = locator.getSourceURL();</span>
-<span class="nc bnc" id="L1435" title="All 2 branches missed.">            if (baseURL != null)</span>
+<span class="fc" id="L1434">            URL baseURL = locator.getSourceURL();</span>
+<span class="pc bpc" id="L1435" title="1 of 2 branches missed.">            if (baseURL != null)</span>
             {
-<span class="nc" id="L1437">                url = locateIncludeFile(baseURL.toString(), fileName);</span>
+<span class="fc" id="L1437">                url = locateIncludeFile(baseURL.toString(), fileName);</span>
             }
         }
 
-<span class="nc bnc" id="L1441" title="All 2 branches missed.">        if (url == null)</span>
+<span class="fc bfc" id="L1441" title="All 2 branches covered.">        if (url == null)</span>
         {
-<span class="nc" id="L1443">            throw new ConfigurationException(&quot;Cannot resolve include file &quot;</span>
+<span class="fc" id="L1443">            throw new ConfigurationException(&quot;Cannot resolve include file &quot;</span>
                     + fileName);
         }
 
-<span class="nc" id="L1447">        FileHandler fh = new FileHandler(this);</span>
-<span class="nc" id="L1448">        fh.setFileLocator(locator);</span>
-<span class="nc" id="L1449">        FileLocator orgLocator = locator;</span>
+<span class="fc" id="L1447">        FileHandler fh = new FileHandler(this);</span>
+<span class="fc" id="L1448">        fh.setFileLocator(locator);</span>
+<span class="fc" id="L1449">        FileLocator orgLocator = locator;</span>
         try
         {
-<span class="nc" id="L1452">            fh.load(url);</span>
+<span class="fc" id="L1452">            fh.load(url);</span>
         }
         finally
         {
-<span class="nc" id="L1456">            locator = orgLocator; // reset locator which is changed by load</span>
+<span class="fc" id="L1456">            locator = orgLocator; // reset locator which is changed by load</span>
         }
-<span class="nc" id="L1458">    }</span>
+<span class="fc" id="L1458">    }</span>
 
     /**
      * Tries to obtain the URL of an include file using the specified (optional)
@@ -1468,10 +1468,10 @@ public class PropertiesConfiguration extends BaseConfiguration
      */
     private URL locateIncludeFile(String basePath, String fileName)
     {
-<span class="nc" id="L1471">        FileLocator includeLocator =</span>
-<span class="nc" id="L1472">                FileLocatorUtils.fileLocator(locator).sourceURL(null)</span>
-<span class="nc" id="L1473">                        .basePath(basePath).fileName(fileName).create();</span>
-<span class="nc" id="L1474">        return FileLocatorUtils.locate(includeLocator);</span>
+<span class="fc" id="L1471">        FileLocator includeLocator =</span>
+<span class="fc" id="L1472">                FileLocatorUtils.fileLocator(locator).sourceURL(null)</span>
+<span class="fc" id="L1473">                        .basePath(basePath).fileName(fileName).create();</span>
+<span class="fc" id="L1474">        return FileLocatorUtils.locate(includeLocator);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

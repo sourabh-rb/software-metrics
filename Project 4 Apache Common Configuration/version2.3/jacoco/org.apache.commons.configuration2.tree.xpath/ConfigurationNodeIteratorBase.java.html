@@ -65,10 +65,10 @@ abstract class ConfigurationNodeIteratorBase&lt;T&gt; implements NodeIterator
      */
     protected ConfigurationNodeIteratorBase(ConfigurationNodePointer&lt;T&gt; parent,
             boolean reverse)
-<span class="nc" id="L68">    {</span>
-<span class="nc" id="L69">        this.parent = parent;</span>
-<span class="nc" id="L70">        this.reverse = reverse;</span>
-<span class="nc" id="L71">    }</span>
+<span class="fc" id="L68">    {</span>
+<span class="fc" id="L69">        this.parent = parent;</span>
+<span class="fc" id="L70">        this.reverse = reverse;</span>
+<span class="fc" id="L71">    }</span>
 
     /**
      * Returns the position of the iteration.
@@ -78,7 +78,7 @@ abstract class ConfigurationNodeIteratorBase&lt;T&gt; implements NodeIterator
     @Override
     public int getPosition()
     {
-<span class="nc" id="L81">        return position;</span>
+<span class="fc" id="L81">        return position;</span>
     }
 
     /**
@@ -90,8 +90,8 @@ abstract class ConfigurationNodeIteratorBase&lt;T&gt; implements NodeIterator
     @Override
     public boolean setPosition(int pos)
     {
-<span class="nc" id="L93">        position = pos;</span>
-<span class="nc bnc" id="L94" title="All 4 branches missed.">        return pos &gt;= 1 &amp;&amp; pos &lt;= getMaxPosition();</span>
+<span class="fc" id="L93">        position = pos;</span>
+<span class="pc bpc" id="L94" title="1 of 4 branches missed.">        return pos &gt;= 1 &amp;&amp; pos &lt;= getMaxPosition();</span>
     }
 
     /**
@@ -102,12 +102,12 @@ abstract class ConfigurationNodeIteratorBase&lt;T&gt; implements NodeIterator
     @Override
     public NodePointer getNodePointer()
     {
-<span class="nc bnc" id="L105" title="All 4 branches missed.">        if (getPosition() &lt; 1 &amp;&amp; !setPosition(1))</span>
+<span class="pc bpc" id="L105" title="1 of 4 branches missed.">        if (getPosition() &lt; 1 &amp;&amp; !setPosition(1))</span>
         {
-<span class="nc" id="L107">            return null;</span>
+<span class="fc" id="L107">            return null;</span>
         }
 
-<span class="nc" id="L110">        return createNodePointer(positionToIndex(getPosition()));</span>
+<span class="fc" id="L110">        return createNodePointer(positionToIndex(getPosition()));</span>
     }
 
     /**
@@ -117,7 +117,7 @@ abstract class ConfigurationNodeIteratorBase&lt;T&gt; implements NodeIterator
      */
     protected ConfigurationNodePointer&lt;T&gt; getParent()
     {
-<span class="nc" id="L120">        return parent;</span>
+<span class="fc" id="L120">        return parent;</span>
     }
 
     /**
@@ -128,7 +128,7 @@ abstract class ConfigurationNodeIteratorBase&lt;T&gt; implements NodeIterator
      */
     protected NodeHandler&lt;T&gt; getNodeHandler()
     {
-<span class="nc" id="L131">        return getParent().getNodeHandler();</span>
+<span class="fc" id="L131">        return getParent().getNodeHandler();</span>
     }
 
     /**
@@ -138,7 +138,7 @@ abstract class ConfigurationNodeIteratorBase&lt;T&gt; implements NodeIterator
      */
     protected int getStartOffset()
     {
-<span class="nc" id="L141">        return startOffset;</span>
+<span class="fc" id="L141">        return startOffset;</span>
     }
 
     /**
@@ -149,16 +149,16 @@ abstract class ConfigurationNodeIteratorBase&lt;T&gt; implements NodeIterator
      */
     protected void setStartOffset(int startOffset)
     {
-<span class="nc" id="L152">        this.startOffset = startOffset;</span>
-<span class="nc bnc" id="L153" title="All 2 branches missed.">        if (reverse)</span>
+<span class="fc" id="L152">        this.startOffset = startOffset;</span>
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        if (reverse)</span>
         {
-<span class="nc" id="L155">            this.startOffset--;</span>
+<span class="fc" id="L155">            this.startOffset--;</span>
         }
         else
         {
-<span class="nc" id="L159">            this.startOffset++;</span>
+<span class="fc" id="L159">            this.startOffset++;</span>
         }
-<span class="nc" id="L161">    }</span>
+<span class="fc" id="L161">    }</span>
 
     /**
      * Returns the maximum position for this iterator.
@@ -167,7 +167,7 @@ abstract class ConfigurationNodeIteratorBase&lt;T&gt; implements NodeIterator
      */
     protected int getMaxPosition()
     {
-<span class="nc bnc" id="L170" title="All 2 branches missed.">        return reverse ? getStartOffset() + 1 : size() - getStartOffset();</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        return reverse ? getStartOffset() + 1 : size() - getStartOffset();</span>
     }
 
     /**
@@ -179,7 +179,7 @@ abstract class ConfigurationNodeIteratorBase&lt;T&gt; implements NodeIterator
      */
     protected int positionToIndex(int pos)
     {
-<span class="nc bnc" id="L182" title="All 2 branches missed.">        return (reverse ? 1 - pos : pos - 1) + getStartOffset();</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        return (reverse ? 1 - pos : pos - 1) + getStartOffset();</span>
     }
 
     /**
@@ -208,8 +208,8 @@ abstract class ConfigurationNodeIteratorBase&lt;T&gt; implements NodeIterator
      */
     protected static String prefixName(String prefix, String name)
     {
-<span class="nc" id="L211">        return String.format(FMT_NAMESPACE, prefix,</span>
-<span class="nc" id="L212">                StringUtils.defaultString(name));</span>
+<span class="fc" id="L211">        return String.format(FMT_NAMESPACE, prefix,</span>
+<span class="fc" id="L212">                StringUtils.defaultString(name));</span>
     }
 
     /**
@@ -222,8 +222,8 @@ abstract class ConfigurationNodeIteratorBase&lt;T&gt; implements NodeIterator
      */
     protected static String qualifiedName(QName name)
     {
-<span class="nc bnc" id="L225" title="All 2 branches missed.">        return (name.getPrefix() == null) ? name.getName() : prefixName(</span>
-<span class="nc" id="L226">                name.getPrefix(), name.getName());</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">        return (name.getPrefix() == null) ? name.getName() : prefixName(</span>
+<span class="fc" id="L226">                name.getPrefix(), name.getName());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

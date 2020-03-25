@@ -35,21 +35,21 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
  * @author &lt;a
  * href=&quot;http://commons.apache.org/configuration/team-list.html&quot;&gt;Commons Configuration team&lt;/a&gt;
  */
-<span class="nc" id="L38">public class DefaultFileSystem extends FileSystem</span>
+<span class="fc" id="L38">public class DefaultFileSystem extends FileSystem</span>
 {
     @Override
     public InputStream getInputStream(URL url) throws ConfigurationException
     {
         // throw an exception if the target URL is a directory
-<span class="nc" id="L44">        File file = FileLocatorUtils.fileFromURL(url);</span>
-<span class="nc bnc" id="L45" title="All 4 branches missed.">        if (file != null &amp;&amp; file.isDirectory())</span>
+<span class="fc" id="L44">        File file = FileLocatorUtils.fileFromURL(url);</span>
+<span class="fc bfc" id="L45" title="All 4 branches covered.">        if (file != null &amp;&amp; file.isDirectory())</span>
         {
-<span class="nc" id="L47">            throw new ConfigurationException(&quot;Cannot load a configuration from a directory&quot;);</span>
+<span class="fc" id="L47">            throw new ConfigurationException(&quot;Cannot load a configuration from a directory&quot;);</span>
         }
 
         try
         {
-<span class="nc" id="L52">            return url.openStream();</span>
+<span class="fc" id="L52">            return url.openStream();</span>
         }
 <span class="nc" id="L54">        catch (Exception e)</span>
         {
@@ -62,10 +62,10 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
     {
         // file URLs have to be converted to Files since FileURLConnection is
         // read only (http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4191800)
-<span class="nc" id="L65">        File file = FileLocatorUtils.fileFromURL(url);</span>
-<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (file != null)</span>
+<span class="fc" id="L65">        File file = FileLocatorUtils.fileFromURL(url);</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (file != null)</span>
         {
-<span class="nc" id="L68">            return getOutputStream(file);</span>
+<span class="fc" id="L68">            return getOutputStream(file);</span>
         }
         else
         {
@@ -73,24 +73,24 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
             OutputStream out;
             try
             {
-<span class="nc" id="L76">                URLConnection connection = url.openConnection();</span>
-<span class="nc" id="L77">                connection.setDoOutput(true);</span>
+<span class="fc" id="L76">                URLConnection connection = url.openConnection();</span>
+<span class="fc" id="L77">                connection.setDoOutput(true);</span>
 
                 // use the PUT method for http URLs
-<span class="nc bnc" id="L80" title="All 2 branches missed.">                if (connection instanceof HttpURLConnection)</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">                if (connection instanceof HttpURLConnection)</span>
                 {
-<span class="nc" id="L82">                    HttpURLConnection conn = (HttpURLConnection) connection;</span>
-<span class="nc" id="L83">                    conn.setRequestMethod(&quot;PUT&quot;);</span>
+<span class="fc" id="L82">                    HttpURLConnection conn = (HttpURLConnection) connection;</span>
+<span class="fc" id="L83">                    conn.setRequestMethod(&quot;PUT&quot;);</span>
                 }
 
-<span class="nc" id="L86">                out = connection.getOutputStream();</span>
+<span class="fc" id="L86">                out = connection.getOutputStream();</span>
 
                 // check the response code for http URLs and throw an exception if an error occured
-<span class="nc bnc" id="L89" title="All 2 branches missed.">                if (connection instanceof HttpURLConnection)</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">                if (connection instanceof HttpURLConnection)</span>
                 {
-<span class="nc" id="L91">                    out = new HttpOutputStream(out, (HttpURLConnection) connection);</span>
+<span class="fc" id="L91">                    out = new HttpOutputStream(out, (HttpURLConnection) connection);</span>
                 }
-<span class="nc" id="L93">                return out;</span>
+<span class="fc" id="L93">                return out;</span>
             }
 <span class="nc" id="L95">            catch (IOException e)</span>
             {
@@ -105,29 +105,29 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
         try
         {
             // create the file if necessary
-<span class="nc" id="L108">            createPath(file);</span>
-<span class="nc" id="L109">            return new FileOutputStream(file);</span>
+<span class="fc" id="L108">            createPath(file);</span>
+<span class="fc" id="L109">            return new FileOutputStream(file);</span>
         }
-<span class="nc" id="L111">        catch (FileNotFoundException e)</span>
+<span class="fc" id="L111">        catch (FileNotFoundException e)</span>
         {
-<span class="nc" id="L113">            throw new ConfigurationException(&quot;Unable to save to file &quot; + file, e);</span>
+<span class="fc" id="L113">            throw new ConfigurationException(&quot;Unable to save to file &quot; + file, e);</span>
         }
     }
 
     @Override
     public String getPath(File file, URL url, String basePath, String fileName)
     {
-<span class="nc" id="L120">        String path = null;</span>
+<span class="fc" id="L120">        String path = null;</span>
         // if resource was loaded from jar file may be null
-<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (file != null)</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (file != null)</span>
         {
-<span class="nc" id="L124">            path = file.getAbsolutePath();</span>
+<span class="fc" id="L124">            path = file.getAbsolutePath();</span>
         }
 
         // try to see if file was loaded from a jar
-<span class="nc bnc" id="L128" title="All 2 branches missed.">        if (path == null)</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        if (path == null)</span>
         {
-<span class="nc bnc" id="L130" title="All 2 branches missed.">            if (url != null)</span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">            if (url != null)</span>
             {
 <span class="nc" id="L132">                path = url.getPath();</span>
             }
@@ -137,10 +137,10 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
                 {
 <span class="nc" id="L138">                    path = getURL(basePath, fileName).getPath();</span>
                 }
-<span class="nc" id="L140">                catch (Exception e)</span>
+<span class="fc" id="L140">                catch (Exception e)</span>
                 {
                     // simply ignore it and return null
-<span class="nc bnc" id="L143" title="All 2 branches missed.">                    if (getLogger().isDebugEnabled())</span>
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">                    if (getLogger().isDebugEnabled())</span>
                     {
 <span class="nc" id="L145">                        getLogger().debug(String.format(&quot;Could not determine URL for &quot;</span>
                                 + &quot;basePath = %s, fileName = %s: %s&quot;, basePath,
@@ -150,7 +150,7 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
             }
         }
 
-<span class="nc" id="L153">        return path;</span>
+<span class="fc" id="L153">        return path;</span>
     }
 
     @Override
@@ -187,27 +187,27 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
     @Override
     public URL getURL(String basePath, String file) throws MalformedURLException
     {
-<span class="nc" id="L190">        File f = new File(file);</span>
-<span class="nc bnc" id="L191" title="All 2 branches missed.">        if (f.isAbsolute()) // already absolute?</span>
+<span class="fc" id="L190">        File f = new File(file);</span>
+<span class="fc bfc" id="L191" title="All 2 branches covered.">        if (f.isAbsolute()) // already absolute?</span>
         {
-<span class="nc" id="L193">            return FileLocatorUtils.toURL(f);</span>
+<span class="fc" id="L193">            return FileLocatorUtils.toURL(f);</span>
         }
 
         try
         {
-<span class="nc bnc" id="L198" title="All 2 branches missed.">            if (basePath == null)</span>
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">            if (basePath == null)</span>
             {
 <span class="nc" id="L200">                return new URL(file);</span>
             }
             else
             {
-<span class="nc" id="L204">                URL base = new URL(basePath);</span>
-<span class="nc" id="L205">                return new URL(base, file);</span>
+<span class="fc" id="L204">                URL base = new URL(basePath);</span>
+<span class="fc" id="L205">                return new URL(base, file);</span>
             }
         }
-<span class="nc" id="L208">        catch (MalformedURLException uex)</span>
+<span class="fc" id="L208">        catch (MalformedURLException uex)</span>
         {
-<span class="nc" id="L210">            return FileLocatorUtils.toURL(FileLocatorUtils.constructFile(basePath, file));</span>
+<span class="fc" id="L210">            return FileLocatorUtils.toURL(FileLocatorUtils.constructFile(basePath, file));</span>
         }
     }
 
@@ -218,39 +218,39 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
         try
         {
             URL url;
-<span class="nc bnc" id="L221" title="All 2 branches missed.">            if (basePath == null)</span>
+<span class="fc bfc" id="L221" title="All 2 branches covered.">            if (basePath == null)</span>
             {
-<span class="nc" id="L223">                return new URL(fileName);</span>
+<span class="fc" id="L223">                return new URL(fileName);</span>
                 //url = new URL(name);
             }
             else
             {
-<span class="nc" id="L228">                URL baseURL = new URL(basePath);</span>
-<span class="nc" id="L229">                url = new URL(baseURL, fileName);</span>
+<span class="fc" id="L228">                URL baseURL = new URL(basePath);</span>
+<span class="fc" id="L229">                url = new URL(baseURL, fileName);</span>
 
                 // check if the file exists
-<span class="nc" id="L232">                InputStream in = null;</span>
+<span class="fc" id="L232">                InputStream in = null;</span>
                 try
                 {
-<span class="nc" id="L235">                    in = url.openStream();</span>
+<span class="fc" id="L235">                    in = url.openStream();</span>
                 }
                 finally
                 {
-<span class="nc bnc" id="L239" title="All 2 branches missed.">                    if (in != null)</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">                    if (in != null)</span>
                     {
-<span class="nc" id="L241">                        in.close();</span>
+<span class="fc" id="L241">                        in.close();</span>
                     }
                 }
-<span class="nc" id="L244">                return url;</span>
+<span class="fc" id="L244">                return url;</span>
             }
         }
-<span class="nc" id="L247">        catch (IOException e)</span>
+<span class="fc" id="L247">        catch (IOException e)</span>
         {
-<span class="nc bnc" id="L249" title="All 2 branches missed.">            if (getLogger().isDebugEnabled())</span>
+<span class="pc bpc" id="L249" title="1 of 2 branches missed.">            if (getLogger().isDebugEnabled())</span>
             {
 <span class="nc" id="L251">                getLogger().debug(&quot;Could not locate file &quot; + fileName + &quot; at &quot; + basePath + &quot;: &quot; + e.getMessage());</span>
             }
-<span class="nc" id="L253">            return null;</span>
+<span class="fc" id="L253">            return null;</span>
         }
     }
 
@@ -262,13 +262,13 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
      */
     private void createPath(File file) throws ConfigurationException
     {
-<span class="nc bnc" id="L265" title="All 2 branches missed.">        if (file != null)</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">        if (file != null)</span>
         {
             // create the path to the file if the file doesn't exist
-<span class="nc bnc" id="L268" title="All 2 branches missed.">            if (!file.exists())</span>
+<span class="fc bfc" id="L268" title="All 2 branches covered.">            if (!file.exists())</span>
             {
-<span class="nc" id="L270">                File parent = file.getParentFile();</span>
-<span class="nc bnc" id="L271" title="All 4 branches missed.">                if (parent != null &amp;&amp; !parent.exists())</span>
+<span class="fc" id="L270">                File parent = file.getParentFile();</span>
+<span class="pc bpc" id="L271" title="1 of 4 branches missed.">                if (parent != null &amp;&amp; !parent.exists())</span>
                 {
 <span class="nc bnc" id="L273" title="All 2 branches missed.">                    if (!parent.mkdirs())</span>
                     {
@@ -277,7 +277,7 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
                 }
             }
         }
-<span class="nc" id="L280">    }</span>
+<span class="fc" id="L280">    }</span>
     /**
      * Wraps the output stream so errors can be detected in the HTTP response.
      * @since 1.7
@@ -293,10 +293,10 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
         private final HttpURLConnection connection;
 
         public HttpOutputStream(OutputStream stream, HttpURLConnection connection)
-<span class="nc" id="L296">        {</span>
-<span class="nc" id="L297">            this.stream = stream;</span>
-<span class="nc" id="L298">            this.connection = connection;</span>
-<span class="nc" id="L299">        }</span>
+<span class="fc" id="L296">        {</span>
+<span class="fc" id="L297">            this.stream = stream;</span>
+<span class="fc" id="L298">            this.connection = connection;</span>
+<span class="fc" id="L299">        }</span>
 
         @Override
         public void write(byte[] bytes) throws IOException
@@ -307,20 +307,20 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
         @Override
         public void write(byte[] bytes, int i, int i1) throws IOException
         {
-<span class="nc" id="L310">            stream.write(bytes, i, i1);</span>
-<span class="nc" id="L311">        }</span>
+<span class="fc" id="L310">            stream.write(bytes, i, i1);</span>
+<span class="fc" id="L311">        }</span>
 
         @Override
         public void flush() throws IOException
         {
-<span class="nc" id="L316">            stream.flush();</span>
-<span class="nc" id="L317">        }</span>
+<span class="fc" id="L316">            stream.flush();</span>
+<span class="fc" id="L317">        }</span>
 
         @Override
         public void close() throws IOException
         {
-<span class="nc" id="L322">            stream.close();</span>
-<span class="nc" id="L323">        }</span>
+<span class="fc" id="L322">            stream.close();</span>
+<span class="fc" id="L323">        }</span>
 
         @Override
         public void write(int i) throws IOException
@@ -337,12 +337,12 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
         @Override
         public void verify() throws IOException
         {
-<span class="nc bnc" id="L340" title="All 2 branches missed.">            if (connection.getResponseCode() &gt;= HttpURLConnection.HTTP_BAD_REQUEST)</span>
+<span class="fc bfc" id="L340" title="All 2 branches covered.">            if (connection.getResponseCode() &gt;= HttpURLConnection.HTTP_BAD_REQUEST)</span>
             {
-<span class="nc" id="L342">                throw new IOException(&quot;HTTP Error &quot; + connection.getResponseCode()</span>
-<span class="nc" id="L343">                        + &quot; &quot; + connection.getResponseMessage());</span>
+<span class="fc" id="L342">                throw new IOException(&quot;HTTP Error &quot; + connection.getResponseCode()</span>
+<span class="fc" id="L343">                        + &quot; &quot; + connection.getResponseMessage());</span>
             }
-<span class="nc" id="L345">        }</span>
+<span class="fc" id="L345">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

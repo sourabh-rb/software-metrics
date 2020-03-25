@@ -68,9 +68,9 @@ public class EventListenerParameters implements BuilderParameters,
      * Creates a new instance of {@code EventListenerParameters}.
      */
     public EventListenerParameters()
-<span class="nc" id="L71">    {</span>
-<span class="nc" id="L72">        eventListeners = new EventListenerList();</span>
-<span class="nc" id="L73">    }</span>
+<span class="fc" id="L71">    {</span>
+<span class="fc" id="L72">        eventListeners = new EventListenerList();</span>
+<span class="fc" id="L73">    }</span>
 
     /**
      * Adds an event listener of the specified event type to this object.
@@ -83,8 +83,8 @@ public class EventListenerParameters implements BuilderParameters,
     public &lt;T extends Event&gt; EventListenerParameters addEventListener(
             EventType&lt;T&gt; eventType, EventListener&lt;? super T&gt; listener)
     {
-<span class="nc" id="L86">        eventListeners.addEventListener(eventType, listener);</span>
-<span class="nc" id="L87">        return this;</span>
+<span class="fc" id="L86">        eventListeners.addEventListener(eventType, listener);</span>
+<span class="fc" id="L87">        return this;</span>
     }
 
     /**
@@ -98,8 +98,8 @@ public class EventListenerParameters implements BuilderParameters,
     public &lt;T extends Event&gt; EventListenerParameters addEventListener(
             EventListenerRegistrationData&lt;T&gt; registrationData)
     {
-<span class="nc" id="L101">        eventListeners.addEventListener(registrationData);</span>
-<span class="nc" id="L102">        return this;</span>
+<span class="fc" id="L101">        eventListeners.addEventListener(registrationData);</span>
+<span class="fc" id="L102">        return this;</span>
     }
 
     /**
@@ -108,13 +108,13 @@ public class EventListenerParameters implements BuilderParameters,
     @Override
     public Map&lt;String, Object&gt; getParameters()
     {
-<span class="nc" id="L111">        return Collections.emptyMap();</span>
+<span class="fc" id="L111">        return Collections.emptyMap();</span>
     }
 
     @Override
     public EventListenerList getListeners()
     {
-<span class="nc" id="L117">        return eventListeners;</span>
+<span class="fc" id="L117">        return eventListeners;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

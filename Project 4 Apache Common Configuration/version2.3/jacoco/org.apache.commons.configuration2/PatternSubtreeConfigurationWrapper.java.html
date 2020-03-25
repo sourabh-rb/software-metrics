@@ -67,12 +67,12 @@ public class PatternSubtreeConfigurationWrapper extends BaseHierarchicalConfigur
      */
     public PatternSubtreeConfigurationWrapper(
             HierarchicalConfiguration&lt;ImmutableNode&gt; config, String path)
-<span class="nc" id="L70">    {</span>
-<span class="nc" id="L71">        this.config = config;</span>
-<span class="nc" id="L72">        this.path = path;</span>
-<span class="nc" id="L73">        this.trailing = path.endsWith(&quot;/&quot;);</span>
-<span class="nc" id="L74">        this.init = true;</span>
-<span class="nc" id="L75">    }</span>
+<span class="fc" id="L70">    {</span>
+<span class="fc" id="L71">        this.config = config;</span>
+<span class="fc" id="L72">        this.path = path;</span>
+<span class="fc" id="L73">        this.trailing = path.endsWith(&quot;/&quot;);</span>
+<span class="fc" id="L74">        this.init = true;</span>
+<span class="fc" id="L75">    }</span>
 
     @Override
     protected void addPropertyInternal(String key, Object value)
@@ -203,7 +203,7 @@ public class PatternSubtreeConfigurationWrapper extends BaseHierarchicalConfigur
     @Override
     public int getInt(String key)
     {
-<span class="nc" id="L206">        return config.getInt(makePath(key));</span>
+<span class="fc" id="L206">        return config.getInt(makePath(key));</span>
     }
 
     @Override
@@ -329,15 +329,15 @@ public class PatternSubtreeConfigurationWrapper extends BaseHierarchicalConfigur
     @Override
     public void setExpressionEngine(ExpressionEngine expressionEngine)
     {
-<span class="nc bnc" id="L332" title="All 2 branches missed.">        if (init)</span>
+<span class="pc bpc" id="L332" title="1 of 2 branches missed.">        if (init)</span>
         {
-<span class="nc" id="L334">            config.setExpressionEngine(expressionEngine);</span>
+<span class="fc" id="L334">            config.setExpressionEngine(expressionEngine);</span>
         }
         else
         {
 <span class="nc" id="L338">            super.setExpressionEngine(expressionEngine);</span>
         }
-<span class="nc" id="L340">    }</span>
+<span class="fc" id="L340">    }</span>
 
     @Override
     protected void addNodesInternal(String key, Collection&lt;? extends ImmutableNode&gt; nodes)
@@ -445,19 +445,19 @@ public class PatternSubtreeConfigurationWrapper extends BaseHierarchicalConfigur
     private String makePath(String item)
     {
         String pathPattern;
-<span class="nc bnc" id="L448" title="All 6 branches missed.">        if ((item.length() == 0 || item.startsWith(&quot;/&quot;)) &amp;&amp; trailing)</span>
+<span class="pc bpc" id="L448" title="4 of 6 branches missed.">        if ((item.length() == 0 || item.startsWith(&quot;/&quot;)) &amp;&amp; trailing)</span>
         {
 <span class="nc" id="L450">            pathPattern = path.substring(0, path.length() - 1);</span>
         }
-<span class="nc bnc" id="L452" title="All 4 branches missed.">        else  if (!item.startsWith(&quot;/&quot;) || !trailing)</span>
+<span class="pc bpc" id="L452" title="3 of 4 branches missed.">        else  if (!item.startsWith(&quot;/&quot;) || !trailing)</span>
         {
-<span class="nc" id="L454">            pathPattern = path + &quot;/&quot;;</span>
+<span class="fc" id="L454">            pathPattern = path + &quot;/&quot;;</span>
         }
         else
         {
 <span class="nc" id="L458">            pathPattern = path;</span>
         }
-<span class="nc" id="L460">        return substitute(pathPattern) + item;</span>
+<span class="fc" id="L460">        return substitute(pathPattern) + item;</span>
     }
 
     /**
@@ -469,8 +469,8 @@ public class PatternSubtreeConfigurationWrapper extends BaseHierarchicalConfigur
      */
     private String substitute(String pattern)
     {
-<span class="nc" id="L472">        Object value = getInterpolator().interpolate(pattern);</span>
-<span class="nc bnc" id="L473" title="All 2 branches missed.">        return (value != null) ? value.toString() : null;</span>
+<span class="fc" id="L472">        Object value = getInterpolator().interpolate(pattern);</span>
+<span class="pc bpc" id="L473" title="1 of 2 branches missed.">        return (value != null) ? value.toString() : null;</span>
     }
 
     /**
@@ -483,9 +483,9 @@ public class PatternSubtreeConfigurationWrapper extends BaseHierarchicalConfigur
      */
     private FileBased fetchFileBased() throws ConfigurationException
     {
-<span class="nc bnc" id="L486" title="All 2 branches missed.">        if (!(config instanceof FileBased))</span>
+<span class="pc bpc" id="L486" title="1 of 2 branches missed.">        if (!(config instanceof FileBased))</span>
         {
-<span class="nc" id="L488">            throw new ConfigurationException(</span>
+<span class="fc" id="L488">            throw new ConfigurationException(</span>
                     &quot;Wrapped configuration does not implement FileBased!&quot;
                             + &quot; No I/O operations are supported.&quot;);
         }

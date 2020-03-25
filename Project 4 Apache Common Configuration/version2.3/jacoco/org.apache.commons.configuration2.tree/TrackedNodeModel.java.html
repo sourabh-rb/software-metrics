@@ -98,22 +98,22 @@ public class TrackedNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     public TrackedNodeModel(InMemoryNodeModelSupport modelSupport, NodeSelector sel,
             boolean untrackOnFinalize)
-<span class="nc" id="L101">    {</span>
-<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (modelSupport == null)</span>
+<span class="fc" id="L101">    {</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (modelSupport == null)</span>
         {
-<span class="nc" id="L104">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L104">            throw new IllegalArgumentException(</span>
                     &quot;Underlying model support must not be null!&quot;);
         }
-<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (sel == null)</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (sel == null)</span>
         {
-<span class="nc" id="L109">            throw new IllegalArgumentException(&quot;Selector must not be null!&quot;);</span>
+<span class="fc" id="L109">            throw new IllegalArgumentException(&quot;Selector must not be null!&quot;);</span>
         }
 
-<span class="nc" id="L112">        parentModelSupport = modelSupport;</span>
-<span class="nc" id="L113">        selector = sel;</span>
-<span class="nc" id="L114">        releaseTrackedNodeOnFinalize = untrackOnFinalize;</span>
-<span class="nc" id="L115">        closed = new AtomicBoolean();</span>
-<span class="nc" id="L116">    }</span>
+<span class="fc" id="L112">        parentModelSupport = modelSupport;</span>
+<span class="fc" id="L113">        selector = sel;</span>
+<span class="fc" id="L114">        releaseTrackedNodeOnFinalize = untrackOnFinalize;</span>
+<span class="fc" id="L115">        closed = new AtomicBoolean();</span>
+<span class="fc" id="L116">    }</span>
 
     /**
      * Returns the {@code InMemoryNodeModelSupport} object which is used to gain
@@ -123,7 +123,7 @@ public class TrackedNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     public InMemoryNodeModelSupport getParentModelSupport()
     {
-<span class="nc" id="L126">        return parentModelSupport;</span>
+<span class="fc" id="L126">        return parentModelSupport;</span>
     }
 
     /**
@@ -134,7 +134,7 @@ public class TrackedNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     public InMemoryNodeModel getParentModel()
     {
-<span class="nc" id="L137">        return getParentModelSupport().getNodeModel();</span>
+<span class="fc" id="L137">        return getParentModelSupport().getNodeModel();</span>
     }
 
     /**
@@ -145,7 +145,7 @@ public class TrackedNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     public NodeSelector getSelector()
     {
-<span class="nc" id="L148">        return selector;</span>
+<span class="fc" id="L148">        return selector;</span>
     }
 
     /**
@@ -161,55 +161,55 @@ public class TrackedNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     public boolean isReleaseTrackedNodeOnFinalize()
     {
-<span class="nc" id="L164">        return releaseTrackedNodeOnFinalize;</span>
+<span class="fc" id="L164">        return releaseTrackedNodeOnFinalize;</span>
     }
 
     @Override
     public void setRootNode(ImmutableNode newRoot)
     {
-<span class="nc" id="L170">        getParentModel().replaceTrackedNode(getSelector(), newRoot);</span>
-<span class="nc" id="L171">    }</span>
+<span class="fc" id="L170">        getParentModel().replaceTrackedNode(getSelector(), newRoot);</span>
+<span class="fc" id="L171">    }</span>
 
     @Override
     public NodeHandler&lt;ImmutableNode&gt; getNodeHandler()
     {
-<span class="nc" id="L176">        return getParentModel().getTrackedNodeHandler(getSelector());</span>
+<span class="fc" id="L176">        return getParentModel().getTrackedNodeHandler(getSelector());</span>
     }
 
     @Override
     public void addProperty(String key, Iterable&lt;?&gt; values,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L183">        getParentModel().addProperty(key, getSelector(), values, resolver);</span>
-<span class="nc" id="L184">    }</span>
+<span class="fc" id="L183">        getParentModel().addProperty(key, getSelector(), values, resolver);</span>
+<span class="fc" id="L184">    }</span>
 
     @Override
     public void addNodes(String key, Collection&lt;? extends ImmutableNode&gt; nodes,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L190">        getParentModel().addNodes(key, getSelector(), nodes, resolver);</span>
-<span class="nc" id="L191">    }</span>
+<span class="fc" id="L190">        getParentModel().addNodes(key, getSelector(), nodes, resolver);</span>
+<span class="fc" id="L191">    }</span>
 
     @Override
     public void setProperty(String key, Object value,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L197">        getParentModel().setProperty(key, getSelector(), value, resolver);</span>
-<span class="nc" id="L198">    }</span>
+<span class="fc" id="L197">        getParentModel().setProperty(key, getSelector(), value, resolver);</span>
+<span class="fc" id="L198">    }</span>
 
     @Override
     public List&lt;QueryResult&lt;ImmutableNode&gt;&gt; clearTree(String key,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L204">        return getParentModel().clearTree(key, getSelector(), resolver);</span>
+<span class="fc" id="L204">        return getParentModel().clearTree(key, getSelector(), resolver);</span>
     }
 
     @Override
     public void clearProperty(String key,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L211">        getParentModel().clearProperty(key, getSelector(), resolver);</span>
-<span class="nc" id="L212">    }</span>
+<span class="fc" id="L211">        getParentModel().clearProperty(key, getSelector(), resolver);</span>
+<span class="fc" id="L212">    }</span>
 
     /**
      * {@inheritDoc} This implementation clears the sub tree spanned by the
@@ -221,8 +221,8 @@ public class TrackedNodeModel implements NodeModel&lt;ImmutableNode&gt;
     @Override
     public void clear(NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L224">        getParentModel().clearTree(null, getSelector(), resolver);</span>
-<span class="nc" id="L225">    }</span>
+<span class="fc" id="L224">        getParentModel().clearTree(null, getSelector(), resolver);</span>
+<span class="fc" id="L225">    }</span>
 
     /**
      * {@inheritDoc} This implementation returns the tracked node instance
@@ -231,7 +231,7 @@ public class TrackedNodeModel implements NodeModel&lt;ImmutableNode&gt;
     @Override
     public ImmutableNode getInMemoryRepresentation()
     {
-<span class="nc" id="L234">        return getNodeHandler().getRootNode();</span>
+<span class="fc" id="L234">        return getNodeHandler().getRootNode();</span>
     }
 
     /**
@@ -246,11 +246,11 @@ public class TrackedNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     public void close()
     {
-<span class="nc bnc" id="L249" title="All 2 branches missed.">        if (closed.compareAndSet(false, true))</span>
+<span class="fc bfc" id="L249" title="All 2 branches covered.">        if (closed.compareAndSet(false, true))</span>
         {
-<span class="nc" id="L251">            getParentModel().untrackNode(getSelector());</span>
+<span class="fc" id="L251">            getParentModel().untrackNode(getSelector());</span>
         }
-<span class="nc" id="L253">    }</span>
+<span class="fc" id="L253">    }</span>
 
     /**
      * {@inheritDoc} This implementation calls {@code close()} if the
@@ -265,11 +265,11 @@ public class TrackedNodeModel implements NodeModel&lt;ImmutableNode&gt;
     @Override
     protected void finalize() throws Throwable
     {
-<span class="nc bnc" id="L268" title="All 2 branches missed.">        if (isReleaseTrackedNodeOnFinalize())</span>
+<span class="fc bfc" id="L268" title="All 2 branches covered.">        if (isReleaseTrackedNodeOnFinalize())</span>
         {
-<span class="nc" id="L270">            close();</span>
+<span class="fc" id="L270">            close();</span>
         }
-<span class="nc" id="L272">        super.finalize();</span>
-<span class="nc" id="L273">    }</span>
+<span class="fc" id="L272">        super.finalize();</span>
+<span class="fc" id="L273">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -33,20 +33,20 @@ package org.apache.commons.configuration2.sync;
  * @version $Id: LockMode.java 1624601 2014-09-12 18:04:36Z oheger $
  * @since 2.0
  */
-<span class="nc" id="L36">public enum LockMode</span>
+<span class="fc" id="L36">public enum LockMode</span>
 {
     /**
      * Lock mode &lt;em&gt;READ&lt;/em&gt;. The object is accessed in a read-only manner.
      * Typically, this means that other read locks can be granted while
      * concurrent writes are not permitted.
      */
-<span class="nc" id="L43">    READ,</span>
+<span class="fc" id="L43">    READ,</span>
 
     /**
      * Lock mode &lt;em&gt;WRITE&lt;/em&gt;. The object is updated. This usually means that
      * this object is exclusively locked. Attempts of other readers or writers
      * will block until the current update operation is complete.
      */
-<span class="nc" id="L50">    WRITE</span>
+<span class="fc" id="L50">    WRITE</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

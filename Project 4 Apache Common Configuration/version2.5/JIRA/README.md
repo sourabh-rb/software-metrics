@@ -12,4 +12,4 @@ For LOC, we are using CLOC tool to count the number of lines java code:
 **SLOC = 69349**
 
 Therefore:
-**$Defect Density = The\ number\ of \ bug / LOC = 0.0000144$**
+$Defect Density = The\ number\ of \ bug / LOC = 0.0000144$

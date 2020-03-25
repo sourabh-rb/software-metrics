@@ -56,10 +56,10 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
      * A dummy node handler instance used in operations which require only a
      * limited functionality.
      */
-<span class="nc" id="L59">    private static final NodeHandler&lt;ImmutableNode&gt; DUMMY_HANDLER =</span>
+<span class="fc" id="L59">    private static final NodeHandler&lt;ImmutableNode&gt; DUMMY_HANDLER =</span>
             new TreeData(null,
-<span class="nc" id="L61">                    Collections.&lt;ImmutableNode, ImmutableNode&gt; emptyMap(),</span>
-<span class="nc" id="L62">                    Collections.&lt;ImmutableNode, ImmutableNode&gt; emptyMap(), null, new ReferenceTracker());</span>
+<span class="fc" id="L61">                    Collections.&lt;ImmutableNode, ImmutableNode&gt; emptyMap(),</span>
+<span class="fc" id="L62">                    Collections.&lt;ImmutableNode, ImmutableNode&gt; emptyMap(), null, new ReferenceTracker());</span>
 
     /** Stores information about the current nodes structure. */
     private final AtomicReference&lt;TreeData&gt; structure;
@@ -70,8 +70,8 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     public InMemoryNodeModel()
     {
-<span class="nc" id="L73">        this(null);</span>
-<span class="nc" id="L74">    }</span>
+<span class="fc" id="L73">        this(null);</span>
+<span class="fc" id="L74">    }</span>
 
     /**
      * Creates a new instance of {@code InMemoryNodeModel} and initializes it
@@ -81,11 +81,11 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
      * @param root the new root node for this model
      */
     public InMemoryNodeModel(ImmutableNode root)
-<span class="nc" id="L84">    {</span>
-<span class="nc" id="L85">        structure =</span>
+<span class="fc" id="L84">    {</span>
+<span class="fc" id="L85">        structure =</span>
                 new AtomicReference&lt;&gt;(
-<span class="nc" id="L87">                        createTreeData(initialRootNode(root), null));</span>
-<span class="nc" id="L88">    }</span>
+<span class="fc" id="L87">                        createTreeData(initialRootNode(root), null));</span>
+<span class="fc" id="L88">    }</span>
 
     /**
      * Returns the root node of this mode. Note: This method should be used with
@@ -101,7 +101,7 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     public ImmutableNode getRootNode()
     {
-<span class="nc" id="L104">        return getTreeData().getRootNode();</span>
+<span class="fc" id="L104">        return getTreeData().getRootNode();</span>
     }
 
     /**
@@ -112,15 +112,15 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     @Override
     public NodeHandler&lt;ImmutableNode&gt; getNodeHandler()
     {
-<span class="nc" id="L115">        return getReferenceNodeHandler();</span>
+<span class="fc" id="L115">        return getReferenceNodeHandler();</span>
     }
 
     @Override
     public void addProperty(String key, Iterable&lt;?&gt; values,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L122">        addProperty(key, null, values, resolver);</span>
-<span class="nc" id="L123">    }</span>
+<span class="fc" id="L122">        addProperty(key, null, values, resolver);</span>
+<span class="fc" id="L123">    }</span>
 
     /**
      * Adds new property values using a tracked node as root node. This method
@@ -140,26 +140,26 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
             final Iterable&lt;?&gt; values,
             final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (valuesNotEmpty(values))</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (valuesNotEmpty(values))</span>
         {
-<span class="nc" id="L145">            updateModel(new TransactionInitializer()</span>
-<span class="nc" id="L146">            {</span>
+<span class="fc" id="L145">            updateModel(new TransactionInitializer()</span>
+<span class="fc" id="L146">            {</span>
                 @Override
                 public boolean initTransaction(ModelTransaction tx)
                 {
-<span class="nc" id="L150">                    initializeAddTransaction(tx, key, values, resolver);</span>
-<span class="nc" id="L151">                    return true;</span>
+<span class="fc" id="L150">                    initializeAddTransaction(tx, key, values, resolver);</span>
+<span class="fc" id="L151">                    return true;</span>
                 }
             }, selector, resolver);
         }
-<span class="nc" id="L155">    }</span>
+<span class="fc" id="L155">    }</span>
 
     @Override
     public void addNodes(String key, Collection&lt;? extends ImmutableNode&gt; nodes,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L161">        addNodes(key, null, nodes, resolver);</span>
-<span class="nc" id="L162">    }</span>
+<span class="fc" id="L161">        addNodes(key, null, nodes, resolver);</span>
+<span class="fc" id="L162">    }</span>
 
     /**
      * Adds new nodes using a tracked node as root node. This method works like
@@ -179,52 +179,52 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
             final Collection&lt;? extends ImmutableNode&gt; nodes,
             final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc bnc" id="L182" title="All 4 branches missed.">        if (nodes != null &amp;&amp; !nodes.isEmpty())</span>
+<span class="fc bfc" id="L182" title="All 4 branches covered.">        if (nodes != null &amp;&amp; !nodes.isEmpty())</span>
         {
-<span class="nc" id="L184">            updateModel(new TransactionInitializer()</span>
-<span class="nc" id="L185">            {</span>
+<span class="fc" id="L184">            updateModel(new TransactionInitializer()</span>
+<span class="fc" id="L185">            {</span>
                 @Override
                 public boolean initTransaction(ModelTransaction tx)
                 {
-<span class="nc" id="L189">                    List&lt;QueryResult&lt;ImmutableNode&gt;&gt; results =</span>
-<span class="nc" id="L190">                            resolver.resolveKey(tx.getQueryRoot(), key,</span>
-<span class="nc" id="L191">                                    tx.getCurrentData());</span>
-<span class="nc bnc" id="L192" title="All 2 branches missed.">                    if (results.size() == 1)</span>
+<span class="fc" id="L189">                    List&lt;QueryResult&lt;ImmutableNode&gt;&gt; results =</span>
+<span class="fc" id="L190">                            resolver.resolveKey(tx.getQueryRoot(), key,</span>
+<span class="fc" id="L191">                                    tx.getCurrentData());</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">                    if (results.size() == 1)</span>
                     {
-<span class="nc bnc" id="L194" title="All 2 branches missed.">                        if (results.get(0).isAttributeResult())</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">                        if (results.get(0).isAttributeResult())</span>
                         {
-<span class="nc" id="L196">                            throw attributeKeyException(key);</span>
+<span class="fc" id="L196">                            throw attributeKeyException(key);</span>
                         }
-<span class="nc" id="L198">                        tx.addAddNodesOperation(results.get(0).getNode(), nodes);</span>
+<span class="fc" id="L198">                        tx.addAddNodesOperation(results.get(0).getNode(), nodes);</span>
                     }
                     else
                     {
-<span class="nc" id="L202">                        NodeAddData&lt;ImmutableNode&gt; addData =</span>
-<span class="nc" id="L203">                                resolver.resolveAddKey(tx.getQueryRoot(), key,</span>
-<span class="nc" id="L204">                                        tx.getCurrentData());</span>
-<span class="nc bnc" id="L205" title="All 2 branches missed.">                        if (addData.isAttribute())</span>
+<span class="fc" id="L202">                        NodeAddData&lt;ImmutableNode&gt; addData =</span>
+<span class="fc" id="L203">                                resolver.resolveAddKey(tx.getQueryRoot(), key,</span>
+<span class="fc" id="L204">                                        tx.getCurrentData());</span>
+<span class="fc bfc" id="L205" title="All 2 branches covered.">                        if (addData.isAttribute())</span>
                         {
-<span class="nc" id="L207">                            throw attributeKeyException(key);</span>
+<span class="fc" id="L207">                            throw attributeKeyException(key);</span>
                         }
-<span class="nc" id="L209">                        ImmutableNode newNode =</span>
-<span class="nc" id="L210">                                new ImmutableNode.Builder(nodes.size())</span>
-<span class="nc" id="L211">                                        .name(addData.getNewNodeName())</span>
-<span class="nc" id="L212">                                        .addChildren(nodes).create();</span>
-<span class="nc" id="L213">                        addNodesByAddData(tx, addData,</span>
-<span class="nc" id="L214">                                Collections.singleton(newNode));</span>
+<span class="fc" id="L209">                        ImmutableNode newNode =</span>
+<span class="fc" id="L210">                                new ImmutableNode.Builder(nodes.size())</span>
+<span class="fc" id="L211">                                        .name(addData.getNewNodeName())</span>
+<span class="fc" id="L212">                                        .addChildren(nodes).create();</span>
+<span class="fc" id="L213">                        addNodesByAddData(tx, addData,</span>
+<span class="fc" id="L214">                                Collections.singleton(newNode));</span>
                     }
-<span class="nc" id="L216">                    return true;</span>
+<span class="fc" id="L216">                    return true;</span>
                 }
             }, selector, resolver);
         }
-<span class="nc" id="L220">    }</span>
+<span class="fc" id="L220">    }</span>
 
     @Override
     public void setProperty(String key, Object value,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L226">        setProperty(key, null, value, resolver);</span>
-<span class="nc" id="L227">    }</span>
+<span class="fc" id="L226">        setProperty(key, null, value, resolver);</span>
+<span class="fc" id="L227">    }</span>
 
     /**
      * Sets the value of a property using a tracked node as root node. This
@@ -243,31 +243,31 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     public void setProperty(final String key, NodeSelector selector,
             final Object value, final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L246">        updateModel(new TransactionInitializer()</span>
-<span class="nc" id="L247">        {</span>
+<span class="fc" id="L246">        updateModel(new TransactionInitializer()</span>
+<span class="fc" id="L247">        {</span>
             @Override
             public boolean initTransaction(ModelTransaction tx)
             {
-<span class="nc" id="L251">                boolean added = false;</span>
-<span class="nc" id="L252">                NodeUpdateData&lt;ImmutableNode&gt; updateData =</span>
-<span class="nc" id="L253">                        resolver.resolveUpdateKey(tx.getQueryRoot(), key,</span>
-<span class="nc" id="L254">                                value, tx.getCurrentData());</span>
-<span class="nc bnc" id="L255" title="All 2 branches missed.">                if (!updateData.getNewValues().isEmpty())</span>
+<span class="fc" id="L251">                boolean added = false;</span>
+<span class="fc" id="L252">                NodeUpdateData&lt;ImmutableNode&gt; updateData =</span>
+<span class="fc" id="L253">                        resolver.resolveUpdateKey(tx.getQueryRoot(), key,</span>
+<span class="fc" id="L254">                                value, tx.getCurrentData());</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">                if (!updateData.getNewValues().isEmpty())</span>
                 {
-<span class="nc" id="L257">                    initializeAddTransaction(tx, key,</span>
-<span class="nc" id="L258">                            updateData.getNewValues(), resolver);</span>
-<span class="nc" id="L259">                    added = true;</span>
+<span class="fc" id="L257">                    initializeAddTransaction(tx, key,</span>
+<span class="fc" id="L258">                            updateData.getNewValues(), resolver);</span>
+<span class="fc" id="L259">                    added = true;</span>
                 }
-<span class="nc" id="L261">                boolean cleared =</span>
-<span class="nc" id="L262">                        initializeClearTransaction(tx,</span>
-<span class="nc" id="L263">                                updateData.getRemovedNodes());</span>
-<span class="nc" id="L264">                boolean updated =</span>
-<span class="nc" id="L265">                        initializeUpdateTransaction(tx,</span>
-<span class="nc" id="L266">                                updateData.getChangedValues());</span>
-<span class="nc bnc" id="L267" title="All 6 branches missed.">                return added || cleared || updated;</span>
+<span class="fc" id="L261">                boolean cleared =</span>
+<span class="fc" id="L262">                        initializeClearTransaction(tx,</span>
+<span class="fc" id="L263">                                updateData.getRemovedNodes());</span>
+<span class="fc" id="L264">                boolean updated =</span>
+<span class="fc" id="L265">                        initializeUpdateTransaction(tx,</span>
+<span class="fc" id="L266">                                updateData.getChangedValues());</span>
+<span class="fc bfc" id="L267" title="All 6 branches covered.">                return added || cleared || updated;</span>
             }
         }, selector, resolver);
-<span class="nc" id="L270">    }</span>
+<span class="fc" id="L270">    }</span>
 
     /**
      * {@inheritDoc} This implementation checks whether nodes become undefined
@@ -279,7 +279,7 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     public List&lt;QueryResult&lt;ImmutableNode&gt;&gt; clearTree(String key,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L282">        return clearTree(key, null, resolver);</span>
+<span class="fc" id="L282">        return clearTree(key, null, resolver);</span>
     }
 
     /**
@@ -299,45 +299,45 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     public List&lt;QueryResult&lt;ImmutableNode&gt;&gt; clearTree(final String key,
             NodeSelector selector, final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L302">        final List&lt;QueryResult&lt;ImmutableNode&gt;&gt; removedElements =</span>
+<span class="fc" id="L302">        final List&lt;QueryResult&lt;ImmutableNode&gt;&gt; removedElements =</span>
                 new LinkedList&lt;&gt;();
-<span class="nc" id="L304">        updateModel(new TransactionInitializer()</span>
-<span class="nc" id="L305">        {</span>
+<span class="fc" id="L304">        updateModel(new TransactionInitializer()</span>
+<span class="fc" id="L305">        {</span>
             @Override
             public boolean initTransaction(ModelTransaction tx)
             {
-<span class="nc" id="L309">                boolean changes = false;</span>
-<span class="nc" id="L310">                TreeData currentStructure = tx.getCurrentData();</span>
-<span class="nc" id="L311">                List&lt;QueryResult&lt;ImmutableNode&gt;&gt; results = resolver.resolveKey(</span>
-<span class="nc" id="L312">                        tx.getQueryRoot(), key, currentStructure);</span>
-<span class="nc" id="L313">                removedElements.clear();</span>
-<span class="nc" id="L314">                removedElements.addAll(results);</span>
-<span class="nc bnc" id="L315" title="All 2 branches missed.">                for (QueryResult&lt;ImmutableNode&gt; result : results)</span>
+<span class="fc" id="L309">                boolean changes = false;</span>
+<span class="fc" id="L310">                TreeData currentStructure = tx.getCurrentData();</span>
+<span class="fc" id="L311">                List&lt;QueryResult&lt;ImmutableNode&gt;&gt; results = resolver.resolveKey(</span>
+<span class="fc" id="L312">                        tx.getQueryRoot(), key, currentStructure);</span>
+<span class="fc" id="L313">                removedElements.clear();</span>
+<span class="fc" id="L314">                removedElements.addAll(results);</span>
+<span class="fc bfc" id="L315" title="All 2 branches covered.">                for (QueryResult&lt;ImmutableNode&gt; result : results)</span>
                 {
-<span class="nc bnc" id="L317" title="All 2 branches missed.">                    if (result.isAttributeResult())</span>
+<span class="fc bfc" id="L317" title="All 2 branches covered.">                    if (result.isAttributeResult())</span>
                     {
-<span class="nc" id="L319">                        tx.addRemoveAttributeOperation(result.getNode(),</span>
-<span class="nc" id="L320">                                result.getAttributeName());</span>
+<span class="fc" id="L319">                        tx.addRemoveAttributeOperation(result.getNode(),</span>
+<span class="fc" id="L320">                                result.getAttributeName());</span>
                     }
                     else
                     {
-<span class="nc bnc" id="L324" title="All 2 branches missed.">                        if (result.getNode() == currentStructure.getRootNode())</span>
+<span class="fc bfc" id="L324" title="All 2 branches covered.">                        if (result.getNode() == currentStructure.getRootNode())</span>
                         {
                             // the whole model is to be cleared
-<span class="nc" id="L327">                            clear(resolver);</span>
-<span class="nc" id="L328">                            return false;</span>
+<span class="fc" id="L327">                            clear(resolver);</span>
+<span class="fc" id="L328">                            return false;</span>
                         }
-<span class="nc" id="L330">                        tx.addRemoveNodeOperation(</span>
-<span class="nc" id="L331">                                currentStructure.getParent(result.getNode()),</span>
-<span class="nc" id="L332">                                result.getNode());</span>
+<span class="fc" id="L330">                        tx.addRemoveNodeOperation(</span>
+<span class="fc" id="L331">                                currentStructure.getParent(result.getNode()),</span>
+<span class="fc" id="L332">                                result.getNode());</span>
                     }
-<span class="nc" id="L334">                    changes = true;</span>
-<span class="nc" id="L335">                }</span>
-<span class="nc" id="L336">                return changes;</span>
+<span class="fc" id="L334">                    changes = true;</span>
+<span class="fc" id="L335">                }</span>
+<span class="fc" id="L336">                return changes;</span>
             }
         }, selector, resolver);
 
-<span class="nc" id="L340">        return removedElements;</span>
+<span class="fc" id="L340">        return removedElements;</span>
     }
 
     /**
@@ -348,8 +348,8 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     public void clearProperty(String key,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L351">        clearProperty(key, null, resolver);</span>
-<span class="nc" id="L352">    }</span>
+<span class="fc" id="L351">        clearProperty(key, null, resolver);</span>
+<span class="fc" id="L352">    }</span>
 
     /**
      * Clears a property using a tracked node as root node. This method works
@@ -367,18 +367,18 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     public void clearProperty(final String key, NodeSelector selector,
             final NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L370">        updateModel(new TransactionInitializer()</span>
-<span class="nc" id="L371">        {</span>
+<span class="fc" id="L370">        updateModel(new TransactionInitializer()</span>
+<span class="fc" id="L371">        {</span>
             @Override
             public boolean initTransaction(ModelTransaction tx)
             {
-<span class="nc" id="L375">                List&lt;QueryResult&lt;ImmutableNode&gt;&gt; results =</span>
-<span class="nc" id="L376">                        resolver.resolveKey(tx.getQueryRoot(), key,</span>
-<span class="nc" id="L377">                                tx.getCurrentData());</span>
-<span class="nc" id="L378">                return initializeClearTransaction(tx, results);</span>
+<span class="fc" id="L375">                List&lt;QueryResult&lt;ImmutableNode&gt;&gt; results =</span>
+<span class="fc" id="L376">                        resolver.resolveKey(tx.getQueryRoot(), key,</span>
+<span class="fc" id="L377">                                tx.getCurrentData());</span>
+<span class="fc" id="L378">                return initializeClearTransaction(tx, results);</span>
             }
         }, selector, resolver);
-<span class="nc" id="L381">    }</span>
+<span class="fc" id="L381">    }</span>
 
     /**
      * {@inheritDoc} A new empty root node is created with the same name as the
@@ -390,11 +390,11 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     @Override
     public void clear(NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L393">        ImmutableNode newRoot =</span>
-<span class="nc" id="L394">                new ImmutableNode.Builder().name(getRootNode().getNodeName())</span>
-<span class="nc" id="L395">                        .create();</span>
-<span class="nc" id="L396">        setRootNode(newRoot);</span>
-<span class="nc" id="L397">    }</span>
+<span class="fc" id="L393">        ImmutableNode newRoot =</span>
+<span class="fc" id="L394">                new ImmutableNode.Builder().name(getRootNode().getNodeName())</span>
+<span class="fc" id="L395">                        .create();</span>
+<span class="fc" id="L396">        setRootNode(newRoot);</span>
+<span class="fc" id="L397">    }</span>
 
     /**
      * {@inheritDoc} This implementation simply returns the current root node of this
@@ -403,7 +403,7 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     @Override
     public ImmutableNode getInMemoryRepresentation()
     {
-<span class="nc" id="L406">        return getTreeData().getRootNode();</span>
+<span class="fc" id="L406">        return getTreeData().getRootNode();</span>
     }
 
     /**
@@ -418,8 +418,8 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     @Override
     public void setRootNode(ImmutableNode newRoot)
     {
-<span class="nc" id="L421">        structure.set(createTreeData(initialRootNode(newRoot), structure.get()));</span>
-<span class="nc" id="L422">    }</span>
+<span class="fc" id="L421">        structure.set(createTreeData(initialRootNode(newRoot), structure.get()));</span>
+<span class="fc" id="L422">    }</span>
 
     /**
      * Replaces the root node of this model. This method is similar to
@@ -438,20 +438,20 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     public void replaceRoot(ImmutableNode newRoot,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc bnc" id="L441" title="All 2 branches missed.">        if (newRoot == null)</span>
+<span class="fc bfc" id="L441" title="All 2 branches covered.">        if (newRoot == null)</span>
         {
-<span class="nc" id="L443">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L443">            throw new IllegalArgumentException(</span>
                     &quot;Replaced root node must not be null!&quot;);
         }
 
-<span class="nc" id="L447">        TreeData current = structure.get();</span>
+<span class="fc" id="L447">        TreeData current = structure.get();</span>
         // this step is needed to get a valid NodeHandler
-<span class="nc" id="L449">        TreeData temp =</span>
-<span class="nc" id="L450">                createTreeDataForRootAndTracker(newRoot,</span>
-<span class="nc" id="L451">                        current.getNodeTracker());</span>
-<span class="nc" id="L452">        structure.set(temp.updateNodeTracker(temp.getNodeTracker().update(</span>
+<span class="fc" id="L449">        TreeData temp =</span>
+<span class="fc" id="L450">                createTreeDataForRootAndTracker(newRoot,</span>
+<span class="fc" id="L451">                        current.getNodeTracker());</span>
+<span class="fc" id="L452">        structure.set(temp.updateNodeTracker(temp.getNodeTracker().update(</span>
                 newRoot, null, resolver, temp)));
-<span class="nc" id="L454">    }</span>
+<span class="fc" id="L454">    }</span>
 
     /**
      * Merges the root node of this model with the specified node. This method
@@ -471,40 +471,40 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
             final Map&lt;ImmutableNode, ?&gt; references, final Object rootRef,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L474">        updateModel(new TransactionInitializer()</span>
-<span class="nc" id="L475">        {</span>
+<span class="fc" id="L474">        updateModel(new TransactionInitializer()</span>
+<span class="fc" id="L475">        {</span>
             @Override
             public boolean initTransaction(ModelTransaction tx)
             {
-<span class="nc" id="L479">                TreeData current = tx.getCurrentData();</span>
-<span class="nc" id="L480">                String newRootName =</span>
-<span class="nc" id="L481">                        determineRootName(current.getRootNode(), node, rootName);</span>
-<span class="nc bnc" id="L482" title="All 2 branches missed.">                if (newRootName != null)</span>
+<span class="fc" id="L479">                TreeData current = tx.getCurrentData();</span>
+<span class="fc" id="L480">                String newRootName =</span>
+<span class="fc" id="L481">                        determineRootName(current.getRootNode(), node, rootName);</span>
+<span class="fc bfc" id="L482" title="All 2 branches covered.">                if (newRootName != null)</span>
                 {
-<span class="nc" id="L484">                    tx.addChangeNodeNameOperation(current.getRootNode(),</span>
+<span class="fc" id="L484">                    tx.addChangeNodeNameOperation(current.getRootNode(),</span>
                             newRootName);
                 }
-<span class="nc" id="L487">                tx.addAddNodesOperation(current.getRootNode(),</span>
-<span class="nc" id="L488">                        node.getChildren());</span>
-<span class="nc" id="L489">                tx.addAttributesOperation(current.getRootNode(),</span>
-<span class="nc" id="L490">                        node.getAttributes());</span>
-<span class="nc bnc" id="L491" title="All 2 branches missed.">                if (node.getValue() != null)</span>
+<span class="fc" id="L487">                tx.addAddNodesOperation(current.getRootNode(),</span>
+<span class="fc" id="L488">                        node.getChildren());</span>
+<span class="fc" id="L489">                tx.addAttributesOperation(current.getRootNode(),</span>
+<span class="fc" id="L490">                        node.getAttributes());</span>
+<span class="fc bfc" id="L491" title="All 2 branches covered.">                if (node.getValue() != null)</span>
                 {
-<span class="nc" id="L493">                    tx.addChangeNodeValueOperation(current.getRootNode(),</span>
-<span class="nc" id="L494">                            node.getValue());</span>
+<span class="fc" id="L493">                    tx.addChangeNodeValueOperation(current.getRootNode(),</span>
+<span class="fc" id="L494">                            node.getValue());</span>
                 }
-<span class="nc bnc" id="L496" title="All 2 branches missed.">                if (references != null)</span>
+<span class="fc bfc" id="L496" title="All 2 branches covered.">                if (references != null)</span>
                 {
-<span class="nc" id="L498">                    tx.addNewReferences(references);</span>
+<span class="fc" id="L498">                    tx.addNewReferences(references);</span>
                 }
-<span class="nc bnc" id="L500" title="All 2 branches missed.">                if (rootRef != null)</span>
+<span class="fc bfc" id="L500" title="All 2 branches covered.">                if (rootRef != null)</span>
                 {
-<span class="nc" id="L502">                    tx.addNewReference(current.getRootNode(), rootRef);</span>
+<span class="fc" id="L502">                    tx.addNewReference(current.getRootNode(), rootRef);</span>
                 }
-<span class="nc" id="L504">                return true;</span>
+<span class="fc" id="L504">                return true;</span>
             }
         }, null, resolver);
-<span class="nc" id="L507">    }</span>
+<span class="fc" id="L507">    }</span>
 
     /**
      * Adds a node to be tracked. After this method has been called with a
@@ -527,15 +527,15 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
         boolean done;
         do
         {
-<span class="nc" id="L530">            TreeData current = structure.get();</span>
-<span class="nc" id="L531">            NodeTracker newTracker =</span>
-<span class="nc" id="L532">                    current.getNodeTracker().trackNode(current.getRootNode(),</span>
+<span class="fc" id="L530">            TreeData current = structure.get();</span>
+<span class="fc" id="L531">            NodeTracker newTracker =</span>
+<span class="fc" id="L532">                    current.getNodeTracker().trackNode(current.getRootNode(),</span>
                             selector, resolver, current);
-<span class="nc" id="L534">            done =</span>
-<span class="nc" id="L535">                    structure.compareAndSet(current,</span>
-<span class="nc" id="L536">                            current.updateNodeTracker(newTracker));</span>
-<span class="nc bnc" id="L537" title="All 2 branches missed.">        } while (!done);</span>
-<span class="nc" id="L538">    }</span>
+<span class="fc" id="L534">            done =</span>
+<span class="fc" id="L535">                    structure.compareAndSet(current,</span>
+<span class="fc" id="L536">                            current.updateNodeTracker(newTracker));</span>
+<span class="fc bfc" id="L537" title="All 2 branches covered.">        } while (!done);</span>
+<span class="fc" id="L538">    }</span>
 
     /**
      * Allows tracking all nodes selected by a key. This method evaluates the
@@ -552,25 +552,25 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     public Collection&lt;NodeSelector&gt; selectAndTrackNodes(String key,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L555">        Mutable&lt;Collection&lt;NodeSelector&gt;&gt; refSelectors =</span>
+<span class="fc" id="L555">        Mutable&lt;Collection&lt;NodeSelector&gt;&gt; refSelectors =</span>
                 new MutableObject&lt;&gt;();
         boolean done;
         do
         {
-<span class="nc" id="L560">            TreeData current = structure.get();</span>
-<span class="nc" id="L561">            List&lt;ImmutableNode&gt; nodes =</span>
-<span class="nc" id="L562">                    resolver.resolveNodeKey(current.getRootNode(), key, current);</span>
-<span class="nc bnc" id="L563" title="All 2 branches missed.">            if (nodes.isEmpty())</span>
+<span class="fc" id="L560">            TreeData current = structure.get();</span>
+<span class="fc" id="L561">            List&lt;ImmutableNode&gt; nodes =</span>
+<span class="fc" id="L562">                    resolver.resolveNodeKey(current.getRootNode(), key, current);</span>
+<span class="fc bfc" id="L563" title="All 2 branches covered.">            if (nodes.isEmpty())</span>
             {
-<span class="nc" id="L565">                return Collections.emptyList();</span>
+<span class="fc" id="L565">                return Collections.emptyList();</span>
             }
-<span class="nc" id="L567">            done =</span>
-<span class="nc" id="L568">                    structure.compareAndSet(</span>
+<span class="fc" id="L567">            done =</span>
+<span class="fc" id="L568">                    structure.compareAndSet(</span>
                             current,
-<span class="nc" id="L570">                            createSelectorsForTrackedNodes(refSelectors, nodes,</span>
+<span class="fc" id="L570">                            createSelectorsForTrackedNodes(refSelectors, nodes,</span>
                                     current, resolver));
-<span class="nc bnc" id="L572" title="All 2 branches missed.">        } while (!done);</span>
-<span class="nc" id="L573">        return refSelectors.getValue();</span>
+<span class="pc bpc" id="L572" title="1 of 2 branches missed.">        } while (!done);</span>
+<span class="fc" id="L573">        return refSelectors.getValue();</span>
     }
 
     /**
@@ -589,33 +589,33 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     public Collection&lt;NodeSelector&gt; trackChildNodes(String key,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L592">        Mutable&lt;Collection&lt;NodeSelector&gt;&gt; refSelectors =</span>
+<span class="fc" id="L592">        Mutable&lt;Collection&lt;NodeSelector&gt;&gt; refSelectors =</span>
                 new MutableObject&lt;&gt;();
         boolean done;
         do
         {
-<span class="nc" id="L597">            refSelectors.setValue(Collections.&lt;NodeSelector&gt; emptyList());</span>
-<span class="nc" id="L598">            TreeData current = structure.get();</span>
-<span class="nc" id="L599">            List&lt;ImmutableNode&gt; nodes =</span>
-<span class="nc" id="L600">                    resolver.resolveNodeKey(current.getRootNode(), key, current);</span>
-<span class="nc bnc" id="L601" title="All 2 branches missed.">            if (nodes.size() == 1)</span>
+<span class="fc" id="L597">            refSelectors.setValue(Collections.&lt;NodeSelector&gt; emptyList());</span>
+<span class="fc" id="L598">            TreeData current = structure.get();</span>
+<span class="fc" id="L599">            List&lt;ImmutableNode&gt; nodes =</span>
+<span class="fc" id="L600">                    resolver.resolveNodeKey(current.getRootNode(), key, current);</span>
+<span class="fc bfc" id="L601" title="All 2 branches covered.">            if (nodes.size() == 1)</span>
             {
-<span class="nc" id="L603">                ImmutableNode node = nodes.get(0);</span>
-<span class="nc" id="L604">                done =</span>
-<span class="nc bnc" id="L605" title="All 2 branches missed.">                        node.getChildren().isEmpty()</span>
-<span class="nc bnc" id="L606" title="All 2 branches missed.">                                || structure.compareAndSet(</span>
+<span class="fc" id="L603">                ImmutableNode node = nodes.get(0);</span>
+<span class="fc" id="L604">                done =</span>
+<span class="fc bfc" id="L605" title="All 2 branches covered.">                        node.getChildren().isEmpty()</span>
+<span class="pc bpc" id="L606" title="1 of 2 branches missed.">                                || structure.compareAndSet(</span>
                                         current,
-<span class="nc" id="L608">                                        createSelectorsForTrackedNodes(</span>
+<span class="fc" id="L608">                                        createSelectorsForTrackedNodes(</span>
                                                 refSelectors,
-<span class="nc" id="L610">                                                node.getChildren(), current,</span>
+<span class="fc" id="L610">                                                node.getChildren(), current,</span>
                                                 resolver));
-<span class="nc" id="L612">            }</span>
+<span class="fc" id="L612">            }</span>
             else
             {
-<span class="nc" id="L615">                done = true;</span>
+<span class="fc" id="L615">                done = true;</span>
             }
-<span class="nc bnc" id="L617" title="All 2 branches missed.">        } while (!done);</span>
-<span class="nc" id="L618">        return refSelectors.getValue();</span>
+<span class="pc bpc" id="L617" title="1 of 2 branches missed.">        } while (!done);</span>
+<span class="fc" id="L618">        return refSelectors.getValue();</span>
     }
 
     /**
@@ -634,30 +634,30 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     public NodeSelector trackChildNodeWithCreation(String key,
             String childName, NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L637">        MutableObject&lt;NodeSelector&gt; refSelector =</span>
+<span class="fc" id="L637">        MutableObject&lt;NodeSelector&gt; refSelector =</span>
                 new MutableObject&lt;&gt;();
         boolean done;
 
         do
         {
-<span class="nc" id="L643">            TreeData current = structure.get();</span>
-<span class="nc" id="L644">            List&lt;ImmutableNode&gt; nodes =</span>
-<span class="nc" id="L645">                    resolver.resolveNodeKey(current.getRootNode(), key, current);</span>
-<span class="nc bnc" id="L646" title="All 2 branches missed.">            if (nodes.size() != 1)</span>
+<span class="fc" id="L643">            TreeData current = structure.get();</span>
+<span class="fc" id="L644">            List&lt;ImmutableNode&gt; nodes =</span>
+<span class="fc" id="L645">                    resolver.resolveNodeKey(current.getRootNode(), key, current);</span>
+<span class="fc bfc" id="L646" title="All 2 branches covered.">            if (nodes.size() != 1)</span>
             {
-<span class="nc" id="L648">                throw new ConfigurationRuntimeException(</span>
+<span class="fc" id="L648">                throw new ConfigurationRuntimeException(</span>
                         &quot;Key does not select a single node: &quot; + key);
             }
 
-<span class="nc" id="L652">            ImmutableNode parent = nodes.get(0);</span>
-<span class="nc" id="L653">            TreeData newData =</span>
-<span class="nc" id="L654">                    createDataWithTrackedChildNode(current, parent, childName,</span>
+<span class="fc" id="L652">            ImmutableNode parent = nodes.get(0);</span>
+<span class="fc" id="L653">            TreeData newData =</span>
+<span class="fc" id="L654">                    createDataWithTrackedChildNode(current, parent, childName,</span>
                             resolver, refSelector);
 
-<span class="nc" id="L657">            done = structure.compareAndSet(current, newData);</span>
-<span class="nc bnc" id="L658" title="All 2 branches missed.">        } while (!done);</span>
+<span class="fc" id="L657">            done = structure.compareAndSet(current, newData);</span>
+<span class="pc bpc" id="L658" title="1 of 2 branches missed.">        } while (!done);</span>
 
-<span class="nc" id="L660">        return refSelector.getValue();</span>
+<span class="fc" id="L660">        return refSelector.getValue();</span>
     }
 
     /**
@@ -672,7 +672,7 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     public ImmutableNode getTrackedNode(NodeSelector selector)
     {
-<span class="nc" id="L675">        return structure.get().getNodeTracker().getTrackedNode(selector);</span>
+<span class="fc" id="L675">        return structure.get().getNodeTracker().getTrackedNode(selector);</span>
     }
 
     /**
@@ -690,22 +690,22 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     public void replaceTrackedNode(NodeSelector selector, ImmutableNode newNode)
     {
-<span class="nc bnc" id="L693" title="All 2 branches missed.">        if (newNode == null)</span>
+<span class="fc bfc" id="L693" title="All 2 branches covered.">        if (newNode == null)</span>
         {
-<span class="nc" id="L695">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L695">            throw new IllegalArgumentException(</span>
                     &quot;Replacement node must not be null!&quot;);
         }
 
         boolean done;
         do
         {
-<span class="nc" id="L702">            TreeData currentData = structure.get();</span>
-<span class="nc" id="L703">            done =</span>
-<span class="nc bnc" id="L704" title="All 2 branches missed.">                    replaceDetachedTrackedNode(currentData, selector, newNode)</span>
-<span class="nc bnc" id="L705" title="All 2 branches missed.">                            || replaceActiveTrackedNode(currentData, selector,</span>
+<span class="fc" id="L702">            TreeData currentData = structure.get();</span>
+<span class="fc" id="L703">            done =</span>
+<span class="fc bfc" id="L704" title="All 2 branches covered.">                    replaceDetachedTrackedNode(currentData, selector, newNode)</span>
+<span class="pc bpc" id="L705" title="1 of 2 branches missed.">                            || replaceActiveTrackedNode(currentData, selector,</span>
                                     newNode);
-<span class="nc bnc" id="L707" title="All 2 branches missed.">        } while (!done);</span>
-<span class="nc" id="L708">    }</span>
+<span class="pc bpc" id="L707" title="1 of 2 branches missed.">        } while (!done);</span>
+<span class="fc" id="L708">    }</span>
 
     /**
      * Returns a {@code NodeHandler} for a tracked node. Such a handler may be
@@ -723,12 +723,12 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     public NodeHandler&lt;ImmutableNode&gt; getTrackedNodeHandler(
             NodeSelector selector)
     {
-<span class="nc" id="L726">        TreeData currentData = structure.get();</span>
-<span class="nc" id="L727">        InMemoryNodeModel detachedNodeModel =</span>
-<span class="nc" id="L728">                currentData.getNodeTracker().getDetachedNodeModel(selector);</span>
-<span class="nc bnc" id="L729" title="All 2 branches missed.">        return (detachedNodeModel != null) ? detachedNodeModel.getNodeHandler()</span>
-<span class="nc" id="L730">                : new TrackedNodeHandler(currentData.getNodeTracker()</span>
-<span class="nc" id="L731">                        .getTrackedNode(selector), currentData);</span>
+<span class="fc" id="L726">        TreeData currentData = structure.get();</span>
+<span class="fc" id="L727">        InMemoryNodeModel detachedNodeModel =</span>
+<span class="fc" id="L728">                currentData.getNodeTracker().getDetachedNodeModel(selector);</span>
+<span class="fc bfc" id="L729" title="All 2 branches covered.">        return (detachedNodeModel != null) ? detachedNodeModel.getNodeHandler()</span>
+<span class="fc" id="L730">                : new TrackedNodeHandler(currentData.getNodeTracker()</span>
+<span class="fc" id="L731">                        .getTrackedNode(selector), currentData);</span>
     }
 
     /**
@@ -749,7 +749,7 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     public boolean isTrackedNodeDetached(NodeSelector selector)
     {
-<span class="nc" id="L752">        return structure.get().getNodeTracker().isTrackedNodeDetached(selector);</span>
+<span class="fc" id="L752">        return structure.get().getNodeTracker().isTrackedNodeDetached(selector);</span>
     }
 
     /**
@@ -768,14 +768,14 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
         boolean done;
         do
         {
-<span class="nc" id="L771">            TreeData current = structure.get();</span>
-<span class="nc" id="L772">            NodeTracker newTracker =</span>
-<span class="nc" id="L773">                    current.getNodeTracker().untrackNode(selector);</span>
-<span class="nc" id="L774">            done =</span>
-<span class="nc" id="L775">                    structure.compareAndSet(current,</span>
-<span class="nc" id="L776">                            current.updateNodeTracker(newTracker));</span>
-<span class="nc bnc" id="L777" title="All 2 branches missed.">        } while (!done);</span>
-<span class="nc" id="L778">    }</span>
+<span class="fc" id="L771">            TreeData current = structure.get();</span>
+<span class="fc" id="L772">            NodeTracker newTracker =</span>
+<span class="fc" id="L773">                    current.getNodeTracker().untrackNode(selector);</span>
+<span class="fc" id="L774">            done =</span>
+<span class="fc" id="L775">                    structure.compareAndSet(current,</span>
+<span class="fc" id="L776">                            current.updateNodeTracker(newTracker));</span>
+<span class="pc bpc" id="L777" title="1 of 2 branches missed.">        } while (!done);</span>
+<span class="fc" id="L778">    }</span>
 
     /**
      * Returns a {@code ReferenceNodeHandler} object for this model. This
@@ -786,7 +786,7 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     public ReferenceNodeHandler getReferenceNodeHandler()
     {
-<span class="nc" id="L789">        return getTreeData();</span>
+<span class="fc" id="L789">        return getTreeData();</span>
     }
 
     /**
@@ -797,7 +797,7 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     TreeData getTreeData()
     {
-<span class="nc" id="L800">        return structure.get();</span>
+<span class="fc" id="L800">        return structure.get();</span>
     }
 
     /**
@@ -812,20 +812,20 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     static void updateParentMapping(final Map&lt;ImmutableNode, ImmutableNode&gt; parents,
             ImmutableNode root)
     {
-<span class="nc" id="L815">        NodeTreeWalker.INSTANCE.walkBFS(root,</span>
+<span class="fc" id="L815">        NodeTreeWalker.INSTANCE.walkBFS(root,</span>
                 new ConfigurationNodeVisitorAdapter&lt;ImmutableNode&gt;()
-<span class="nc" id="L817">                {</span>
+<span class="fc" id="L817">                {</span>
                     @Override
                     public void visitBeforeChildren(ImmutableNode node,
                             NodeHandler&lt;ImmutableNode&gt; handler)
                     {
-<span class="nc bnc" id="L822" title="All 2 branches missed.">                        for (ImmutableNode c : node.getChildren())</span>
+<span class="fc bfc" id="L822" title="All 2 branches covered.">                        for (ImmutableNode c : node.getChildren())</span>
                         {
-<span class="nc" id="L824">                            parents.put(c, node);</span>
-<span class="nc" id="L825">                        }</span>
-<span class="nc" id="L826">                    }</span>
+<span class="fc" id="L824">                            parents.put(c, node);</span>
+<span class="fc" id="L825">                        }</span>
+<span class="fc" id="L826">                    }</span>
                 }, DUMMY_HANDLER);
-<span class="nc" id="L828">    }</span>
+<span class="fc" id="L828">    }</span>
 
     /**
      * Checks if the passed in node is defined. Result is &lt;b&gt;true&lt;/b&gt; if the
@@ -836,8 +836,8 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     static boolean checkIfNodeDefined(ImmutableNode node)
     {
-<span class="nc bnc" id="L839" title="All 4 branches missed.">        return node.getValue() != null || !node.getChildren().isEmpty()</span>
-<span class="nc bnc" id="L840" title="All 2 branches missed.">                || !node.getAttributes().isEmpty();</span>
+<span class="fc bfc" id="L839" title="All 4 branches covered.">        return node.getValue() != null || !node.getChildren().isEmpty()</span>
+<span class="fc bfc" id="L840" title="All 2 branches covered.">                || !node.getAttributes().isEmpty();</span>
     }
 
     /**
@@ -851,18 +851,18 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     private void initializeAddTransaction(ModelTransaction tx, String key,
             Iterable&lt;?&gt; values, NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L854">        NodeAddData&lt;ImmutableNode&gt; addData =</span>
-<span class="nc" id="L855">                resolver.resolveAddKey(tx.getQueryRoot(), key,</span>
-<span class="nc" id="L856">                        tx.getCurrentData());</span>
-<span class="nc bnc" id="L857" title="All 2 branches missed.">        if (addData.isAttribute())</span>
+<span class="fc" id="L854">        NodeAddData&lt;ImmutableNode&gt; addData =</span>
+<span class="fc" id="L855">                resolver.resolveAddKey(tx.getQueryRoot(), key,</span>
+<span class="fc" id="L856">                        tx.getCurrentData());</span>
+<span class="fc bfc" id="L857" title="All 2 branches covered.">        if (addData.isAttribute())</span>
         {
-<span class="nc" id="L859">            addAttributeProperty(tx, addData, values);</span>
+<span class="fc" id="L859">            addAttributeProperty(tx, addData, values);</span>
         }
         else
         {
-<span class="nc" id="L863">            addNodeProperty(tx, addData, values);</span>
+<span class="fc" id="L863">            addNodeProperty(tx, addData, values);</span>
         }
-<span class="nc" id="L865">    }</span>
+<span class="fc" id="L865">    }</span>
 
     /**
      * Creates a {@code TreeData} object for the specified root node.
@@ -874,9 +874,9 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     private TreeData createTreeData(ImmutableNode root, TreeData current)
     {
         NodeTracker newTracker =
-<span class="nc bnc" id="L877" title="All 2 branches missed.">                (current != null) ? current.getNodeTracker()</span>
-<span class="nc" id="L878">                        .detachAllTrackedNodes() : new NodeTracker();</span>
-<span class="nc" id="L879">        return createTreeDataForRootAndTracker(root, newTracker);</span>
+<span class="fc bfc" id="L877" title="All 2 branches covered.">                (current != null) ? current.getNodeTracker()</span>
+<span class="fc" id="L878">                        .detachAllTrackedNodes() : new NodeTracker();</span>
+<span class="fc" id="L879">        return createTreeDataForRootAndTracker(root, newTracker);</span>
     }
 
     /**
@@ -890,8 +890,8 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     private TreeData createTreeDataForRootAndTracker(ImmutableNode root,
             NodeTracker newTracker)
     {
-<span class="nc" id="L893">        return new TreeData(root, createParentMapping(root),</span>
-<span class="nc" id="L894">                Collections.&lt;ImmutableNode, ImmutableNode&gt; emptyMap(),</span>
+<span class="fc" id="L893">        return new TreeData(root, createParentMapping(root),</span>
+<span class="fc" id="L894">                Collections.&lt;ImmutableNode, ImmutableNode&gt; emptyMap(),</span>
                 newTracker, new ReferenceTracker());
     }
 
@@ -905,10 +905,10 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     private static void addNodeProperty(ModelTransaction tx,
             NodeAddData&lt;ImmutableNode&gt; addData, Iterable&lt;?&gt; values)
     {
-<span class="nc" id="L908">        Collection&lt;ImmutableNode&gt; newNodes =</span>
-<span class="nc" id="L909">                createNodesToAdd(addData.getNewNodeName(), values);</span>
-<span class="nc" id="L910">        addNodesByAddData(tx, addData, newNodes);</span>
-<span class="nc" id="L911">    }</span>
+<span class="fc" id="L908">        Collection&lt;ImmutableNode&gt; newNodes =</span>
+<span class="fc" id="L909">                createNodesToAdd(addData.getNewNodeName(), values);</span>
+<span class="fc" id="L910">        addNodesByAddData(tx, addData, newNodes);</span>
+<span class="fc" id="L911">    }</span>
 
     /**
      * Initializes a transaction to add a collection of nodes as described by a
@@ -924,16 +924,16 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
             NodeAddData&lt;ImmutableNode&gt; addData,
             Collection&lt;ImmutableNode&gt; newNodes)
     {
-<span class="nc bnc" id="L927" title="All 2 branches missed.">        if (addData.getPathNodes().isEmpty())</span>
+<span class="fc bfc" id="L927" title="All 2 branches covered.">        if (addData.getPathNodes().isEmpty())</span>
         {
-<span class="nc" id="L929">            tx.addAddNodesOperation(addData.getParent(), newNodes);</span>
+<span class="fc" id="L929">            tx.addAddNodesOperation(addData.getParent(), newNodes);</span>
         }
         else
         {
-<span class="nc" id="L933">            ImmutableNode newChild = createNodeToAddWithPath(addData, newNodes);</span>
-<span class="nc" id="L934">            tx.addAddNodeOperation(addData.getParent(), newChild);</span>
+<span class="fc" id="L933">            ImmutableNode newChild = createNodeToAddWithPath(addData, newNodes);</span>
+<span class="fc" id="L934">            tx.addAddNodeOperation(addData.getParent(), newChild);</span>
         }
-<span class="nc" id="L936">    }</span>
+<span class="fc" id="L936">    }</span>
 
     /**
      * Handles an add property operation if the property to be added is an
@@ -946,28 +946,28 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     private static void addAttributeProperty(ModelTransaction tx,
             NodeAddData&lt;ImmutableNode&gt; addData, Iterable&lt;?&gt; values)
     {
-<span class="nc bnc" id="L949" title="All 2 branches missed.">        if (addData.getPathNodes().isEmpty())</span>
+<span class="fc bfc" id="L949" title="All 2 branches covered.">        if (addData.getPathNodes().isEmpty())</span>
         {
-<span class="nc" id="L951">            tx.addAttributeOperation(addData.getParent(),</span>
-<span class="nc" id="L952">                    addData.getNewNodeName(), values.iterator().next());</span>
+<span class="fc" id="L951">            tx.addAttributeOperation(addData.getParent(),</span>
+<span class="fc" id="L952">                    addData.getNewNodeName(), values.iterator().next());</span>
         }
         else
         {
-<span class="nc" id="L956">            int pathNodeCount = addData.getPathNodes().size();</span>
-<span class="nc" id="L957">            ImmutableNode childWithAttribute =</span>
+<span class="fc" id="L956">            int pathNodeCount = addData.getPathNodes().size();</span>
+<span class="fc" id="L957">            ImmutableNode childWithAttribute =</span>
                     new ImmutableNode.Builder()
-<span class="nc" id="L959">                            .name(addData.getPathNodes().get(pathNodeCount - 1))</span>
-<span class="nc" id="L960">                            .addAttribute(addData.getNewNodeName(),</span>
-<span class="nc" id="L961">                                    values.iterator().next()).create();</span>
+<span class="fc" id="L959">                            .name(addData.getPathNodes().get(pathNodeCount - 1))</span>
+<span class="fc" id="L960">                            .addAttribute(addData.getNewNodeName(),</span>
+<span class="fc" id="L961">                                    values.iterator().next()).create();</span>
             ImmutableNode newChild =
-<span class="nc bnc" id="L963" title="All 2 branches missed.">                    (pathNodeCount &gt; 1) ? createNodeOnPath(addData</span>
-<span class="nc" id="L964">                            .getPathNodes().subList(0, pathNodeCount - 1)</span>
-<span class="nc" id="L965">                            .iterator(),</span>
-<span class="nc" id="L966">                            Collections.singleton(childWithAttribute))</span>
-<span class="nc" id="L967">                            : childWithAttribute;</span>
-<span class="nc" id="L968">            tx.addAddNodeOperation(addData.getParent(), newChild);</span>
+<span class="fc bfc" id="L963" title="All 2 branches covered.">                    (pathNodeCount &gt; 1) ? createNodeOnPath(addData</span>
+<span class="fc" id="L964">                            .getPathNodes().subList(0, pathNodeCount - 1)</span>
+<span class="fc" id="L965">                            .iterator(),</span>
+<span class="fc" id="L966">                            Collections.singleton(childWithAttribute))</span>
+<span class="fc" id="L967">                            : childWithAttribute;</span>
+<span class="fc" id="L968">            tx.addAddNodeOperation(addData.getParent(), newChild);</span>
         }
-<span class="nc" id="L970">    }</span>
+<span class="fc" id="L970">    }</span>
 
     /**
      * Creates a collection with new nodes with a given name and a value from a
@@ -980,13 +980,13 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     private static Collection&lt;ImmutableNode&gt; createNodesToAdd(
             String newNodeName, Iterable&lt;?&gt; values)
     {
-<span class="nc" id="L983">        Collection&lt;ImmutableNode&gt; nodes = new LinkedList&lt;&gt;();</span>
-<span class="nc bnc" id="L984" title="All 2 branches missed.">        for (Object value : values)</span>
+<span class="fc" id="L983">        Collection&lt;ImmutableNode&gt; nodes = new LinkedList&lt;&gt;();</span>
+<span class="fc bfc" id="L984" title="All 2 branches covered.">        for (Object value : values)</span>
         {
-<span class="nc" id="L986">            nodes.add(new ImmutableNode.Builder().name(newNodeName)</span>
-<span class="nc" id="L987">                    .value(value).create());</span>
-<span class="nc" id="L988">        }</span>
-<span class="nc" id="L989">        return nodes;</span>
+<span class="fc" id="L986">            nodes.add(new ImmutableNode.Builder().name(newNodeName)</span>
+<span class="fc" id="L987">                    .value(value).create());</span>
+<span class="fc" id="L988">        }</span>
+<span class="fc" id="L989">        return nodes;</span>
     }
 
     /**
@@ -1001,7 +1001,7 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
             NodeAddData&lt;ImmutableNode&gt; addData,
             Collection&lt;ImmutableNode&gt; newNodes)
     {
-<span class="nc" id="L1004">        return createNodeOnPath(addData.getPathNodes().iterator(), newNodes);</span>
+<span class="fc" id="L1004">        return createNodeOnPath(addData.getPathNodes().iterator(), newNodes);</span>
     }
 
     /**
@@ -1016,19 +1016,19 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     private static ImmutableNode createNodeOnPath(Iterator&lt;String&gt; it,
             Collection&lt;ImmutableNode&gt; newNodes)
     {
-<span class="nc" id="L1019">        String nodeName = it.next();</span>
+<span class="fc" id="L1019">        String nodeName = it.next();</span>
         ImmutableNode.Builder builder;
-<span class="nc bnc" id="L1021" title="All 2 branches missed.">        if (it.hasNext())</span>
+<span class="fc bfc" id="L1021" title="All 2 branches covered.">        if (it.hasNext())</span>
         {
-<span class="nc" id="L1023">            builder = new ImmutableNode.Builder(1);</span>
-<span class="nc" id="L1024">            builder.addChild(createNodeOnPath(it, newNodes));</span>
+<span class="fc" id="L1023">            builder = new ImmutableNode.Builder(1);</span>
+<span class="fc" id="L1024">            builder.addChild(createNodeOnPath(it, newNodes));</span>
         }
         else
         {
-<span class="nc" id="L1028">            builder = new ImmutableNode.Builder(newNodes.size());</span>
-<span class="nc" id="L1029">            builder.addChildren(newNodes);</span>
+<span class="fc" id="L1028">            builder = new ImmutableNode.Builder(newNodes.size());</span>
+<span class="fc" id="L1029">            builder.addChildren(newNodes);</span>
         }
-<span class="nc" id="L1031">        return builder.name(nodeName).create();</span>
+<span class="fc" id="L1031">        return builder.name(nodeName).create();</span>
     }
 
     /**
@@ -1043,20 +1043,20 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     private static boolean initializeClearTransaction(ModelTransaction tx,
             Collection&lt;QueryResult&lt;ImmutableNode&gt;&gt; results)
     {
-<span class="nc bnc" id="L1046" title="All 2 branches missed.">        for (QueryResult&lt;ImmutableNode&gt; result : results)</span>
+<span class="fc bfc" id="L1046" title="All 2 branches covered.">        for (QueryResult&lt;ImmutableNode&gt; result : results)</span>
         {
-<span class="nc bnc" id="L1048" title="All 2 branches missed.">            if (result.isAttributeResult())</span>
+<span class="fc bfc" id="L1048" title="All 2 branches covered.">            if (result.isAttributeResult())</span>
             {
-<span class="nc" id="L1050">                tx.addRemoveAttributeOperation(result.getNode(),</span>
-<span class="nc" id="L1051">                        result.getAttributeName());</span>
+<span class="fc" id="L1050">                tx.addRemoveAttributeOperation(result.getNode(),</span>
+<span class="fc" id="L1051">                        result.getAttributeName());</span>
             }
             else
             {
-<span class="nc" id="L1055">                tx.addClearNodeValueOperation(result.getNode());</span>
+<span class="fc" id="L1055">                tx.addClearNodeValueOperation(result.getNode());</span>
             }
-<span class="nc" id="L1057">        }</span>
+<span class="fc" id="L1057">        }</span>
 
-<span class="nc bnc" id="L1059" title="All 2 branches missed.">        return !results.isEmpty();</span>
+<span class="fc bfc" id="L1059" title="All 2 branches covered.">        return !results.isEmpty();</span>
     }
 
     /**
@@ -1070,22 +1070,22 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     private static boolean initializeUpdateTransaction(ModelTransaction tx,
             Map&lt;QueryResult&lt;ImmutableNode&gt;, Object&gt; changedValues)
     {
-<span class="nc bnc" id="L1073" title="All 2 branches missed.">        for (Map.Entry&lt;QueryResult&lt;ImmutableNode&gt;, Object&gt; e : changedValues</span>
-<span class="nc" id="L1074">                .entrySet())</span>
+<span class="fc bfc" id="L1073" title="All 2 branches covered.">        for (Map.Entry&lt;QueryResult&lt;ImmutableNode&gt;, Object&gt; e : changedValues</span>
+<span class="fc" id="L1074">                .entrySet())</span>
         {
-<span class="nc bnc" id="L1076" title="All 2 branches missed.">            if (e.getKey().isAttributeResult())</span>
+<span class="fc bfc" id="L1076" title="All 2 branches covered.">            if (e.getKey().isAttributeResult())</span>
             {
-<span class="nc" id="L1078">                tx.addAttributeOperation(e.getKey().getNode(), e.getKey()</span>
-<span class="nc" id="L1079">                        .getAttributeName(), e.getValue());</span>
+<span class="fc" id="L1078">                tx.addAttributeOperation(e.getKey().getNode(), e.getKey()</span>
+<span class="fc" id="L1079">                        .getAttributeName(), e.getValue());</span>
             }
             else
             {
-<span class="nc" id="L1083">                tx.addChangeNodeValueOperation(e.getKey().getNode(),</span>
-<span class="nc" id="L1084">                        e.getValue());</span>
+<span class="fc" id="L1083">                tx.addChangeNodeValueOperation(e.getKey().getNode(),</span>
+<span class="fc" id="L1084">                        e.getValue());</span>
             }
-<span class="nc" id="L1086">        }</span>
+<span class="fc" id="L1086">        }</span>
 
-<span class="nc bnc" id="L1088" title="All 2 branches missed.">        return !changedValues.isEmpty();</span>
+<span class="fc bfc" id="L1088" title="All 2 branches covered.">        return !changedValues.isEmpty();</span>
     }
 
     /**
@@ -1097,8 +1097,8 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     private static ImmutableNode initialRootNode(ImmutableNode providedRoot)
     {
-<span class="nc bnc" id="L1100" title="All 2 branches missed.">        return (providedRoot != null) ? providedRoot</span>
-<span class="nc" id="L1101">                : new ImmutableNode.Builder().create();</span>
+<span class="fc bfc" id="L1100" title="All 2 branches covered.">        return (providedRoot != null) ? providedRoot</span>
+<span class="fc" id="L1101">                : new ImmutableNode.Builder().create();</span>
     }
 
     /**
@@ -1115,15 +1115,15 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     private static String determineRootName(ImmutableNode rootNode,
             ImmutableNode node, String rootName)
     {
-<span class="nc bnc" id="L1118" title="All 2 branches missed.">        if (rootName != null)</span>
+<span class="fc bfc" id="L1118" title="All 2 branches covered.">        if (rootName != null)</span>
         {
-<span class="nc" id="L1120">            return rootName;</span>
+<span class="fc" id="L1120">            return rootName;</span>
         }
-<span class="nc bnc" id="L1122" title="All 2 branches missed.">        if (rootNode.getNodeName() == null)</span>
+<span class="fc bfc" id="L1122" title="All 2 branches covered.">        if (rootNode.getNodeName() == null)</span>
         {
-<span class="nc" id="L1124">            return node.getNodeName();</span>
+<span class="fc" id="L1124">            return node.getNodeName();</span>
         }
-<span class="nc" id="L1126">        return null;</span>
+<span class="fc" id="L1126">        return null;</span>
     }
 
     /**
@@ -1138,10 +1138,10 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     private Map&lt;ImmutableNode, ImmutableNode&gt; createParentMapping(
             ImmutableNode root)
     {
-<span class="nc" id="L1141">        Map&lt;ImmutableNode, ImmutableNode&gt; parents =</span>
+<span class="fc" id="L1141">        Map&lt;ImmutableNode, ImmutableNode&gt; parents =</span>
                 new HashMap&lt;&gt;();
-<span class="nc" id="L1143">        updateParentMapping(parents, root);</span>
-<span class="nc" id="L1144">        return parents;</span>
+<span class="fc" id="L1143">        updateParentMapping(parents, root);</span>
+<span class="fc" id="L1144">        return parents;</span>
     }
 
     /**
@@ -1162,14 +1162,14 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
 
         do
         {
-<span class="nc" id="L1165">            TreeData currentData = getTreeData();</span>
-<span class="nc" id="L1166">            done =</span>
-<span class="nc bnc" id="L1167" title="All 2 branches missed.">                    executeTransactionOnDetachedTrackedNode(txInit, selector,</span>
+<span class="fc" id="L1165">            TreeData currentData = getTreeData();</span>
+<span class="fc" id="L1166">            done =</span>
+<span class="fc bfc" id="L1167" title="All 2 branches covered.">                    executeTransactionOnDetachedTrackedNode(txInit, selector,</span>
                             currentData, resolver)
-<span class="nc bnc" id="L1169" title="All 2 branches missed.">                            || executeTransactionOnCurrentStructure(txInit,</span>
+<span class="fc bfc" id="L1169" title="All 2 branches covered.">                            || executeTransactionOnCurrentStructure(txInit,</span>
                                     selector, currentData, resolver);
-<span class="nc bnc" id="L1171" title="All 2 branches missed.">        } while (!done);</span>
-<span class="nc" id="L1172">    }</span>
+<span class="fc bfc" id="L1171" title="All 2 branches covered.">        } while (!done);</span>
+<span class="fc" id="L1172">    }</span>
 
     /**
      * Executes a transaction on the current data of this model. This method is
@@ -1187,18 +1187,18 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
             TreeData currentData, NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
         boolean done;
-<span class="nc" id="L1190">        ModelTransaction tx =</span>
+<span class="fc" id="L1190">        ModelTransaction tx =</span>
                 new ModelTransaction(currentData, selector, resolver);
-<span class="nc bnc" id="L1192" title="All 2 branches missed.">        if (!txInit.initTransaction(tx))</span>
+<span class="fc bfc" id="L1192" title="All 2 branches covered.">        if (!txInit.initTransaction(tx))</span>
         {
-<span class="nc" id="L1194">            done = true;</span>
+<span class="fc" id="L1194">            done = true;</span>
         }
         else
         {
-<span class="nc" id="L1198">            TreeData newData = tx.execute();</span>
-<span class="nc" id="L1199">            done = structure.compareAndSet(tx.getCurrentData(), newData);</span>
+<span class="fc" id="L1198">            TreeData newData = tx.execute();</span>
+<span class="fc" id="L1199">            done = structure.compareAndSet(tx.getCurrentData(), newData);</span>
         }
-<span class="nc" id="L1201">        return done;</span>
+<span class="fc" id="L1201">        return done;</span>
     }
 
     /**
@@ -1219,18 +1219,18 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
             TransactionInitializer txInit, NodeSelector selector,
             TreeData currentData, NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc bnc" id="L1222" title="All 2 branches missed.">        if (selector != null)</span>
+<span class="fc bfc" id="L1222" title="All 2 branches covered.">        if (selector != null)</span>
         {
-<span class="nc" id="L1224">            InMemoryNodeModel detachedNodeModel =</span>
-<span class="nc" id="L1225">                    currentData.getNodeTracker().getDetachedNodeModel(selector);</span>
-<span class="nc bnc" id="L1226" title="All 2 branches missed.">            if (detachedNodeModel != null)</span>
+<span class="fc" id="L1224">            InMemoryNodeModel detachedNodeModel =</span>
+<span class="fc" id="L1225">                    currentData.getNodeTracker().getDetachedNodeModel(selector);</span>
+<span class="fc bfc" id="L1226" title="All 2 branches covered.">            if (detachedNodeModel != null)</span>
             {
-<span class="nc" id="L1228">                detachedNodeModel.updateModel(txInit, null, resolver);</span>
-<span class="nc" id="L1229">                return true;</span>
+<span class="fc" id="L1228">                detachedNodeModel.updateModel(txInit, null, resolver);</span>
+<span class="fc" id="L1229">                return true;</span>
             }
         }
 
-<span class="nc" id="L1233">        return false;</span>
+<span class="fc" id="L1233">        return false;</span>
     }
 
     /**
@@ -1244,15 +1244,15 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     private boolean replaceDetachedTrackedNode(TreeData currentData,
             NodeSelector selector, ImmutableNode newNode)
     {
-<span class="nc" id="L1247">        InMemoryNodeModel detachedNodeModel =</span>
-<span class="nc" id="L1248">                currentData.getNodeTracker().getDetachedNodeModel(selector);</span>
-<span class="nc bnc" id="L1249" title="All 2 branches missed.">        if (detachedNodeModel != null)</span>
+<span class="fc" id="L1247">        InMemoryNodeModel detachedNodeModel =</span>
+<span class="fc" id="L1248">                currentData.getNodeTracker().getDetachedNodeModel(selector);</span>
+<span class="fc bfc" id="L1249" title="All 2 branches covered.">        if (detachedNodeModel != null)</span>
         {
-<span class="nc" id="L1251">            detachedNodeModel.setRootNode(newNode);</span>
-<span class="nc" id="L1252">            return true;</span>
+<span class="fc" id="L1251">            detachedNodeModel.setRootNode(newNode);</span>
+<span class="fc" id="L1252">            return true;</span>
         }
 
-<span class="nc" id="L1255">        return false;</span>
+<span class="fc" id="L1255">        return false;</span>
     }
 
     /**
@@ -1266,11 +1266,11 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
     private boolean replaceActiveTrackedNode(TreeData currentData,
             NodeSelector selector, ImmutableNode newNode)
     {
-<span class="nc" id="L1269">        NodeTracker newTracker =</span>
-<span class="nc" id="L1270">                currentData.getNodeTracker().replaceAndDetachTrackedNode(</span>
+<span class="fc" id="L1269">        NodeTracker newTracker =</span>
+<span class="fc" id="L1270">                currentData.getNodeTracker().replaceAndDetachTrackedNode(</span>
                         selector, newNode);
-<span class="nc" id="L1272">        return structure.compareAndSet(currentData,</span>
-<span class="nc" id="L1273">                currentData.updateNodeTracker(newTracker));</span>
+<span class="fc" id="L1272">        return structure.compareAndSet(currentData,</span>
+<span class="fc" id="L1273">                currentData.updateNodeTracker(newTracker));</span>
     }
 
     /**
@@ -1288,18 +1288,18 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
             List&lt;ImmutableNode&gt; nodes, TreeData current,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
     {
-<span class="nc" id="L1291">        List&lt;NodeSelector&gt; selectors =</span>
-<span class="nc" id="L1292">                new ArrayList&lt;&gt;(nodes.size());</span>
-<span class="nc" id="L1293">        Map&lt;ImmutableNode, String&gt; cache = new HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L1294" title="All 2 branches missed.">        for (ImmutableNode node : nodes)</span>
+<span class="fc" id="L1291">        List&lt;NodeSelector&gt; selectors =</span>
+<span class="fc" id="L1292">                new ArrayList&lt;&gt;(nodes.size());</span>
+<span class="fc" id="L1293">        Map&lt;ImmutableNode, String&gt; cache = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L1294" title="All 2 branches covered.">        for (ImmutableNode node : nodes)</span>
         {
-<span class="nc" id="L1296">            selectors.add(new NodeSelector(resolver.nodeKey(node, cache,</span>
+<span class="fc" id="L1296">            selectors.add(new NodeSelector(resolver.nodeKey(node, cache,</span>
                     current)));
-<span class="nc" id="L1298">        }</span>
-<span class="nc" id="L1299">        refSelectors.setValue(selectors);</span>
-<span class="nc" id="L1300">        NodeTracker newTracker =</span>
-<span class="nc" id="L1301">                current.getNodeTracker().trackNodes(selectors, nodes);</span>
-<span class="nc" id="L1302">        return current.updateNodeTracker(newTracker);</span>
+<span class="fc" id="L1298">        }</span>
+<span class="fc" id="L1299">        refSelectors.setValue(selectors);</span>
+<span class="fc" id="L1300">        NodeTracker newTracker =</span>
+<span class="fc" id="L1301">                current.getNodeTracker().trackNodes(selectors, nodes);</span>
+<span class="fc" id="L1302">        return current.updateNodeTracker(newTracker);</span>
     }
 
     /**
@@ -1317,15 +1317,15 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
             ImmutableNode node, NodeKeyResolver&lt;ImmutableNode&gt; resolver,
             MutableObject&lt;NodeSelector&gt; refSelector)
     {
-<span class="nc" id="L1320">        NodeSelector selector =</span>
-<span class="nc" id="L1321">                new NodeSelector(resolver.nodeKey(node,</span>
+<span class="fc" id="L1320">        NodeSelector selector =</span>
+<span class="fc" id="L1321">                new NodeSelector(resolver.nodeKey(node,</span>
                         new HashMap&lt;ImmutableNode, String&gt;(), current));
-<span class="nc" id="L1323">        refSelector.setValue(selector);</span>
-<span class="nc" id="L1324">        NodeTracker newTracker =</span>
-<span class="nc" id="L1325">                current.getNodeTracker().trackNodes(</span>
-<span class="nc" id="L1326">                        Collections.singleton(selector),</span>
-<span class="nc" id="L1327">                        Collections.singleton(node));</span>
-<span class="nc" id="L1328">        return current.updateNodeTracker(newTracker);</span>
+<span class="fc" id="L1323">        refSelector.setValue(selector);</span>
+<span class="fc" id="L1324">        NodeTracker newTracker =</span>
+<span class="fc" id="L1325">                current.getNodeTracker().trackNodes(</span>
+<span class="fc" id="L1326">                        Collections.singleton(selector),</span>
+<span class="fc" id="L1327">                        Collections.singleton(node));</span>
+<span class="fc" id="L1328">        return current.updateNodeTracker(newTracker);</span>
     }
 
     /**
@@ -1347,25 +1347,25 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
             MutableObject&lt;NodeSelector&gt; refSelector)
     {
         TreeData newData;
-<span class="nc" id="L1350">        List&lt;ImmutableNode&gt; namedChildren =</span>
-<span class="nc" id="L1351">                current.getChildren(parent, childName);</span>
-<span class="nc bnc" id="L1352" title="All 2 branches missed.">        if (!namedChildren.isEmpty())</span>
+<span class="fc" id="L1350">        List&lt;ImmutableNode&gt; namedChildren =</span>
+<span class="fc" id="L1351">                current.getChildren(parent, childName);</span>
+<span class="fc bfc" id="L1352" title="All 2 branches covered.">        if (!namedChildren.isEmpty())</span>
         {
-<span class="nc" id="L1354">            newData =</span>
-<span class="nc" id="L1355">                    updateDataWithNewTrackedNode(current, namedChildren.get(0),</span>
+<span class="fc" id="L1354">            newData =</span>
+<span class="fc" id="L1355">                    updateDataWithNewTrackedNode(current, namedChildren.get(0),</span>
                             resolver, refSelector);
         }
         else
         {
-<span class="nc" id="L1360">            ImmutableNode child =</span>
-<span class="nc" id="L1361">                    new ImmutableNode.Builder().name(childName).create();</span>
-<span class="nc" id="L1362">            ModelTransaction tx = new ModelTransaction(current, null, resolver);</span>
-<span class="nc" id="L1363">            tx.addAddNodeOperation(parent, child);</span>
-<span class="nc" id="L1364">            newData =</span>
-<span class="nc" id="L1365">                    updateDataWithNewTrackedNode(tx.execute(), child, resolver,</span>
+<span class="fc" id="L1360">            ImmutableNode child =</span>
+<span class="fc" id="L1361">                    new ImmutableNode.Builder().name(childName).create();</span>
+<span class="fc" id="L1362">            ModelTransaction tx = new ModelTransaction(current, null, resolver);</span>
+<span class="fc" id="L1363">            tx.addAddNodeOperation(parent, child);</span>
+<span class="fc" id="L1364">            newData =</span>
+<span class="fc" id="L1365">                    updateDataWithNewTrackedNode(tx.execute(), child, resolver,</span>
                             refSelector);
         }
-<span class="nc" id="L1368">        return newData;</span>
+<span class="fc" id="L1368">        return newData;</span>
     }
 
     /**
@@ -1376,7 +1376,7 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     private static boolean valuesNotEmpty(Iterable&lt;?&gt; values)
     {
-<span class="nc" id="L1379">        return values.iterator().hasNext();</span>
+<span class="fc" id="L1379">        return values.iterator().hasNext();</span>
     }
 
     /**
@@ -1389,7 +1389,7 @@ public class InMemoryNodeModel implements NodeModel&lt;ImmutableNode&gt;
      */
     private static RuntimeException attributeKeyException(String key)
     {
-<span class="nc" id="L1392">        return new IllegalArgumentException(</span>
+<span class="fc" id="L1392">        return new IllegalArgumentException(</span>
                 &quot;New nodes cannot be added to an attribute key: &quot; + key);
     }
 

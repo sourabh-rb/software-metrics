@@ -63,7 +63,7 @@ public class ReloadingFileBasedConfigurationBuilder&lt;T extends FileBasedConfig
         extends FileBasedConfigurationBuilder&lt;T&gt; implements ReloadingControllerSupport
 {
     /** The default factory for creating reloading detector objects. */
-<span class="nc" id="L66">    private static final ReloadingDetectorFactory DEFAULT_DETECTOR_FACTORY =</span>
+<span class="fc" id="L66">    private static final ReloadingDetectorFactory DEFAULT_DETECTOR_FACTORY =</span>
             new DefaultReloadingDetectorFactory();
 
     /** The reloading controller associated with this object. */
@@ -90,9 +90,9 @@ public class ReloadingFileBasedConfigurationBuilder&lt;T extends FileBasedConfig
     public ReloadingFileBasedConfigurationBuilder(Class&lt;? extends T&gt; resCls,
             Map&lt;String, Object&gt; params)
     {
-<span class="nc" id="L93">        super(resCls, params);</span>
-<span class="nc" id="L94">        reloadingController = createReloadingController();</span>
-<span class="nc" id="L95">    }</span>
+<span class="fc" id="L93">        super(resCls, params);</span>
+<span class="fc" id="L94">        reloadingController = createReloadingController();</span>
+<span class="fc" id="L95">    }</span>
 
     /**
      * Creates a new instance of {@code ReloadingFileBasedConfigurationBuilder}
@@ -107,9 +107,9 @@ public class ReloadingFileBasedConfigurationBuilder&lt;T extends FileBasedConfig
     public ReloadingFileBasedConfigurationBuilder(Class&lt;? extends T&gt; resCls,
             Map&lt;String, Object&gt; params, boolean allowFailOnInit)
     {
-<span class="nc" id="L110">        super(resCls, params, allowFailOnInit);</span>
-<span class="nc" id="L111">        reloadingController = createReloadingController();</span>
-<span class="nc" id="L112">    }</span>
+<span class="fc" id="L110">        super(resCls, params, allowFailOnInit);</span>
+<span class="fc" id="L111">        reloadingController = createReloadingController();</span>
+<span class="fc" id="L112">    }</span>
 
     /**
      * Creates a new instance of {@code ReloadingFileBasedConfigurationBuilder}
@@ -120,9 +120,9 @@ public class ReloadingFileBasedConfigurationBuilder&lt;T extends FileBasedConfig
      */
     public ReloadingFileBasedConfigurationBuilder(Class&lt;? extends T&gt; resCls)
     {
-<span class="nc" id="L123">        super(resCls);</span>
-<span class="nc" id="L124">        reloadingController = createReloadingController();</span>
-<span class="nc" id="L125">    }</span>
+<span class="fc" id="L123">        super(resCls);</span>
+<span class="fc" id="L124">        reloadingController = createReloadingController();</span>
+<span class="fc" id="L125">    }</span>
 
     /**
      * Returns the {@code ReloadingController} associated with this builder.
@@ -135,7 +135,7 @@ public class ReloadingFileBasedConfigurationBuilder&lt;T extends FileBasedConfig
     @Override
     public ReloadingController getReloadingController()
     {
-<span class="nc" id="L138">        return reloadingController;</span>
+<span class="fc" id="L138">        return reloadingController;</span>
     }
 
     /**
@@ -145,8 +145,8 @@ public class ReloadingFileBasedConfigurationBuilder&lt;T extends FileBasedConfig
     public ReloadingFileBasedConfigurationBuilder&lt;T&gt; configure(
             BuilderParameters... params)
     {
-<span class="nc" id="L148">        super.configure(params);</span>
-<span class="nc" id="L149">        return this;</span>
+<span class="fc" id="L148">        super.configure(params);</span>
+<span class="fc" id="L149">        return this;</span>
     }
 
     /**
@@ -167,7 +167,7 @@ public class ReloadingFileBasedConfigurationBuilder&lt;T extends FileBasedConfig
             FileBasedBuilderParametersImpl fbparams)
             throws ConfigurationException
     {
-<span class="nc" id="L170">        return fetchDetectorFactory(fbparams).createReloadingDetector(handler,</span>
+<span class="fc" id="L170">        return fetchDetectorFactory(fbparams).createReloadingDetector(handler,</span>
                 fbparams);
     }
 
@@ -182,13 +182,13 @@ public class ReloadingFileBasedConfigurationBuilder&lt;T extends FileBasedConfig
     protected void initFileHandler(FileHandler handler)
             throws ConfigurationException
     {
-<span class="nc" id="L185">        super.initFileHandler(handler);</span>
+<span class="fc" id="L185">        super.initFileHandler(handler);</span>
 
-<span class="nc" id="L187">        resultReloadingDetector =</span>
-<span class="nc" id="L188">                createReloadingDetector(handler,</span>
-<span class="nc" id="L189">                        FileBasedBuilderParametersImpl.fromParameters(</span>
-<span class="nc" id="L190">                                getParameters(), true));</span>
-<span class="nc" id="L191">    }</span>
+<span class="fc" id="L187">        resultReloadingDetector =</span>
+<span class="fc" id="L188">                createReloadingDetector(handler,</span>
+<span class="fc" id="L189">                        FileBasedBuilderParametersImpl.fromParameters(</span>
+<span class="fc" id="L190">                                getParameters(), true));</span>
+<span class="fc" id="L191">    }</span>
 
     /**
      * Creates the {@code ReloadingController} associated with this object. The
@@ -203,10 +203,10 @@ public class ReloadingFileBasedConfigurationBuilder&lt;T extends FileBasedConfig
      */
     private ReloadingController createReloadingController()
     {
-<span class="nc" id="L206">        ReloadingDetector ctrlDetector = createReloadingDetectorForController();</span>
-<span class="nc" id="L207">        ReloadingController ctrl = new ReloadingController(ctrlDetector);</span>
-<span class="nc" id="L208">        connectToReloadingController(ctrl);</span>
-<span class="nc" id="L209">        return ctrl;</span>
+<span class="fc" id="L206">        ReloadingDetector ctrlDetector = createReloadingDetectorForController();</span>
+<span class="fc" id="L207">        ReloadingController ctrl = new ReloadingController(ctrlDetector);</span>
+<span class="fc" id="L208">        connectToReloadingController(ctrl);</span>
+<span class="fc" id="L209">        return ctrl;</span>
     }
 
     /**
@@ -218,23 +218,23 @@ public class ReloadingFileBasedConfigurationBuilder&lt;T extends FileBasedConfig
      */
     private ReloadingDetector createReloadingDetectorForController()
     {
-<span class="nc" id="L221">        return new ReloadingDetector()</span>
-<span class="nc" id="L222">        {</span>
+<span class="fc" id="L221">        return new ReloadingDetector()</span>
+<span class="fc" id="L222">        {</span>
             @Override
             public void reloadingPerformed()
             {
-<span class="nc" id="L226">                ReloadingDetector detector = resultReloadingDetector;</span>
-<span class="nc bnc" id="L227" title="All 2 branches missed.">                if (detector != null)</span>
+<span class="fc" id="L226">                ReloadingDetector detector = resultReloadingDetector;</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">                if (detector != null)</span>
                 {
-<span class="nc" id="L229">                    detector.reloadingPerformed();</span>
+<span class="fc" id="L229">                    detector.reloadingPerformed();</span>
                 }
-<span class="nc" id="L231">            }</span>
+<span class="fc" id="L231">            }</span>
 
             @Override
             public boolean isReloadingRequired()
             {
-<span class="nc" id="L236">                ReloadingDetector detector = resultReloadingDetector;</span>
-<span class="nc bnc" id="L237" title="All 4 branches missed.">                return (detector != null) &amp;&amp; detector.isReloadingRequired();</span>
+<span class="fc" id="L236">                ReloadingDetector detector = resultReloadingDetector;</span>
+<span class="fc bfc" id="L237" title="All 4 branches covered.">                return (detector != null) &amp;&amp; detector.isReloadingRequired();</span>
             }
         };
     }
@@ -249,8 +249,8 @@ public class ReloadingFileBasedConfigurationBuilder&lt;T extends FileBasedConfig
     private static ReloadingDetectorFactory fetchDetectorFactory(
             FileBasedBuilderParametersImpl params)
     {
-<span class="nc" id="L252">        ReloadingDetectorFactory factory = params.getReloadingDetectorFactory();</span>
-<span class="nc bnc" id="L253" title="All 2 branches missed.">        return (factory != null) ? factory : DEFAULT_DETECTOR_FACTORY;</span>
+<span class="fc" id="L252">        ReloadingDetectorFactory factory = params.getReloadingDetectorFactory();</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">        return (factory != null) ? factory : DEFAULT_DETECTOR_FACTORY;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -64,10 +64,10 @@ public class HomeDirectoryLocationStrategy implements FileLocationStrategy
      * @param withBasePath a flag whether the base path should be evaluated
      */
     public HomeDirectoryLocationStrategy(String homeDir, boolean withBasePath)
-<span class="nc" id="L67">    {</span>
-<span class="nc" id="L68">        homeDirectory = fetchHomeDirectory(homeDir);</span>
-<span class="nc" id="L69">        evaluateBasePath = withBasePath;</span>
-<span class="nc" id="L70">    }</span>
+<span class="fc" id="L67">    {</span>
+<span class="fc" id="L68">        homeDirectory = fetchHomeDirectory(homeDir);</span>
+<span class="fc" id="L69">        evaluateBasePath = withBasePath;</span>
+<span class="fc" id="L70">    }</span>
 
     /**
      * Creates a new instance of {@code HomeDirectoryLocationStrategy} and
@@ -78,8 +78,8 @@ public class HomeDirectoryLocationStrategy implements FileLocationStrategy
      */
     public HomeDirectoryLocationStrategy(boolean withBasePath)
     {
-<span class="nc" id="L81">        this(null, withBasePath);</span>
-<span class="nc" id="L82">    }</span>
+<span class="fc" id="L81">        this(null, withBasePath);</span>
+<span class="fc" id="L82">    }</span>
 
     /**
      * Creates a new instance of {@code HomeDirectoryLocationStrategy} with
@@ -89,8 +89,8 @@ public class HomeDirectoryLocationStrategy implements FileLocationStrategy
      */
     public HomeDirectoryLocationStrategy()
     {
-<span class="nc" id="L92">        this(false);</span>
-<span class="nc" id="L93">    }</span>
+<span class="fc" id="L92">        this(false);</span>
+<span class="fc" id="L93">    }</span>
 
     /**
      * Returns the home directory. In this directory the strategy searches for
@@ -100,7 +100,7 @@ public class HomeDirectoryLocationStrategy implements FileLocationStrategy
      */
     public String getHomeDirectory()
     {
-<span class="nc" id="L103">        return homeDirectory;</span>
+<span class="fc" id="L103">        return homeDirectory;</span>
     }
 
     /**
@@ -111,7 +111,7 @@ public class HomeDirectoryLocationStrategy implements FileLocationStrategy
      */
     public boolean isEvaluateBasePath()
     {
-<span class="nc" id="L114">        return evaluateBasePath;</span>
+<span class="fc" id="L114">        return evaluateBasePath;</span>
     }
 
     /**
@@ -123,19 +123,19 @@ public class HomeDirectoryLocationStrategy implements FileLocationStrategy
     @Override
     public URL locate(FileSystem fileSystem, FileLocator locator)
     {
-<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (StringUtils.isNotEmpty(locator.getFileName()))</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (StringUtils.isNotEmpty(locator.getFileName()))</span>
         {
-<span class="nc" id="L128">            String basePath = fetchBasePath(locator);</span>
-<span class="nc" id="L129">            File file =</span>
-<span class="nc" id="L130">                    FileLocatorUtils.constructFile(basePath,</span>
-<span class="nc" id="L131">                            locator.getFileName());</span>
-<span class="nc bnc" id="L132" title="All 2 branches missed.">            if (file.isFile())</span>
+<span class="fc" id="L128">            String basePath = fetchBasePath(locator);</span>
+<span class="fc" id="L129">            File file =</span>
+<span class="fc" id="L130">                    FileLocatorUtils.constructFile(basePath,</span>
+<span class="fc" id="L131">                            locator.getFileName());</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">            if (file.isFile())</span>
             {
-<span class="nc" id="L134">                return FileLocatorUtils.convertFileToURL(file);</span>
+<span class="fc" id="L134">                return FileLocatorUtils.convertFileToURL(file);</span>
             }
         }
 
-<span class="nc" id="L138">        return null;</span>
+<span class="fc" id="L138">        return null;</span>
     }
 
     /**
@@ -146,15 +146,15 @@ public class HomeDirectoryLocationStrategy implements FileLocationStrategy
      */
     private String fetchBasePath(FileLocator locator)
     {
-<span class="nc bnc" id="L149" title="All 2 branches missed.">        if (isEvaluateBasePath()</span>
-<span class="nc bnc" id="L150" title="All 2 branches missed.">                &amp;&amp; StringUtils.isNotEmpty(locator.getBasePath()))</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        if (isEvaluateBasePath()</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">                &amp;&amp; StringUtils.isNotEmpty(locator.getBasePath()))</span>
         {
-<span class="nc" id="L152">            return FileLocatorUtils.appendPath(getHomeDirectory(),</span>
-<span class="nc" id="L153">                    locator.getBasePath());</span>
+<span class="fc" id="L152">            return FileLocatorUtils.appendPath(getHomeDirectory(),</span>
+<span class="fc" id="L153">                    locator.getBasePath());</span>
         }
         else
         {
-<span class="nc" id="L157">            return getHomeDirectory();</span>
+<span class="fc" id="L157">            return getHomeDirectory();</span>
         }
     }
 
@@ -168,7 +168,7 @@ public class HomeDirectoryLocationStrategy implements FileLocationStrategy
      */
     private static String fetchHomeDirectory(String homeDir)
     {
-<span class="nc bnc" id="L171" title="All 2 branches missed.">        return (homeDir != null) ? homeDir : System.getProperty(PROP_HOME);</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        return (homeDir != null) ? homeDir : System.getProperty(PROP_HOME);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -161,10 +161,10 @@ public class DatabaseConfiguration extends AbstractConfiguration
      * Creates a new instance of {@code DatabaseConfiguration}.
      */
     public DatabaseConfiguration()
-<span class="nc" id="L164">    {</span>
-<span class="nc" id="L165">        initLogger(new ConfigurationLogger(DatabaseConfiguration.class));</span>
-<span class="nc" id="L166">        addErrorLogListener();</span>
-<span class="nc" id="L167">    }</span>
+<span class="fc" id="L164">    {</span>
+<span class="fc" id="L165">        initLogger(new ConfigurationLogger(DatabaseConfiguration.class));</span>
+<span class="fc" id="L166">        addErrorLogListener();</span>
+<span class="fc" id="L167">    }</span>
 
     /**
      * Returns the {@code DataSource} for obtaining database connections.
@@ -183,8 +183,8 @@ public class DatabaseConfiguration extends AbstractConfiguration
      */
     public void setDataSource(DataSource dataSource)
     {
-<span class="nc" id="L186">        this.dataSource = dataSource;</span>
-<span class="nc" id="L187">    }</span>
+<span class="fc" id="L186">        this.dataSource = dataSource;</span>
+<span class="fc" id="L187">    }</span>
 
     /**
      * Returns the name of the table containing configuration data.
@@ -203,8 +203,8 @@ public class DatabaseConfiguration extends AbstractConfiguration
      */
     public void setTable(String table)
     {
-<span class="nc" id="L206">        this.table = table;</span>
-<span class="nc" id="L207">    }</span>
+<span class="fc" id="L206">        this.table = table;</span>
+<span class="fc" id="L207">    }</span>
 
     /**
      * Returns the name of the table column with the configuration name.
@@ -224,8 +224,8 @@ public class DatabaseConfiguration extends AbstractConfiguration
      */
     public void setConfigurationNameColumn(String configurationNameColumn)
     {
-<span class="nc" id="L227">        this.configurationNameColumn = configurationNameColumn;</span>
-<span class="nc" id="L228">    }</span>
+<span class="fc" id="L227">        this.configurationNameColumn = configurationNameColumn;</span>
+<span class="fc" id="L228">    }</span>
 
     /**
      * Returns the name of the column containing the configuration keys.
@@ -244,8 +244,8 @@ public class DatabaseConfiguration extends AbstractConfiguration
      */
     public void setKeyColumn(String keyColumn)
     {
-<span class="nc" id="L247">        this.keyColumn = keyColumn;</span>
-<span class="nc" id="L248">    }</span>
+<span class="fc" id="L247">        this.keyColumn = keyColumn;</span>
+<span class="fc" id="L248">    }</span>
 
     /**
      * Returns the name of the column containing the configuration values.
@@ -264,8 +264,8 @@ public class DatabaseConfiguration extends AbstractConfiguration
      */
     public void setValueColumn(String valueColumn)
     {
-<span class="nc" id="L267">        this.valueColumn = valueColumn;</span>
-<span class="nc" id="L268">    }</span>
+<span class="fc" id="L267">        this.valueColumn = valueColumn;</span>
+<span class="fc" id="L268">    }</span>
 
     /**
      * Returns the name of this configuration instance.
@@ -284,8 +284,8 @@ public class DatabaseConfiguration extends AbstractConfiguration
      */
     public void setConfigurationName(String configurationName)
     {
-<span class="nc" id="L287">        this.configurationName = configurationName;</span>
-<span class="nc" id="L288">    }</span>
+<span class="fc" id="L287">        this.configurationName = configurationName;</span>
+<span class="fc" id="L288">    }</span>
 
     /**
      * Returns a flag whether this configuration performs commits after database
@@ -295,7 +295,7 @@ public class DatabaseConfiguration extends AbstractConfiguration
      */
     public boolean isAutoCommit()
     {
-<span class="nc" id="L298">        return autoCommit;</span>
+<span class="fc" id="L298">        return autoCommit;</span>
     }
 
     /**
@@ -306,8 +306,8 @@ public class DatabaseConfiguration extends AbstractConfiguration
      */
     public void setAutoCommit(boolean autoCommit)
     {
-<span class="nc" id="L309">        this.autoCommit = autoCommit;</span>
-<span class="nc" id="L310">    }</span>
+<span class="fc" id="L309">        this.autoCommit = autoCommit;</span>
+<span class="fc" id="L310">    }</span>
 
     /**
      * Returns the value of the specified property. If this causes a database
@@ -322,41 +322,41 @@ public class DatabaseConfiguration extends AbstractConfiguration
     @Override
     protected Object getPropertyInternal(final String key)
     {
-<span class="nc" id="L325">        JdbcOperation&lt;Object&gt; op =</span>
+<span class="fc" id="L325">        JdbcOperation&lt;Object&gt; op =</span>
                 new JdbcOperation&lt;Object&gt;(ConfigurationErrorEvent.READ,
                         ConfigurationErrorEvent.READ, key, null)
-<span class="nc" id="L328">        {</span>
+<span class="fc" id="L328">        {</span>
             @Override
             protected Object performOperation() throws SQLException
             {
-<span class="nc" id="L332">                ResultSet rs =</span>
-<span class="nc" id="L333">                        openResultSet(String.format(SQL_GET_PROPERTY,</span>
-<span class="nc" id="L334">                                table, keyColumn), true, key);</span>
+<span class="fc" id="L332">                ResultSet rs =</span>
+<span class="fc" id="L333">                        openResultSet(String.format(SQL_GET_PROPERTY,</span>
+<span class="fc" id="L334">                                table, keyColumn), true, key);</span>
 
-<span class="nc" id="L336">                List&lt;Object&gt; results = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L337" title="All 2 branches missed.">                while (rs.next())</span>
+<span class="fc" id="L336">                List&lt;Object&gt; results = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L337" title="All 2 branches covered.">                while (rs.next())</span>
                 {
-<span class="nc" id="L339">                    Object value = extractPropertyValue(rs);</span>
+<span class="fc" id="L339">                    Object value = extractPropertyValue(rs);</span>
                     // Split value if it contains the list delimiter
-<span class="nc bnc" id="L341" title="All 2 branches missed.">                    for (Object o : getListDelimiterHandler().parse(value))</span>
+<span class="fc bfc" id="L341" title="All 2 branches covered.">                    for (Object o : getListDelimiterHandler().parse(value))</span>
                     {
-<span class="nc" id="L343">                        results.add(o);</span>
-<span class="nc" id="L344">                    }</span>
-<span class="nc" id="L345">                }</span>
+<span class="fc" id="L343">                        results.add(o);</span>
+<span class="fc" id="L344">                    }</span>
+<span class="fc" id="L345">                }</span>
 
-<span class="nc bnc" id="L347" title="All 2 branches missed.">                if (!results.isEmpty())</span>
+<span class="fc bfc" id="L347" title="All 2 branches covered.">                if (!results.isEmpty())</span>
                 {
-<span class="nc bnc" id="L349" title="All 2 branches missed.">                    return (results.size() &gt; 1) ? results : results</span>
-<span class="nc" id="L350">                            .get(0);</span>
+<span class="fc bfc" id="L349" title="All 2 branches covered.">                    return (results.size() &gt; 1) ? results : results</span>
+<span class="fc" id="L350">                            .get(0);</span>
                 }
                 else
                 {
-<span class="nc" id="L354">                    return null;</span>
+<span class="fc" id="L354">                    return null;</span>
                 }
             }
         };
 
-<span class="nc" id="L359">        return op.execute();</span>
+<span class="fc" id="L359">        return op.execute();</span>
     }
 
     /**
@@ -372,40 +372,40 @@ public class DatabaseConfiguration extends AbstractConfiguration
     @Override
     protected void addPropertyDirect(final String key, final Object obj)
     {
-<span class="nc" id="L375">        new JdbcOperation&lt;Void&gt;(ConfigurationErrorEvent.WRITE,</span>
+<span class="fc" id="L375">        new JdbcOperation&lt;Void&gt;(ConfigurationErrorEvent.WRITE,</span>
                 ConfigurationEvent.ADD_PROPERTY, key, obj)
-<span class="nc" id="L377">        {</span>
+<span class="fc" id="L377">        {</span>
             @Override
             protected Void performOperation() throws SQLException
             {
-<span class="nc" id="L381">                StringBuilder query = new StringBuilder(&quot;INSERT INTO &quot;);</span>
-<span class="nc" id="L382">                query.append(table).append(&quot; (&quot;);</span>
-<span class="nc" id="L383">                query.append(keyColumn).append(&quot;, &quot;);</span>
-<span class="nc" id="L384">                query.append(valueColumn);</span>
-<span class="nc bnc" id="L385" title="All 2 branches missed.">                if (configurationNameColumn != null)</span>
+<span class="fc" id="L381">                StringBuilder query = new StringBuilder(&quot;INSERT INTO &quot;);</span>
+<span class="fc" id="L382">                query.append(table).append(&quot; (&quot;);</span>
+<span class="fc" id="L383">                query.append(keyColumn).append(&quot;, &quot;);</span>
+<span class="fc" id="L384">                query.append(valueColumn);</span>
+<span class="fc bfc" id="L385" title="All 2 branches covered.">                if (configurationNameColumn != null)</span>
                 {
-<span class="nc" id="L387">                    query.append(&quot;, &quot;).append(configurationNameColumn);</span>
+<span class="fc" id="L387">                    query.append(&quot;, &quot;).append(configurationNameColumn);</span>
                 }
-<span class="nc" id="L389">                query.append(&quot;) VALUES (?, ?&quot;);</span>
-<span class="nc bnc" id="L390" title="All 2 branches missed.">                if (configurationNameColumn != null)</span>
+<span class="fc" id="L389">                query.append(&quot;) VALUES (?, ?&quot;);</span>
+<span class="fc bfc" id="L390" title="All 2 branches covered.">                if (configurationNameColumn != null)</span>
                 {
-<span class="nc" id="L392">                    query.append(&quot;, ?&quot;);</span>
+<span class="fc" id="L392">                    query.append(&quot;, ?&quot;);</span>
                 }
-<span class="nc" id="L394">                query.append(&quot;)&quot;);</span>
+<span class="fc" id="L394">                query.append(&quot;)&quot;);</span>
 
-<span class="nc" id="L396">                PreparedStatement pstmt = initStatement(query.toString(),</span>
-<span class="nc" id="L397">                        false, key, String.valueOf(obj));</span>
-<span class="nc bnc" id="L398" title="All 2 branches missed.">                if (configurationNameColumn != null)</span>
+<span class="fc" id="L396">                PreparedStatement pstmt = initStatement(query.toString(),</span>
+<span class="fc" id="L397">                        false, key, String.valueOf(obj));</span>
+<span class="fc bfc" id="L398" title="All 2 branches covered.">                if (configurationNameColumn != null)</span>
                 {
-<span class="nc" id="L400">                    pstmt.setString(3, configurationName);</span>
+<span class="fc" id="L400">                    pstmt.setString(3, configurationName);</span>
                 }
 
-<span class="nc" id="L403">                pstmt.executeUpdate();</span>
-<span class="nc" id="L404">                return null;</span>
+<span class="fc" id="L403">                pstmt.executeUpdate();</span>
+<span class="fc" id="L404">                return null;</span>
             }
         }
-<span class="nc" id="L407">        .execute();</span>
-<span class="nc" id="L408">    }</span>
+<span class="fc" id="L407">        .execute();</span>
+<span class="fc" id="L408">    }</span>
 
     /**
      * Adds a property to this configuration. This implementation
@@ -422,18 +422,18 @@ public class DatabaseConfiguration extends AbstractConfiguration
     @Override
     protected void addPropertyInternal(String key, Object value)
     {
-<span class="nc" id="L425">        ListDelimiterHandler oldHandler = getListDelimiterHandler();</span>
+<span class="fc" id="L425">        ListDelimiterHandler oldHandler = getListDelimiterHandler();</span>
         try
         {
             // temporarily disable delimiter parsing
-<span class="nc" id="L429">            setListDelimiterHandler(DisabledListDelimiterHandler.INSTANCE);</span>
-<span class="nc" id="L430">            super.addPropertyInternal(key, value);</span>
+<span class="fc" id="L429">            setListDelimiterHandler(DisabledListDelimiterHandler.INSTANCE);</span>
+<span class="fc" id="L430">            super.addPropertyInternal(key, value);</span>
         }
         finally
         {
-<span class="nc" id="L434">            setListDelimiterHandler(oldHandler);</span>
+<span class="fc" id="L434">            setListDelimiterHandler(oldHandler);</span>
         }
-<span class="nc" id="L436">    }</span>
+<span class="fc" id="L436">    }</span>
 
     /**
      * Checks if this configuration is empty. If this causes a database error,
@@ -446,22 +446,22 @@ public class DatabaseConfiguration extends AbstractConfiguration
     @Override
     protected boolean isEmptyInternal()
     {
-<span class="nc" id="L449">        JdbcOperation&lt;Integer&gt; op =</span>
+<span class="fc" id="L449">        JdbcOperation&lt;Integer&gt; op =</span>
                 new JdbcOperation&lt;Integer&gt;(ConfigurationErrorEvent.READ,
                         ConfigurationErrorEvent.READ, null, null)
-<span class="nc" id="L452">        {</span>
+<span class="fc" id="L452">        {</span>
             @Override
             protected Integer performOperation() throws SQLException
             {
-<span class="nc" id="L456">                ResultSet rs = openResultSet(String.format(</span>
-<span class="nc" id="L457">                        SQL_IS_EMPTY, table), true);</span>
+<span class="fc" id="L456">                ResultSet rs = openResultSet(String.format(</span>
+<span class="fc" id="L457">                        SQL_IS_EMPTY, table), true);</span>
 
-<span class="nc bnc" id="L459" title="All 2 branches missed.">                return rs.next() ? Integer.valueOf(rs.getInt(1)) : null;</span>
+<span class="pc bpc" id="L459" title="1 of 2 branches missed.">                return rs.next() ? Integer.valueOf(rs.getInt(1)) : null;</span>
             }
         };
 
-<span class="nc" id="L463">        Integer count = op.execute();</span>
-<span class="nc bnc" id="L464" title="All 4 branches missed.">        return count == null || count.intValue() == 0;</span>
+<span class="fc" id="L463">        Integer count = op.execute();</span>
+<span class="fc bfc" id="L464" title="All 4 branches covered.">        return count == null || count.intValue() == 0;</span>
     }
 
     /**
@@ -477,22 +477,22 @@ public class DatabaseConfiguration extends AbstractConfiguration
     @Override
     protected boolean containsKeyInternal(final String key)
     {
-<span class="nc" id="L480">        JdbcOperation&lt;Boolean&gt; op =</span>
+<span class="fc" id="L480">        JdbcOperation&lt;Boolean&gt; op =</span>
                 new JdbcOperation&lt;Boolean&gt;(ConfigurationErrorEvent.READ,
                         ConfigurationErrorEvent.READ, key, null)
-<span class="nc" id="L483">        {</span>
+<span class="fc" id="L483">        {</span>
             @Override
             protected Boolean performOperation() throws SQLException
             {
-<span class="nc" id="L487">                ResultSet rs = openResultSet(</span>
-<span class="nc" id="L488">                        String.format(SQL_GET_PROPERTY, table, keyColumn), true, key);</span>
+<span class="fc" id="L487">                ResultSet rs = openResultSet(</span>
+<span class="fc" id="L488">                        String.format(SQL_GET_PROPERTY, table, keyColumn), true, key);</span>
 
-<span class="nc" id="L490">                return rs.next();</span>
+<span class="fc" id="L490">                return rs.next();</span>
             }
         };
 
-<span class="nc" id="L494">        Boolean result = op.execute();</span>
-<span class="nc bnc" id="L495" title="All 4 branches missed.">        return result != null &amp;&amp; result.booleanValue();</span>
+<span class="fc" id="L494">        Boolean result = op.execute();</span>
+<span class="fc bfc" id="L495" title="All 4 branches covered.">        return result != null &amp;&amp; result.booleanValue();</span>
     }
 
     /**
@@ -507,20 +507,20 @@ public class DatabaseConfiguration extends AbstractConfiguration
     @Override
     protected void clearPropertyDirect(final String key)
     {
-<span class="nc" id="L510">        new JdbcOperation&lt;Void&gt;(ConfigurationErrorEvent.WRITE,</span>
+<span class="fc" id="L510">        new JdbcOperation&lt;Void&gt;(ConfigurationErrorEvent.WRITE,</span>
                 ConfigurationEvent.CLEAR_PROPERTY, key, null)
-<span class="nc" id="L512">        {</span>
+<span class="fc" id="L512">        {</span>
             @Override
             protected Void performOperation() throws SQLException
             {
-<span class="nc" id="L516">                PreparedStatement ps = initStatement(String.format(</span>
-<span class="nc" id="L517">                        SQL_CLEAR_PROPERTY, table, keyColumn), true, key);</span>
-<span class="nc" id="L518">                ps.executeUpdate();</span>
-<span class="nc" id="L519">                return null;</span>
+<span class="fc" id="L516">                PreparedStatement ps = initStatement(String.format(</span>
+<span class="fc" id="L517">                        SQL_CLEAR_PROPERTY, table, keyColumn), true, key);</span>
+<span class="fc" id="L518">                ps.executeUpdate();</span>
+<span class="fc" id="L519">                return null;</span>
             }
         }
-<span class="nc" id="L522">        .execute();</span>
-<span class="nc" id="L523">    }</span>
+<span class="fc" id="L522">        .execute();</span>
+<span class="fc" id="L523">    }</span>
 
     /**
      * Removes all entries from this configuration. If this causes a database
@@ -532,19 +532,19 @@ public class DatabaseConfiguration extends AbstractConfiguration
     @Override
     protected void clearInternal()
     {
-<span class="nc" id="L535">        new JdbcOperation&lt;Void&gt;(ConfigurationErrorEvent.WRITE,</span>
+<span class="fc" id="L535">        new JdbcOperation&lt;Void&gt;(ConfigurationErrorEvent.WRITE,</span>
                 ConfigurationEvent.CLEAR, null, null)
-<span class="nc" id="L537">        {</span>
+<span class="fc" id="L537">        {</span>
             @Override
             protected Void performOperation() throws SQLException
             {
-<span class="nc" id="L541">                initStatement(String.format(SQL_CLEAR,</span>
-<span class="nc" id="L542">                        table), true).executeUpdate();</span>
-<span class="nc" id="L543">                return null;</span>
+<span class="fc" id="L541">                initStatement(String.format(SQL_CLEAR,</span>
+<span class="fc" id="L542">                        table), true).executeUpdate();</span>
+<span class="fc" id="L543">                return null;</span>
             }
         }
-<span class="nc" id="L546">        .execute();</span>
-<span class="nc" id="L547">    }</span>
+<span class="fc" id="L546">        .execute();</span>
+<span class="fc" id="L547">    }</span>
 
     /**
      * Returns an iterator with the names of all properties contained in this
@@ -559,26 +559,26 @@ public class DatabaseConfiguration extends AbstractConfiguration
     @Override
     protected Iterator&lt;String&gt; getKeysInternal()
     {
-<span class="nc" id="L562">        final Collection&lt;String&gt; keys = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L563">        new JdbcOperation&lt;Collection&lt;String&gt;&gt;(ConfigurationErrorEvent.READ,</span>
+<span class="fc" id="L562">        final Collection&lt;String&gt; keys = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L563">        new JdbcOperation&lt;Collection&lt;String&gt;&gt;(ConfigurationErrorEvent.READ,</span>
                 ConfigurationErrorEvent.READ, null, null)
-<span class="nc" id="L565">        {</span>
+<span class="fc" id="L565">        {</span>
             @Override
             protected Collection&lt;String&gt; performOperation() throws SQLException
             {
-<span class="nc" id="L569">                ResultSet rs = openResultSet(String.format(</span>
-<span class="nc" id="L570">                        SQL_GET_KEYS, keyColumn, table), true);</span>
+<span class="fc" id="L569">                ResultSet rs = openResultSet(String.format(</span>
+<span class="fc" id="L570">                        SQL_GET_KEYS, keyColumn, table), true);</span>
 
-<span class="nc bnc" id="L572" title="All 2 branches missed.">                while (rs.next())</span>
+<span class="fc bfc" id="L572" title="All 2 branches covered.">                while (rs.next())</span>
                 {
-<span class="nc" id="L574">                    keys.add(rs.getString(1));</span>
+<span class="fc" id="L574">                    keys.add(rs.getString(1));</span>
                 }
-<span class="nc" id="L576">                return keys;</span>
+<span class="fc" id="L576">                return keys;</span>
             }
         }
-<span class="nc" id="L579">        .execute();</span>
+<span class="fc" id="L579">        .execute();</span>
 
-<span class="nc" id="L581">        return keys.iterator();</span>
+<span class="fc" id="L581">        return keys.iterator();</span>
     }
 
     /**
@@ -589,7 +589,7 @@ public class DatabaseConfiguration extends AbstractConfiguration
      */
     public DataSource getDatasource()
     {
-<span class="nc" id="L592">        return dataSource;</span>
+<span class="fc" id="L592">        return dataSource;</span>
     }
 
     /**
@@ -604,40 +604,40 @@ public class DatabaseConfiguration extends AbstractConfiguration
     {
         try
         {
-<span class="nc bnc" id="L607" title="All 2 branches missed.">            if (rs != null)</span>
+<span class="fc bfc" id="L607" title="All 2 branches covered.">            if (rs != null)</span>
             {
-<span class="nc" id="L609">                rs.close();</span>
+<span class="fc" id="L609">                rs.close();</span>
             }
         }
 <span class="nc" id="L612">        catch (SQLException e)</span>
         {
 <span class="nc" id="L614">            getLogger().error(&quot;An error occurred on closing the result set&quot;, e);</span>
-<span class="nc" id="L615">        }</span>
+<span class="fc" id="L615">        }</span>
 
         try
         {
-<span class="nc bnc" id="L619" title="All 2 branches missed.">            if (stmt != null)</span>
+<span class="fc bfc" id="L619" title="All 2 branches covered.">            if (stmt != null)</span>
             {
-<span class="nc" id="L621">                stmt.close();</span>
+<span class="fc" id="L621">                stmt.close();</span>
             }
         }
 <span class="nc" id="L624">        catch (SQLException e)</span>
         {
 <span class="nc" id="L626">            getLogger().error(&quot;An error occured on closing the statement&quot;, e);</span>
-<span class="nc" id="L627">        }</span>
+<span class="fc" id="L627">        }</span>
 
         try
         {
-<span class="nc bnc" id="L631" title="All 2 branches missed.">            if (conn != null)</span>
+<span class="fc bfc" id="L631" title="All 2 branches covered.">            if (conn != null)</span>
             {
-<span class="nc" id="L633">                conn.close();</span>
+<span class="fc" id="L633">                conn.close();</span>
             }
         }
 <span class="nc" id="L636">        catch (SQLException e)</span>
         {
 <span class="nc" id="L638">            getLogger().error(&quot;An error occured on closing the connection&quot;, e);</span>
-<span class="nc" id="L639">        }</span>
-<span class="nc" id="L640">    }</span>
+<span class="fc" id="L639">        }</span>
+<span class="fc" id="L640">    }</span>
 
     /**
      * Extracts the value of a property from the given result set. The passed in
@@ -653,12 +653,12 @@ public class DatabaseConfiguration extends AbstractConfiguration
      */
     protected Object extractPropertyValue(ResultSet rs) throws SQLException
     {
-<span class="nc" id="L656">        Object value = rs.getObject(valueColumn);</span>
-<span class="nc bnc" id="L657" title="All 2 branches missed.">        if (value instanceof Clob)</span>
+<span class="fc" id="L656">        Object value = rs.getObject(valueColumn);</span>
+<span class="fc bfc" id="L657" title="All 2 branches covered.">        if (value instanceof Clob)</span>
         {
-<span class="nc" id="L659">            value = convertClob((Clob) value);</span>
+<span class="fc" id="L659">            value = convertClob((Clob) value);</span>
         }
-<span class="nc" id="L661">        return value;</span>
+<span class="fc" id="L661">        return value;</span>
     }
 
     /**
@@ -670,8 +670,8 @@ public class DatabaseConfiguration extends AbstractConfiguration
      */
     private static Object convertClob(Clob clob) throws SQLException
     {
-<span class="nc" id="L673">        int len = (int) clob.length();</span>
-<span class="nc bnc" id="L674" title="All 2 branches missed.">        return (len &gt; 0) ? clob.getSubString(1, len) : StringUtils.EMPTY;</span>
+<span class="fc" id="L673">        int len = (int) clob.length();</span>
+<span class="fc bfc" id="L674" title="All 2 branches covered.">        return (len &gt; 0) ? clob.getSubString(1, len) : StringUtils.EMPTY;</span>
     }
 
     /**
@@ -716,12 +716,12 @@ public class DatabaseConfiguration extends AbstractConfiguration
         protected JdbcOperation(
                 EventType&lt;? extends ConfigurationErrorEvent&gt; errEvType,
                 EventType&lt;?&gt; opType, String errPropName, Object errPropVal)
-<span class="nc" id="L719">        {</span>
-<span class="nc" id="L720">            errorEventType = errEvType;</span>
-<span class="nc" id="L721">            operationEventType = opType;</span>
-<span class="nc" id="L722">            errorPropertyName = errPropName;</span>
-<span class="nc" id="L723">            errorPropertyValue = errPropVal;</span>
-<span class="nc" id="L724">        }</span>
+<span class="fc" id="L719">        {</span>
+<span class="fc" id="L720">            errorEventType = errEvType;</span>
+<span class="fc" id="L721">            operationEventType = opType;</span>
+<span class="fc" id="L722">            errorPropertyName = errPropName;</span>
+<span class="fc" id="L723">            errorPropertyValue = errPropVal;</span>
+<span class="fc" id="L724">        }</span>
 
         /**
          * Executes this operation. This method obtains a database connection
@@ -734,29 +734,29 @@ public class DatabaseConfiguration extends AbstractConfiguration
          */
         public T execute()
         {
-<span class="nc" id="L737">            T result = null;</span>
+<span class="fc" id="L737">            T result = null;</span>
 
             try
             {
-<span class="nc" id="L741">                conn = getDatasource().getConnection();</span>
-<span class="nc" id="L742">                result = performOperation();</span>
+<span class="fc" id="L741">                conn = getDatasource().getConnection();</span>
+<span class="fc" id="L742">                result = performOperation();</span>
 
-<span class="nc bnc" id="L744" title="All 2 branches missed.">                if (isAutoCommit())</span>
+<span class="pc bpc" id="L744" title="1 of 2 branches missed.">                if (isAutoCommit())</span>
                 {
 <span class="nc" id="L746">                    conn.commit();</span>
                 }
             }
-<span class="nc" id="L749">            catch (SQLException e)</span>
+<span class="fc" id="L749">            catch (SQLException e)</span>
             {
-<span class="nc" id="L751">                fireError(errorEventType, operationEventType, errorPropertyName,</span>
+<span class="fc" id="L751">                fireError(errorEventType, operationEventType, errorPropertyName,</span>
                         errorPropertyValue, e);
             }
             finally
             {
-<span class="nc" id="L756">                close(conn, pstmt, resultSet);</span>
+<span class="fc" id="L756">                close(conn, pstmt, resultSet);</span>
             }
 
-<span class="nc" id="L759">            return result;</span>
+<span class="fc" id="L759">            return result;</span>
         }
 
         /**
@@ -767,7 +767,7 @@ public class DatabaseConfiguration extends AbstractConfiguration
          */
         protected Connection getConnection()
         {
-<span class="nc" id="L770">            return conn;</span>
+<span class="fc" id="L770">            return conn;</span>
         }
 
         /**
@@ -784,19 +784,19 @@ public class DatabaseConfiguration extends AbstractConfiguration
                 throws SQLException
         {
             String statement;
-<span class="nc bnc" id="L787" title="All 4 branches missed.">            if (nameCol &amp;&amp; configurationNameColumn != null)</span>
+<span class="fc bfc" id="L787" title="All 4 branches covered.">            if (nameCol &amp;&amp; configurationNameColumn != null)</span>
             {
-<span class="nc" id="L789">                StringBuilder buf = new StringBuilder(sql);</span>
-<span class="nc" id="L790">                buf.append(&quot; AND &quot;).append(configurationNameColumn).append(&quot;=?&quot;);</span>
-<span class="nc" id="L791">                statement = buf.toString();</span>
-<span class="nc" id="L792">            }</span>
+<span class="fc" id="L789">                StringBuilder buf = new StringBuilder(sql);</span>
+<span class="fc" id="L790">                buf.append(&quot; AND &quot;).append(configurationNameColumn).append(&quot;=?&quot;);</span>
+<span class="fc" id="L791">                statement = buf.toString();</span>
+<span class="fc" id="L792">            }</span>
             else
             {
-<span class="nc" id="L795">                statement = sql;</span>
+<span class="fc" id="L795">                statement = sql;</span>
             }
 
-<span class="nc" id="L798">            pstmt = getConnection().prepareStatement(statement);</span>
-<span class="nc" id="L799">            return pstmt;</span>
+<span class="fc" id="L798">            pstmt = getConnection().prepareStatement(statement);</span>
+<span class="fc" id="L799">            return pstmt;</span>
         }
 
         /**
@@ -815,19 +815,19 @@ public class DatabaseConfiguration extends AbstractConfiguration
         protected PreparedStatement initStatement(String sql, boolean nameCol,
                 Object... params) throws SQLException
         {
-<span class="nc" id="L818">            PreparedStatement ps = createStatement(sql, nameCol);</span>
+<span class="fc" id="L818">            PreparedStatement ps = createStatement(sql, nameCol);</span>
 
-<span class="nc" id="L820">            int idx = 1;</span>
-<span class="nc bnc" id="L821" title="All 2 branches missed.">            for (Object param : params)</span>
+<span class="fc" id="L820">            int idx = 1;</span>
+<span class="fc bfc" id="L821" title="All 2 branches covered.">            for (Object param : params)</span>
             {
-<span class="nc" id="L823">                ps.setObject(idx++, param);</span>
+<span class="fc" id="L823">                ps.setObject(idx++, param);</span>
             }
-<span class="nc bnc" id="L825" title="All 4 branches missed.">            if (nameCol &amp;&amp; configurationNameColumn != null)</span>
+<span class="fc bfc" id="L825" title="All 4 branches covered.">            if (nameCol &amp;&amp; configurationNameColumn != null)</span>
             {
-<span class="nc" id="L827">                ps.setString(idx, configurationName);</span>
+<span class="fc" id="L827">                ps.setString(idx, configurationName);</span>
             }
 
-<span class="nc" id="L830">            return ps;</span>
+<span class="fc" id="L830">            return ps;</span>
         }
 
         /**
@@ -844,8 +844,8 @@ public class DatabaseConfiguration extends AbstractConfiguration
         protected ResultSet openResultSet(String sql, boolean nameCol,
                 Object... params) throws SQLException
         {
-<span class="nc" id="L847">            resultSet = initStatement(sql, nameCol, params).executeQuery();</span>
-<span class="nc" id="L848">            return resultSet;</span>
+<span class="fc" id="L847">            resultSet = initStatement(sql, nameCol, params).executeQuery();</span>
+<span class="fc" id="L848">            return resultSet;</span>
         }
 
         /**

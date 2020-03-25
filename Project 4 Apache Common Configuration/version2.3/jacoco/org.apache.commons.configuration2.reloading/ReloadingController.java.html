@@ -84,16 +84,16 @@ public class ReloadingController implements EventSource
      * @throws IllegalArgumentException if the detector is undefined
      */
     public ReloadingController(ReloadingDetector detect)
-<span class="nc" id="L87">    {</span>
-<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (detect == null)</span>
+<span class="fc" id="L87">    {</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (detect == null)</span>
         {
-<span class="nc" id="L90">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L90">            throw new IllegalArgumentException(</span>
                     &quot;ReloadingDetector must not be null!&quot;);
         }
 
-<span class="nc" id="L94">        detector = detect;</span>
-<span class="nc" id="L95">        listeners = new EventListenerList();</span>
-<span class="nc" id="L96">    }</span>
+<span class="fc" id="L94">        detector = detect;</span>
+<span class="fc" id="L95">        listeners = new EventListenerList();</span>
+<span class="fc" id="L96">    }</span>
 
     /**
      * Returns the {@code ReloadingDetector} used by this controller.
@@ -102,7 +102,7 @@ public class ReloadingController implements EventSource
      */
     public ReloadingDetector getDetector()
     {
-<span class="nc" id="L105">        return detector;</span>
+<span class="fc" id="L105">        return detector;</span>
     }
 
     /**
@@ -112,14 +112,14 @@ public class ReloadingController implements EventSource
     public &lt;T extends Event&gt; void addEventListener(
             EventType&lt;T&gt; eventType, EventListener&lt;? super T&gt; listener)
     {
-<span class="nc" id="L115">        listeners.addEventListener(eventType, listener);</span>
-<span class="nc" id="L116">    }</span>
+<span class="fc" id="L115">        listeners.addEventListener(eventType, listener);</span>
+<span class="fc" id="L116">    }</span>
 
     @Override
     public &lt;T extends Event&gt; boolean removeEventListener(
             EventType&lt;T&gt; eventType, EventListener&lt;? super T&gt; listener)
     {
-<span class="nc" id="L122">        return listeners.removeEventListener(eventType, listener);</span>
+<span class="fc" id="L122">        return listeners.removeEventListener(eventType, listener);</span>
     }
 
     /**
@@ -133,7 +133,7 @@ public class ReloadingController implements EventSource
      */
     public synchronized boolean isInReloadingState()
     {
-<span class="nc" id="L136">        return reloadingState;</span>
+<span class="fc" id="L136">        return reloadingState;</span>
     }
 
     /**
@@ -154,26 +154,26 @@ public class ReloadingController implements EventSource
      */
     public boolean checkForReloading(Object data)
     {
-<span class="nc" id="L157">        boolean sendEvent = false;</span>
-<span class="nc" id="L158">        synchronized (this)</span>
+<span class="fc" id="L157">        boolean sendEvent = false;</span>
+<span class="fc" id="L158">        synchronized (this)</span>
         {
-<span class="nc bnc" id="L160" title="All 2 branches missed.">            if (isInReloadingState())</span>
+<span class="fc bfc" id="L160" title="All 2 branches covered.">            if (isInReloadingState())</span>
             {
-<span class="nc" id="L162">                return true;</span>
+<span class="fc" id="L162">                return true;</span>
             }
-<span class="nc bnc" id="L164" title="All 2 branches missed.">            if (getDetector().isReloadingRequired())</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">            if (getDetector().isReloadingRequired())</span>
             {
-<span class="nc" id="L166">                sendEvent = true;</span>
-<span class="nc" id="L167">                reloadingState = true;</span>
+<span class="fc" id="L166">                sendEvent = true;</span>
+<span class="fc" id="L167">                reloadingState = true;</span>
             }
-<span class="nc" id="L169">        }</span>
+<span class="fc" id="L169">        }</span>
 
-<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (sendEvent)</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        if (sendEvent)</span>
         {
-<span class="nc" id="L173">            listeners.fire(new ReloadingEvent(this, data));</span>
-<span class="nc" id="L174">            return true;</span>
+<span class="fc" id="L173">            listeners.fire(new ReloadingEvent(this, data));</span>
+<span class="fc" id="L174">            return true;</span>
         }
-<span class="nc" id="L176">        return false;</span>
+<span class="fc" id="L176">        return false;</span>
     }
 
     /**
@@ -183,11 +183,11 @@ public class ReloadingController implements EventSource
      */
     public synchronized void resetReloadingState()
     {
-<span class="nc bnc" id="L186" title="All 2 branches missed.">        if (isInReloadingState())</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        if (isInReloadingState())</span>
         {
-<span class="nc" id="L188">            getDetector().reloadingPerformed();</span>
-<span class="nc" id="L189">            reloadingState = false;</span>
+<span class="fc" id="L188">            getDetector().reloadingPerformed();</span>
+<span class="fc" id="L189">            reloadingState = false;</span>
         }
-<span class="nc" id="L191">    }</span>
+<span class="fc" id="L191">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

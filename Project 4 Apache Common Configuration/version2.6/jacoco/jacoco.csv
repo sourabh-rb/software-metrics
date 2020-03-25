@@ -283,3 +283,6 @@ Apache Commons Configuration,org.apache.commons.configuration2.web,ServletFilter
 Apache Commons Configuration,org.apache.commons.configuration2.web,ServletRequestConfiguration,6,71,2,8,1,16,2,6,0,3
 Apache Commons Configuration,org.apache.commons.configuration2.spring,ConfigurationPropertiesFactoryBean,11,150,1,19,5,30,5,19,4,10
 Apache Commons Configuration,org.apache.commons.configuration2.spring,ConfigurationPropertySource,30,11,2,0,7,3,3,2,2,2
+,,,,,756,3860,1241,10437,,,,
+,,,,,,4616,,11678,,,,
+,,,,,,0.836221837088388,,0.893731803390991,,,,

@@ -70,7 +70,7 @@ public class BaseConfigurationBuilderProvider implements
         ConfigurationBuilderProvider
 {
     /** The types of the constructor parameters for a basic builder. */
-<span class="nc" id="L73">    private static final Class&lt;?&gt;[] CTOR_PARAM_TYPES = {</span>
+<span class="fc" id="L73">    private static final Class&lt;?&gt;[] CTOR_PARAM_TYPES = {</span>
             Class.class, Map.class, Boolean.TYPE
     };
 
@@ -100,23 +100,23 @@ public class BaseConfigurationBuilderProvider implements
      */
     public BaseConfigurationBuilderProvider(String bldrCls,
             String reloadBldrCls, String configCls, Collection&lt;String&gt; paramCls)
-<span class="nc" id="L103">    {</span>
-<span class="nc bnc" id="L104" title="All 2 branches missed.">        if (bldrCls == null)</span>
+<span class="fc" id="L103">    {</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (bldrCls == null)</span>
         {
-<span class="nc" id="L106">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L106">            throw new IllegalArgumentException(</span>
                     &quot;Builder class must not be null!&quot;);
         }
-<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (configCls == null)</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (configCls == null)</span>
         {
-<span class="nc" id="L111">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L111">            throw new IllegalArgumentException(</span>
                     &quot;Configuration class must not be null!&quot;);
         }
 
-<span class="nc" id="L115">        builderClass = bldrCls;</span>
-<span class="nc" id="L116">        reloadingBuilderClass = reloadBldrCls;</span>
-<span class="nc" id="L117">        configurationClass = configCls;</span>
-<span class="nc" id="L118">        parameterClasses = initParameterClasses(paramCls);</span>
-<span class="nc" id="L119">    }</span>
+<span class="fc" id="L115">        builderClass = bldrCls;</span>
+<span class="fc" id="L116">        reloadingBuilderClass = reloadBldrCls;</span>
+<span class="fc" id="L117">        configurationClass = configCls;</span>
+<span class="fc" id="L118">        parameterClasses = initParameterClasses(paramCls);</span>
+<span class="fc" id="L119">    }</span>
 
     /**
      * Returns the name of the class of the builder created by this provider.
@@ -125,7 +125,7 @@ public class BaseConfigurationBuilderProvider implements
      */
     public String getBuilderClass()
     {
-<span class="nc" id="L128">        return builderClass;</span>
+<span class="fc" id="L128">        return builderClass;</span>
     }
 
     /**
@@ -137,7 +137,7 @@ public class BaseConfigurationBuilderProvider implements
      */
     public String getReloadingBuilderClass()
     {
-<span class="nc" id="L140">        return reloadingBuilderClass;</span>
+<span class="fc" id="L140">        return reloadingBuilderClass;</span>
     }
 
     /**
@@ -148,7 +148,7 @@ public class BaseConfigurationBuilderProvider implements
      */
     public String getConfigurationClass()
     {
-<span class="nc" id="L151">        return configurationClass;</span>
+<span class="fc" id="L151">        return configurationClass;</span>
     }
 
     /**
@@ -159,7 +159,7 @@ public class BaseConfigurationBuilderProvider implements
      */
     public Collection&lt;String&gt; getParameterClasses()
     {
-<span class="nc" id="L162">        return parameterClasses;</span>
+<span class="fc" id="L162">        return parameterClasses;</span>
     }
 
     /**
@@ -173,16 +173,16 @@ public class BaseConfigurationBuilderProvider implements
     {
         try
         {
-<span class="nc" id="L176">            Collection&lt;BuilderParameters&gt; params = createParameterObjects();</span>
-<span class="nc" id="L177">            initializeParameterObjects(decl, params);</span>
-<span class="nc" id="L178">            BasicConfigurationBuilder&lt;? extends Configuration&gt; builder =</span>
-<span class="nc" id="L179">                    createBuilder(decl, params);</span>
-<span class="nc" id="L180">            configureBuilder(builder, decl, params);</span>
-<span class="nc" id="L181">            return builder;</span>
+<span class="fc" id="L176">            Collection&lt;BuilderParameters&gt; params = createParameterObjects();</span>
+<span class="fc" id="L177">            initializeParameterObjects(decl, params);</span>
+<span class="fc" id="L178">            BasicConfigurationBuilder&lt;? extends Configuration&gt; builder =</span>
+<span class="fc" id="L179">                    createBuilder(decl, params);</span>
+<span class="fc" id="L180">            configureBuilder(builder, decl, params);</span>
+<span class="fc" id="L181">            return builder;</span>
         }
-<span class="nc" id="L183">        catch (ConfigurationException cex)</span>
+<span class="fc" id="L183">        catch (ConfigurationException cex)</span>
         {
-<span class="nc" id="L185">            throw cex;</span>
+<span class="fc" id="L185">            throw cex;</span>
         }
 <span class="nc" id="L187">        catch (Exception ex)</span>
         {
@@ -202,7 +202,7 @@ public class BaseConfigurationBuilderProvider implements
      */
     protected boolean isAllowFailOnInit(ConfigurationDeclaration decl)
     {
-<span class="nc bnc" id="L205" title="All 4 branches missed.">        return decl.isOptional() &amp;&amp; decl.isForceCreate();</span>
+<span class="fc bfc" id="L205" title="All 4 branches covered.">        return decl.isOptional() &amp;&amp; decl.isForceCreate();</span>
     }
 
     /**
@@ -217,14 +217,14 @@ public class BaseConfigurationBuilderProvider implements
     protected Collection&lt;BuilderParameters&gt; createParameterObjects()
             throws Exception
     {
-<span class="nc" id="L220">        Collection&lt;BuilderParameters&gt; params =</span>
+<span class="fc" id="L220">        Collection&lt;BuilderParameters&gt; params =</span>
                 new ArrayList&lt;&gt;(
-<span class="nc" id="L222">                        getParameterClasses().size());</span>
-<span class="nc bnc" id="L223" title="All 2 branches missed.">        for (String paramcls : getParameterClasses())</span>
+<span class="fc" id="L222">                        getParameterClasses().size());</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">        for (String paramcls : getParameterClasses())</span>
         {
-<span class="nc" id="L225">            params.add(createParameterObject(paramcls));</span>
-<span class="nc" id="L226">        }</span>
-<span class="nc" id="L227">        return params;</span>
+<span class="fc" id="L225">            params.add(createParameterObject(paramcls));</span>
+<span class="fc" id="L226">        }</span>
+<span class="fc" id="L227">        return params;</span>
     }
 
     /**
@@ -243,10 +243,10 @@ public class BaseConfigurationBuilderProvider implements
     protected void initializeParameterObjects(ConfigurationDeclaration decl,
             Collection&lt;BuilderParameters&gt; params) throws Exception
     {
-<span class="nc" id="L246">        inheritParentBuilderProperties(decl, params);</span>
-<span class="nc" id="L247">        MultiWrapDynaBean wrapBean = new MultiWrapDynaBean(params);</span>
-<span class="nc" id="L248">        decl.getConfigurationBuilder().initBean(wrapBean, decl);</span>
-<span class="nc" id="L249">    }</span>
+<span class="fc" id="L246">        inheritParentBuilderProperties(decl, params);</span>
+<span class="fc" id="L247">        MultiWrapDynaBean wrapBean = new MultiWrapDynaBean(params);</span>
+<span class="fc" id="L248">        decl.getConfigurationBuilder().initBean(wrapBean, decl);</span>
+<span class="fc" id="L249">    }</span>
 
     /**
      * Passes all parameter objects to the parent
@@ -262,11 +262,11 @@ public class BaseConfigurationBuilderProvider implements
     protected void inheritParentBuilderProperties(
             ConfigurationDeclaration decl, Collection&lt;BuilderParameters&gt; params)
     {
-<span class="nc bnc" id="L265" title="All 2 branches missed.">        for (BuilderParameters p : params)</span>
+<span class="fc bfc" id="L265" title="All 2 branches covered.">        for (BuilderParameters p : params)</span>
         {
-<span class="nc" id="L267">            decl.getConfigurationBuilder().initChildBuilderParameters(p);</span>
-<span class="nc" id="L268">        }</span>
-<span class="nc" id="L269">    }</span>
+<span class="fc" id="L267">            decl.getConfigurationBuilder().initChildBuilderParameters(p);</span>
+<span class="fc" id="L268">        }</span>
+<span class="fc" id="L269">    }</span>
 
     /**
      * Creates a new, uninitialized instance of the builder class managed by
@@ -284,18 +284,18 @@ public class BaseConfigurationBuilderProvider implements
             ConfigurationDeclaration decl, Collection&lt;BuilderParameters&gt; params)
             throws Exception
     {
-<span class="nc" id="L287">        Class&lt;?&gt; bldCls =</span>
-<span class="nc" id="L288">                ConfigurationUtils.loadClass(determineBuilderClass(decl));</span>
-<span class="nc" id="L289">        Class&lt;?&gt; configCls =</span>
-<span class="nc" id="L290">                ConfigurationUtils.loadClass(determineConfigurationClass(decl,</span>
+<span class="fc" id="L287">        Class&lt;?&gt; bldCls =</span>
+<span class="fc" id="L288">                ConfigurationUtils.loadClass(determineBuilderClass(decl));</span>
+<span class="fc" id="L289">        Class&lt;?&gt; configCls =</span>
+<span class="fc" id="L290">                ConfigurationUtils.loadClass(determineConfigurationClass(decl,</span>
                         params));
-<span class="nc" id="L292">        Constructor&lt;?&gt; ctor = bldCls.getConstructor(CTOR_PARAM_TYPES);</span>
+<span class="fc" id="L292">        Constructor&lt;?&gt; ctor = bldCls.getConstructor(CTOR_PARAM_TYPES);</span>
         // ? extends Configuration is the minimum constraint
         @SuppressWarnings(&quot;unchecked&quot;)
-<span class="nc" id="L295">        BasicConfigurationBuilder&lt;? extends Configuration&gt; builder =</span>
+<span class="fc" id="L295">        BasicConfigurationBuilder&lt;? extends Configuration&gt; builder =</span>
                 (BasicConfigurationBuilder&lt;? extends Configuration&gt;) ctor
-<span class="nc" id="L297">                        .newInstance(configCls, null, isAllowFailOnInit(decl));</span>
-<span class="nc" id="L298">        return builder;</span>
+<span class="fc" id="L297">                        .newInstance(configCls, null, isAllowFailOnInit(decl));</span>
+<span class="fc" id="L298">        return builder;</span>
     }
 
     /**
@@ -314,8 +314,8 @@ public class BaseConfigurationBuilderProvider implements
             ConfigurationDeclaration decl, Collection&lt;BuilderParameters&gt; params)
             throws Exception
     {
-<span class="nc" id="L317">        builder.configure(params.toArray(new BuilderParameters[params.size()]));</span>
-<span class="nc" id="L318">    }</span>
+<span class="fc" id="L317">        builder.configure(params.toArray(new BuilderParameters[params.size()]));</span>
+<span class="fc" id="L318">    }</span>
 
     /**
      * Determines the name of the class to be used for a new builder instance.
@@ -331,17 +331,17 @@ public class BaseConfigurationBuilderProvider implements
     protected String determineBuilderClass(ConfigurationDeclaration decl)
             throws ConfigurationException
     {
-<span class="nc bnc" id="L334" title="All 2 branches missed.">        if (decl.isReload())</span>
+<span class="fc bfc" id="L334" title="All 2 branches covered.">        if (decl.isReload())</span>
         {
-<span class="nc bnc" id="L336" title="All 2 branches missed.">            if (getReloadingBuilderClass() == null)</span>
+<span class="fc bfc" id="L336" title="All 2 branches covered.">            if (getReloadingBuilderClass() == null)</span>
             {
-<span class="nc" id="L338">                throw new ConfigurationException(</span>
+<span class="fc" id="L338">                throw new ConfigurationException(</span>
                         &quot;No support for reloading for builder class &quot;
-<span class="nc" id="L340">                                + getBuilderClass());</span>
+<span class="fc" id="L340">                                + getBuilderClass());</span>
             }
-<span class="nc" id="L342">            return getReloadingBuilderClass();</span>
+<span class="fc" id="L342">            return getReloadingBuilderClass();</span>
         }
-<span class="nc" id="L344">        return getBuilderClass();</span>
+<span class="fc" id="L344">        return getBuilderClass();</span>
     }
 
     /**
@@ -359,7 +359,7 @@ public class BaseConfigurationBuilderProvider implements
     protected String determineConfigurationClass(ConfigurationDeclaration decl,
             Collection&lt;BuilderParameters&gt; params) throws ConfigurationException
     {
-<span class="nc" id="L362">        return getConfigurationClass();</span>
+<span class="fc" id="L362">        return getConfigurationClass();</span>
     }
 
     /**
@@ -372,9 +372,9 @@ public class BaseConfigurationBuilderProvider implements
     private static BuilderParameters createParameterObject(String paramcls)
             throws Exception
     {
-<span class="nc" id="L375">        Class&lt;?&gt; cls = ConfigurationUtils.loadClass(paramcls);</span>
-<span class="nc" id="L376">        BuilderParameters p = (BuilderParameters) cls.newInstance();</span>
-<span class="nc" id="L377">        return p;</span>
+<span class="fc" id="L375">        Class&lt;?&gt; cls = ConfigurationUtils.loadClass(paramcls);</span>
+<span class="fc" id="L376">        BuilderParameters p = (BuilderParameters) cls.newInstance();</span>
+<span class="fc" id="L377">        return p;</span>
     }
 
     /**
@@ -387,13 +387,13 @@ public class BaseConfigurationBuilderProvider implements
     private static Collection&lt;String&gt; initParameterClasses(
             Collection&lt;String&gt; paramCls)
     {
-<span class="nc bnc" id="L390" title="All 2 branches missed.">        if (paramCls == null)</span>
+<span class="fc bfc" id="L390" title="All 2 branches covered.">        if (paramCls == null)</span>
         {
-<span class="nc" id="L392">            return Collections.emptySet();</span>
+<span class="fc" id="L392">            return Collections.emptySet();</span>
         }
         else
         {
-<span class="nc" id="L396">            return Collections.unmodifiableCollection(new ArrayList&lt;&gt;(</span>
+<span class="fc" id="L396">            return Collections.unmodifiableCollection(new ArrayList&lt;&gt;(</span>
                     paramCls));
         }
     }

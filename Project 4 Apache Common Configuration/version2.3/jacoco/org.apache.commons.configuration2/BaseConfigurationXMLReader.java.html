@@ -40,8 +40,8 @@ public class BaseConfigurationXMLReader extends ConfigurationXMLReader
      */
     public BaseConfigurationXMLReader()
     {
-<span class="nc" id="L43">        super();</span>
-<span class="nc" id="L44">    }</span>
+<span class="fc" id="L43">        super();</span>
+<span class="fc" id="L44">    }</span>
 
     /**
      * Creates a new instance of {@code BaseConfigurationXMLReader} and
@@ -51,9 +51,9 @@ public class BaseConfigurationXMLReader extends ConfigurationXMLReader
      */
     public BaseConfigurationXMLReader(Configuration conf)
     {
-<span class="nc" id="L54">        this();</span>
-<span class="nc" id="L55">        setConfiguration(conf);</span>
-<span class="nc" id="L56">    }</span>
+<span class="fc" id="L54">        this();</span>
+<span class="fc" id="L55">        setConfiguration(conf);</span>
+<span class="fc" id="L56">    }</span>
 
     /**
      * Returns the actual configuration to be processed.
@@ -62,7 +62,7 @@ public class BaseConfigurationXMLReader extends ConfigurationXMLReader
      */
     public Configuration getConfiguration()
     {
-<span class="nc" id="L65">        return config;</span>
+<span class="fc" id="L65">        return config;</span>
     }
 
     /**
@@ -72,8 +72,8 @@ public class BaseConfigurationXMLReader extends ConfigurationXMLReader
      */
     public void setConfiguration(Configuration conf)
     {
-<span class="nc" id="L75">        config = conf;</span>
-<span class="nc" id="L76">    }</span>
+<span class="fc" id="L75">        config = conf;</span>
+<span class="fc" id="L76">    }</span>
 
     /**
      * Returns the configuration to be processed.
@@ -83,7 +83,7 @@ public class BaseConfigurationXMLReader extends ConfigurationXMLReader
     @Override
     public Configuration getParsedConfiguration()
     {
-<span class="nc" id="L86">        return getConfiguration();</span>
+<span class="fc" id="L86">        return getConfiguration();</span>
     }
 
     /**
@@ -95,17 +95,17 @@ public class BaseConfigurationXMLReader extends ConfigurationXMLReader
     @Override
     protected void processKeys()
     {
-<span class="nc" id="L98">        fireElementStart(getRootName(), null);</span>
-<span class="nc" id="L99">        new SAXConverter().process(getConfiguration());</span>
-<span class="nc" id="L100">        fireElementEnd(getRootName());</span>
-<span class="nc" id="L101">    }</span>
+<span class="fc" id="L98">        fireElementStart(getRootName(), null);</span>
+<span class="fc" id="L99">        new SAXConverter().process(getConfiguration());</span>
+<span class="fc" id="L100">        fireElementEnd(getRootName());</span>
+<span class="fc" id="L101">    }</span>
 
     /**
      * An internally used helper class to iterate over all configuration keys
      * ant to generate corresponding SAX events.
      *
      */
-<span class="nc" id="L108">    class SAXConverter extends HierarchicalConfigurationConverter</span>
+<span class="fc" id="L108">    class SAXConverter extends HierarchicalConfigurationConverter</span>
     {
         /**
          * Callback for the start of an element.
@@ -116,12 +116,12 @@ public class BaseConfigurationXMLReader extends ConfigurationXMLReader
         @Override
         protected void elementStart(String name, Object value)
         {
-<span class="nc" id="L119">            fireElementStart(name, null);</span>
-<span class="nc bnc" id="L120" title="All 2 branches missed.">            if (value != null)</span>
+<span class="fc" id="L119">            fireElementStart(name, null);</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">            if (value != null)</span>
             {
-<span class="nc" id="L122">                fireCharacters(value.toString());</span>
+<span class="fc" id="L122">                fireCharacters(value.toString());</span>
             }
-<span class="nc" id="L124">        }</span>
+<span class="fc" id="L124">        }</span>
 
         /**
          * Callback for the end of an element.
@@ -131,8 +131,8 @@ public class BaseConfigurationXMLReader extends ConfigurationXMLReader
         @Override
         protected void elementEnd(String name)
         {
-<span class="nc" id="L134">            fireElementEnd(name);</span>
-<span class="nc" id="L135">        }</span>
+<span class="fc" id="L134">            fireElementEnd(name);</span>
+<span class="fc" id="L135">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

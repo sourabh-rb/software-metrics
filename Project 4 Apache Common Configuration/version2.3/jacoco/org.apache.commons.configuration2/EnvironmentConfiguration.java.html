@@ -50,8 +50,8 @@ public class EnvironmentConfiguration extends MapConfiguration
      */
     public EnvironmentConfiguration()
     {
-<span class="nc" id="L53">        super(new HashMap&lt;String, Object&gt;(System.getenv()));</span>
-<span class="nc" id="L54">    }</span>
+<span class="fc" id="L53">        super(new HashMap&lt;String, Object&gt;(System.getenv()));</span>
+<span class="fc" id="L54">    }</span>
 
     /**
      * Adds a property to this configuration. Because this configuration is
@@ -63,7 +63,7 @@ public class EnvironmentConfiguration extends MapConfiguration
     @Override
     protected void addPropertyDirect(String key, Object value)
     {
-<span class="nc" id="L66">        throw new UnsupportedOperationException(&quot;EnvironmentConfiguration is read-only!&quot;);</span>
+<span class="fc" id="L66">        throw new UnsupportedOperationException(&quot;EnvironmentConfiguration is read-only!&quot;);</span>
     }
 
     /**
@@ -75,7 +75,7 @@ public class EnvironmentConfiguration extends MapConfiguration
     @Override
     protected void clearPropertyDirect(String key)
     {
-<span class="nc" id="L78">        throw new UnsupportedOperationException(&quot;EnvironmentConfiguration is read-only!&quot;);</span>
+<span class="fc" id="L78">        throw new UnsupportedOperationException(&quot;EnvironmentConfiguration is read-only!&quot;);</span>
     }
 
     /**
@@ -86,7 +86,7 @@ public class EnvironmentConfiguration extends MapConfiguration
     @Override
     protected void clearInternal()
     {
-<span class="nc" id="L89">        throw new UnsupportedOperationException(&quot;EnvironmentConfiguration is read-only!&quot;);</span>
+<span class="fc" id="L89">        throw new UnsupportedOperationException(&quot;EnvironmentConfiguration is read-only!&quot;);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

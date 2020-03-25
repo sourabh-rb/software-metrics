@@ -34,7 +34,7 @@ import java.nio.charset.Charset;
     /**
      * The UTF-8 character set, used to decode octets in URLs.
      */
-<span class="nc" id="L37">    private static final Charset UTF8 = Charset.forName(&quot;UTF-8&quot;);</span>
+<span class="fc" id="L37">    private static final Charset UTF8 = Charset.forName(&quot;UTF-8&quot;);</span>
 
     //-----------------------------------------------------------------------
     /**
@@ -52,12 +52,12 @@ import java.nio.charset.Charset;
      *  if the URL's protocol is not &lt;code&gt;file&lt;/code&gt;
      */
     public static File toFile(final URL url) {
-<span class="nc bnc" id="L55" title="All 4 branches missed.">        if (url == null || !&quot;file&quot;.equalsIgnoreCase(url.getProtocol())) {</span>
-<span class="nc" id="L56">            return null;</span>
+<span class="fc bfc" id="L55" title="All 4 branches covered.">        if (url == null || !&quot;file&quot;.equalsIgnoreCase(url.getProtocol())) {</span>
+<span class="fc" id="L56">            return null;</span>
         } else {
-<span class="nc" id="L58">            String filename = url.getFile().replace('/', File.separatorChar);</span>
-<span class="nc" id="L59">            filename = decodeUrl(filename);</span>
-<span class="nc" id="L60">            return new File(filename);</span>
+<span class="fc" id="L58">            String filename = url.getFile().replace('/', File.separatorChar);</span>
+<span class="fc" id="L59">            filename = decodeUrl(filename);</span>
+<span class="fc" id="L60">            return new File(filename);</span>
         }
     }
 
@@ -76,36 +76,36 @@ import java.nio.charset.Charset;
      *         {@code null}.
      */
     static String decodeUrl(final String url) {
-<span class="nc" id="L79">        String decoded = url;</span>
-<span class="nc bnc" id="L80" title="All 4 branches missed.">        if (url != null &amp;&amp; url.indexOf('%') &gt;= 0) {</span>
-<span class="nc" id="L81">            final int n = url.length();</span>
-<span class="nc" id="L82">            final StringBuffer buffer = new StringBuffer();</span>
-<span class="nc" id="L83">            final ByteBuffer bytes = ByteBuffer.allocate(n);</span>
-<span class="nc bnc" id="L84" title="All 2 branches missed.">            for (int i = 0; i &lt; n;) {</span>
-<span class="nc bnc" id="L85" title="All 2 branches missed.">                if (url.charAt(i) == '%') {</span>
+<span class="fc" id="L79">        String decoded = url;</span>
+<span class="pc bpc" id="L80" title="1 of 4 branches missed.">        if (url != null &amp;&amp; url.indexOf('%') &gt;= 0) {</span>
+<span class="fc" id="L81">            final int n = url.length();</span>
+<span class="fc" id="L82">            final StringBuffer buffer = new StringBuffer();</span>
+<span class="fc" id="L83">            final ByteBuffer bytes = ByteBuffer.allocate(n);</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">            for (int i = 0; i &lt; n;) {</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">                if (url.charAt(i) == '%') {</span>
                     try {
                         do {
-<span class="nc" id="L88">                            final byte octet = (byte) Integer.parseInt(url.substring(i + 1, i + 3), 16);</span>
-<span class="nc" id="L89">                            bytes.put(octet);</span>
-<span class="nc" id="L90">                            i += 3;</span>
-<span class="nc bnc" id="L91" title="All 4 branches missed.">                        } while (i &lt; n &amp;&amp; url.charAt(i) == '%');</span>
+<span class="fc" id="L88">                            final byte octet = (byte) Integer.parseInt(url.substring(i + 1, i + 3), 16);</span>
+<span class="fc" id="L89">                            bytes.put(octet);</span>
+<span class="fc" id="L90">                            i += 3;</span>
+<span class="pc bpc" id="L91" title="2 of 4 branches missed.">                        } while (i &lt; n &amp;&amp; url.charAt(i) == '%');</span>
                         continue;
 <span class="nc" id="L93">                    } catch (final RuntimeException e) {</span>
                         // malformed percent-encoded octet, fall through and
                         // append characters literally
                     } finally {
-<span class="nc bnc" id="L97" title="All 2 branches missed.">                        if (bytes.position() &gt; 0) {</span>
-<span class="nc" id="L98">                            bytes.flip();</span>
-<span class="nc" id="L99">                            buffer.append(UTF8.decode(bytes).toString());</span>
-<span class="nc" id="L100">                            bytes.clear();</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">                        if (bytes.position() &gt; 0) {</span>
+<span class="fc" id="L98">                            bytes.flip();</span>
+<span class="fc" id="L99">                            buffer.append(UTF8.decode(bytes).toString());</span>
+<span class="fc" id="L100">                            bytes.clear();</span>
                         }
                     }
                 }
-<span class="nc" id="L104">                buffer.append(url.charAt(i++));</span>
+<span class="fc" id="L104">                buffer.append(url.charAt(i++));</span>
             }
-<span class="nc" id="L106">            decoded = buffer.toString();</span>
+<span class="fc" id="L106">            decoded = buffer.toString();</span>
         }
-<span class="nc" id="L108">        return decoded;</span>
+<span class="fc" id="L108">        return decoded;</span>
     }
 
 }
