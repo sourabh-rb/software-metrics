@@ -3,12 +3,12 @@
 ### JIRA search statement:
 `project = "Commons Collections" AND affectedVersion in (4.2) AND issuetype = Bug AND status = Closed ORDER BY created DESC`
 Result:
-![alt](https://i.imgur.com/yBvrJKK)
+![alt](https://i.imgur.com/yBvrJKK.png)
 
 The number of bugs is **3**.
 
 For LOC, we are using CLOC tool to count the number of lines java code:
-![alt](https://i.imgur.com/679IZ7m)
+![alt](https://i.imgur.com/679IZ7m.png)
 **SLOC = 66670**
 
 Therefore:
