@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CalendarReflection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.time</a> &gt; <span class="el_source">CalendarReflection.java</span></div><h1>CalendarReflection.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.lang3.time;
+
+import java.lang.reflect.Method;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
+/**
+ * Use reflection to access java 1.7 methods in Calendar.  This allows compilation with 1.6 compiler.
+ */
+<span class="nc" id="L28">class CalendarReflection {</span>
+
+<span class="fc" id="L30">    private static final Method IS_WEEK_DATE_SUPPORTED = getCalendarMethod(&quot;isWeekDateSupported&quot;);</span>
+<span class="fc" id="L31">    private static final Method GET_WEEK_YEAR = getCalendarMethod(&quot;getWeekYear&quot;);</span>
+
+    private static Method getCalendarMethod(String methodName, Class&lt;?&gt;... argTypes) {
+        try {
+<span class="fc" id="L35">            Method m = Calendar.class.getMethod(methodName, argTypes);</span>
+<span class="fc" id="L36">            return m;</span>
+<span class="nc" id="L37">        } catch (Exception e) {</span>
+<span class="nc" id="L38">            return null;</span>
+        }
+    }
+
+    /**
+     * Does this calendar instance support week date?
+     * @param calendar The calendar instance.
+     * @return false, if runtime is less than java 1.7; otherwise, the result of calendar.isWeekDateSupported().
+     */
+    static boolean isWeekDateSupported(Calendar calendar) {
+        try {
+<span class="pc bpc" id="L49" title="2 of 4 branches missed.">            return IS_WEEK_DATE_SUPPORTED!=null &amp;&amp; ((Boolean)IS_WEEK_DATE_SUPPORTED.invoke(calendar)).booleanValue();</span>
+<span class="nc" id="L50">        } catch (Exception e) {</span>
+<span class="nc" id="L51">            return ExceptionUtils.&lt;Boolean&gt;rethrow(e);</span>
+        }
+    }
+
+    /**
+     * Invoke getWeekYear() method of calendar instance.
+     * &lt;p&gt;
+     * If runtime is 1.7 or better and calendar instance support week year,
+     * return the value from invocation of getWeekYear().
+     * &lt;p&gt;
+     * If runtime is less than 1.7, and calendar is an instance of
+     * GregorianCalendar, return an approximation of the week year.
+     * (Approximation is good for all years after the Julian to Gregorian
+     * cutover.)
+     * &lt;p&gt;
+     * Otherwise, return the calendar instance year value.
+     *
+     * @param calendar The calendar instance.
+     * @return the week year or year value.
+     */
+    public static int getWeekYear(Calendar calendar) {
+        try {
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">            if (isWeekDateSupported(calendar)) {</span>
+<span class="fc" id="L74">                return (Integer) GET_WEEK_YEAR.invoke(calendar);</span>
+            }
+<span class="nc" id="L76">        } catch (Exception e) {</span>
+<span class="nc" id="L77">            return ExceptionUtils.&lt;Integer&gt; rethrow(e);</span>
+<span class="nc" id="L78">        }</span>
+
+<span class="nc" id="L80">        int year = calendar.get(Calendar.YEAR);</span>
+<span class="nc bnc" id="L81" title="All 4 branches missed.">        if (IS_WEEK_DATE_SUPPORTED == null &amp;&amp; calendar instanceof GregorianCalendar) {</span>
+            // not perfect, won't work before gregorian cutover
+            // good enough for most business use.
+<span class="nc bnc" id="L84" title="All 3 branches missed.">            switch (calendar.get(Calendar.MONTH)) {</span>
+            case Calendar.JANUARY:
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                if (calendar.get(Calendar.WEEK_OF_YEAR) &gt;= 52) {</span>
+<span class="nc" id="L87">                    --year;</span>
+                }
+                break;
+            case Calendar.DECEMBER:
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                if (calendar.get(Calendar.WEEK_OF_YEAR) == 1) {</span>
+<span class="nc" id="L92">                    ++year;</span>
+                }
+                break;
+            }
+        }
+<span class="nc" id="L97">        return year;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>
