@@ -62,8 +62,8 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
      */
     public BaseHierarchicalConfiguration()
     {
-<span class="nc" id="L65">        this((HierarchicalConfiguration&lt;ImmutableNode&gt;) null);</span>
-<span class="nc" id="L66">    }</span>
+<span class="fc" id="L65">        this((HierarchicalConfiguration&lt;ImmutableNode&gt;) null);</span>
+<span class="fc" id="L66">    }</span>
 
     /**
      * Creates a new instance of {@code BaseHierarchicalConfiguration} and
@@ -76,8 +76,8 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
      */
     public BaseHierarchicalConfiguration(HierarchicalConfiguration&lt;ImmutableNode&gt; c)
     {
-<span class="nc" id="L79">        this(createNodeModel(c));</span>
-<span class="nc" id="L80">    }</span>
+<span class="fc" id="L79">        this(createNodeModel(c));</span>
+<span class="fc" id="L80">    }</span>
 
     /**
      * Creates a new instance of {@code BaseHierarchicalConfiguration} and
@@ -87,9 +87,9 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
      */
     protected BaseHierarchicalConfiguration(NodeModel&lt;ImmutableNode&gt; model)
     {
-<span class="nc" id="L90">        super(model);</span>
-<span class="nc" id="L91">        changeListener = createChangeListener();</span>
-<span class="nc" id="L92">    }</span>
+<span class="fc" id="L90">        super(model);</span>
+<span class="fc" id="L91">        changeListener = createChangeListener();</span>
+<span class="fc" id="L92">    }</span>
 
     /**
      * {@inheritDoc} This implementation returns the {@code InMemoryNodeModel}
@@ -98,7 +98,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     @Override
     public InMemoryNodeModel getNodeModel()
     {
-<span class="nc" id="L101">        return (InMemoryNodeModel) super.getNodeModel();</span>
+<span class="fc" id="L101">        return (InMemoryNodeModel) super.getNodeModel();</span>
     }
 
     /**
@@ -123,19 +123,19 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     @Override
     public Configuration subset(String prefix)
     {
-<span class="nc" id="L126">        beginRead(false);</span>
+<span class="fc" id="L126">        beginRead(false);</span>
         try
         {
-<span class="nc" id="L129">            List&lt;QueryResult&lt;ImmutableNode&gt;&gt; results = fetchNodeList(prefix);</span>
-<span class="nc bnc" id="L130" title="All 2 branches missed.">            if (results.isEmpty())</span>
+<span class="fc" id="L129">            List&lt;QueryResult&lt;ImmutableNode&gt;&gt; results = fetchNodeList(prefix);</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (results.isEmpty())</span>
             {
-<span class="nc" id="L132">                return new BaseHierarchicalConfiguration();</span>
+<span class="fc" id="L132">                return new BaseHierarchicalConfiguration();</span>
             }
 
-<span class="nc" id="L135">            final BaseHierarchicalConfiguration parent = this;</span>
-<span class="nc" id="L136">            BaseHierarchicalConfiguration result =</span>
+<span class="fc" id="L135">            final BaseHierarchicalConfiguration parent = this;</span>
+<span class="fc" id="L136">            BaseHierarchicalConfiguration result =</span>
                     new BaseHierarchicalConfiguration()
-<span class="nc" id="L138">                    {</span>
+<span class="fc" id="L138">                    {</span>
                         // Override interpolate to always interpolate on the parent
                         @Override
                         protected Object interpolate(Object value)
@@ -146,24 +146,24 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
                         @Override
                         public ConfigurationInterpolator getInterpolator()
                         {
-<span class="nc" id="L149">                            return parent.getInterpolator();</span>
+<span class="fc" id="L149">                            return parent.getInterpolator();</span>
                         }
                     };
-<span class="nc" id="L152">            result.getModel().setRootNode(createSubsetRootNode(results));</span>
+<span class="fc" id="L152">            result.getModel().setRootNode(createSubsetRootNode(results));</span>
 
-<span class="nc bnc" id="L154" title="All 2 branches missed.">            if (result.isEmpty())</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">            if (result.isEmpty())</span>
             {
-<span class="nc" id="L156">                return new BaseHierarchicalConfiguration();</span>
+<span class="fc" id="L156">                return new BaseHierarchicalConfiguration();</span>
             }
             else
             {
-<span class="nc" id="L160">                result.setSynchronizer(getSynchronizer());</span>
-<span class="nc" id="L161">                return result;</span>
+<span class="fc" id="L160">                result.setSynchronizer(getSynchronizer());</span>
+<span class="fc" id="L161">                return result;</span>
             }
         }
         finally
         {
-<span class="nc" id="L166">            endRead();</span>
+<span class="fc" id="L166">            endRead();</span>
         }
     }
 
@@ -179,34 +179,34 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     private ImmutableNode createSubsetRootNode(
             Collection&lt;QueryResult&lt;ImmutableNode&gt;&gt; results)
     {
-<span class="nc" id="L182">        ImmutableNode.Builder builder = new ImmutableNode.Builder();</span>
-<span class="nc" id="L183">        Object value = null;</span>
-<span class="nc" id="L184">        int valueCount = 0;</span>
+<span class="fc" id="L182">        ImmutableNode.Builder builder = new ImmutableNode.Builder();</span>
+<span class="fc" id="L183">        Object value = null;</span>
+<span class="fc" id="L184">        int valueCount = 0;</span>
 
-<span class="nc bnc" id="L186" title="All 2 branches missed.">        for (QueryResult&lt;ImmutableNode&gt; result : results)</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        for (QueryResult&lt;ImmutableNode&gt; result : results)</span>
         {
-<span class="nc bnc" id="L188" title="All 2 branches missed.">            if (result.isAttributeResult())</span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">            if (result.isAttributeResult())</span>
             {
-<span class="nc" id="L190">                builder.addAttribute(result.getAttributeName(),</span>
-<span class="nc" id="L191">                        result.getAttributeValue(getModel().getNodeHandler()));</span>
+<span class="fc" id="L190">                builder.addAttribute(result.getAttributeName(),</span>
+<span class="fc" id="L191">                        result.getAttributeValue(getModel().getNodeHandler()));</span>
             }
             else
             {
-<span class="nc bnc" id="L195" title="All 2 branches missed.">                if (result.getNode().getValue() != null)</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">                if (result.getNode().getValue() != null)</span>
                 {
-<span class="nc" id="L197">                    value = result.getNode().getValue();</span>
-<span class="nc" id="L198">                    valueCount++;</span>
+<span class="fc" id="L197">                    value = result.getNode().getValue();</span>
+<span class="fc" id="L198">                    valueCount++;</span>
                 }
-<span class="nc" id="L200">                builder.addChildren(result.getNode().getChildren());</span>
-<span class="nc" id="L201">                builder.addAttributes(result.getNode().getAttributes());</span>
+<span class="fc" id="L200">                builder.addChildren(result.getNode().getChildren());</span>
+<span class="fc" id="L201">                builder.addAttributes(result.getNode().getAttributes());</span>
             }
-<span class="nc" id="L203">        }</span>
+<span class="fc" id="L203">        }</span>
 
-<span class="nc bnc" id="L205" title="All 2 branches missed.">        if (valueCount == 1)</span>
+<span class="fc bfc" id="L205" title="All 2 branches covered.">        if (valueCount == 1)</span>
         {
-<span class="nc" id="L207">            builder.value(value);</span>
+<span class="fc" id="L207">            builder.value(value);</span>
         }
-<span class="nc" id="L209">        return builder.create();</span>
+<span class="fc" id="L209">        return builder.create();</span>
     }
 
     /**
@@ -230,15 +230,15 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     public HierarchicalConfiguration&lt;ImmutableNode&gt; configurationAt(String key,
             boolean supportUpdates)
     {
-<span class="nc" id="L233">        beginRead(false);</span>
+<span class="fc" id="L233">        beginRead(false);</span>
         try
         {
-<span class="nc bnc" id="L236" title="All 2 branches missed.">            return supportUpdates ? createConnectedSubConfiguration(key)</span>
-<span class="nc" id="L237">                    : createIndependentSubConfiguration(key);</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">            return supportUpdates ? createConnectedSubConfiguration(key)</span>
+<span class="fc" id="L237">                    : createIndependentSubConfiguration(key);</span>
         }
         finally
         {
-<span class="nc" id="L241">            endRead();</span>
+<span class="fc" id="L241">            endRead();</span>
         }
     }
 
@@ -253,7 +253,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
      */
     protected InMemoryNodeModel getSubConfigurationParentModel()
     {
-<span class="nc" id="L256">        return (InMemoryNodeModel) getModel();</span>
+<span class="fc" id="L256">        return (InMemoryNodeModel) getModel();</span>
     }
 
     /**
@@ -270,7 +270,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
      */
     protected NodeSelector getSubConfigurationNodeSelector(String key)
     {
-<span class="nc" id="L273">        return new NodeSelector(key);</span>
+<span class="fc" id="L273">        return new NodeSelector(key);</span>
     }
 
     /**
@@ -286,11 +286,11 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     protected SubnodeConfiguration createSubConfigurationForTrackedNode(
             NodeSelector selector, InMemoryNodeModelSupport parentModelSupport)
     {
-<span class="nc" id="L289">        SubnodeConfiguration subConfig =</span>
+<span class="fc" id="L289">        SubnodeConfiguration subConfig =</span>
                 new SubnodeConfiguration(this, new TrackedNodeModel(
                         parentModelSupport, selector, true));
-<span class="nc" id="L292">        initSubConfigurationForThisParent(subConfig);</span>
-<span class="nc" id="L293">        return subConfig;</span>
+<span class="fc" id="L292">        initSubConfigurationForThisParent(subConfig);</span>
+<span class="fc" id="L293">        return subConfig;</span>
     }
 
     /**
@@ -304,9 +304,9 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
      */
     protected void initSubConfigurationForThisParent(SubnodeConfiguration subConfig)
     {
-<span class="nc" id="L307">        initSubConfiguration(subConfig);</span>
-<span class="nc" id="L308">        subConfig.addEventListener(ConfigurationEvent.ANY, changeListener);</span>
-<span class="nc" id="L309">    }</span>
+<span class="fc" id="L307">        initSubConfiguration(subConfig);</span>
+<span class="fc" id="L308">        subConfig.addEventListener(ConfigurationEvent.ANY, changeListener);</span>
+<span class="fc" id="L309">    }</span>
 
     /**
      * Creates a sub configuration from the specified key which is connected to
@@ -320,9 +320,9 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     private BaseHierarchicalConfiguration createConnectedSubConfiguration(
             String key)
     {
-<span class="nc" id="L323">        NodeSelector selector = getSubConfigurationNodeSelector(key);</span>
-<span class="nc" id="L324">        getSubConfigurationParentModel().trackNode(selector, this);</span>
-<span class="nc" id="L325">        return createSubConfigurationForTrackedNode(selector, this);</span>
+<span class="fc" id="L323">        NodeSelector selector = getSubConfigurationNodeSelector(key);</span>
+<span class="fc" id="L324">        getSubConfigurationParentModel().trackNode(selector, this);</span>
+<span class="fc" id="L325">        return createSubConfigurationForTrackedNode(selector, this);</span>
     }
 
     /**
@@ -337,15 +337,15 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
             InMemoryNodeModelSupport parentModelSupport,
             Collection&lt;NodeSelector&gt; selectors)
     {
-<span class="nc" id="L340">        List&lt;HierarchicalConfiguration&lt;ImmutableNode&gt;&gt; configs =</span>
+<span class="fc" id="L340">        List&lt;HierarchicalConfiguration&lt;ImmutableNode&gt;&gt; configs =</span>
                 new ArrayList&lt;&gt;(
-<span class="nc" id="L342">                        selectors.size());</span>
-<span class="nc bnc" id="L343" title="All 2 branches missed.">        for (NodeSelector selector : selectors)</span>
+<span class="fc" id="L342">                        selectors.size());</span>
+<span class="fc bfc" id="L343" title="All 2 branches covered.">        for (NodeSelector selector : selectors)</span>
         {
-<span class="nc" id="L345">            configs.add(createSubConfigurationForTrackedNode(selector,</span>
+<span class="fc" id="L345">            configs.add(createSubConfigurationForTrackedNode(selector,</span>
                     parentModelSupport));
-<span class="nc" id="L347">        }</span>
-<span class="nc" id="L348">        return configs;</span>
+<span class="fc" id="L347">        }</span>
+<span class="fc" id="L348">        return configs;</span>
     }
 
     /**
@@ -359,18 +359,18 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     private BaseHierarchicalConfiguration createIndependentSubConfiguration(
             String key)
     {
-<span class="nc" id="L362">        List&lt;ImmutableNode&gt; targetNodes = fetchFilteredNodeResults(key);</span>
-<span class="nc" id="L363">        int size = targetNodes.size();</span>
-<span class="nc bnc" id="L364" title="All 2 branches missed.">        if (size != 1)</span>
+<span class="fc" id="L362">        List&lt;ImmutableNode&gt; targetNodes = fetchFilteredNodeResults(key);</span>
+<span class="fc" id="L363">        int size = targetNodes.size();</span>
+<span class="fc bfc" id="L364" title="All 2 branches covered.">        if (size != 1)</span>
         {
-<span class="nc" id="L366">            throw new ConfigurationRuntimeException(</span>
-<span class="nc" id="L367">                    &quot;Passed in key must select exactly one node (found %,d): %s&quot;, size, key);</span>
+<span class="fc" id="L366">            throw new ConfigurationRuntimeException(</span>
+<span class="fc" id="L367">                    &quot;Passed in key must select exactly one node (found %,d): %s&quot;, size, key);</span>
         }
-<span class="nc" id="L369">        BaseHierarchicalConfiguration sub =</span>
+<span class="fc" id="L369">        BaseHierarchicalConfiguration sub =</span>
                 new BaseHierarchicalConfiguration(new InMemoryNodeModel(
-<span class="nc" id="L371">                        targetNodes.get(0)));</span>
-<span class="nc" id="L372">        initSubConfiguration(sub);</span>
-<span class="nc" id="L373">        return sub;</span>
+<span class="fc" id="L371">                        targetNodes.get(0)));</span>
+<span class="fc" id="L372">        initSubConfiguration(sub);</span>
+<span class="fc" id="L373">        return sub;</span>
     }
 
     /**
@@ -384,10 +384,10 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     private BaseHierarchicalConfiguration createIndependentSubConfigurationForNode(
             ImmutableNode node)
     {
-<span class="nc" id="L387">        BaseHierarchicalConfiguration sub =</span>
+<span class="fc" id="L387">        BaseHierarchicalConfiguration sub =</span>
                 new BaseHierarchicalConfiguration(new InMemoryNodeModel(node));
-<span class="nc" id="L389">        initSubConfiguration(sub);</span>
-<span class="nc" id="L390">        return sub;</span>
+<span class="fc" id="L389">        initSubConfiguration(sub);</span>
+<span class="fc" id="L390">        return sub;</span>
     }
 
     /**
@@ -398,8 +398,8 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
      */
     private List&lt;ImmutableNode&gt; fetchFilteredNodeResults(String key)
     {
-<span class="nc" id="L401">        NodeHandler&lt;ImmutableNode&gt; handler = getModel().getNodeHandler();</span>
-<span class="nc" id="L402">        return resolveNodeKey(handler.getRootNode(), key, handler);</span>
+<span class="fc" id="L401">        NodeHandler&lt;ImmutableNode&gt; handler = getModel().getNodeHandler();</span>
+<span class="fc" id="L402">        return resolveNodeKey(handler.getRootNode(), key, handler);</span>
     }
 
     /**
@@ -411,7 +411,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     public ImmutableHierarchicalConfiguration immutableConfigurationAt(
             String key, boolean supportUpdates)
     {
-<span class="nc" id="L414">        return ConfigurationUtils.unmodifiableConfiguration(configurationAt(</span>
+<span class="fc" id="L414">        return ConfigurationUtils.unmodifiableConfiguration(configurationAt(</span>
                 key, supportUpdates));
     }
 
@@ -423,7 +423,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     @Override
     public HierarchicalConfiguration&lt;ImmutableNode&gt; configurationAt(String key)
     {
-<span class="nc" id="L426">        return configurationAt(key, false);</span>
+<span class="fc" id="L426">        return configurationAt(key, false);</span>
     }
 
     /**
@@ -436,7 +436,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     public ImmutableHierarchicalConfiguration immutableConfigurationAt(
             String key)
     {
-<span class="nc" id="L439">        return ConfigurationUtils.unmodifiableConfiguration(configurationAt(</span>
+<span class="fc" id="L439">        return ConfigurationUtils.unmodifiableConfiguration(configurationAt(</span>
                 key));
     }
 
@@ -449,27 +449,27 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
             String key)
     {
         List&lt;ImmutableNode&gt; nodes;
-<span class="nc" id="L452">        beginRead(false);</span>
+<span class="fc" id="L452">        beginRead(false);</span>
         try
         {
-<span class="nc" id="L455">            nodes = fetchFilteredNodeResults(key);</span>
+<span class="fc" id="L455">            nodes = fetchFilteredNodeResults(key);</span>
         }
         finally
         {
-<span class="nc" id="L459">            endRead();</span>
+<span class="fc" id="L459">            endRead();</span>
         }
 
-<span class="nc" id="L462">        List&lt;HierarchicalConfiguration&lt;ImmutableNode&gt;&gt; results =</span>
+<span class="fc" id="L462">        List&lt;HierarchicalConfiguration&lt;ImmutableNode&gt;&gt; results =</span>
                 new ArrayList&lt;&gt;(
-<span class="nc" id="L464">                        nodes.size());</span>
-<span class="nc bnc" id="L465" title="All 2 branches missed.">        for (ImmutableNode node : nodes)</span>
+<span class="fc" id="L464">                        nodes.size());</span>
+<span class="fc bfc" id="L465" title="All 2 branches covered.">        for (ImmutableNode node : nodes)</span>
         {
-<span class="nc" id="L467">            BaseHierarchicalConfiguration sub =</span>
-<span class="nc" id="L468">                    createIndependentSubConfigurationForNode(node);</span>
-<span class="nc" id="L469">            results.add(sub);</span>
-<span class="nc" id="L470">        }</span>
+<span class="fc" id="L467">            BaseHierarchicalConfiguration sub =</span>
+<span class="fc" id="L468">                    createIndependentSubConfigurationForNode(node);</span>
+<span class="fc" id="L469">            results.add(sub);</span>
+<span class="fc" id="L470">        }</span>
 
-<span class="nc" id="L472">        return results;</span>
+<span class="fc" id="L472">        return results;</span>
     }
 
     /**
@@ -480,25 +480,25 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     public List&lt;HierarchicalConfiguration&lt;ImmutableNode&gt;&gt; configurationsAt(
             String key, boolean supportUpdates)
     {
-<span class="nc bnc" id="L483" title="All 2 branches missed.">        if (!supportUpdates)</span>
+<span class="fc bfc" id="L483" title="All 2 branches covered.">        if (!supportUpdates)</span>
         {
-<span class="nc" id="L485">            return configurationsAt(key);</span>
+<span class="fc" id="L485">            return configurationsAt(key);</span>
         }
 
         InMemoryNodeModel parentModel;
-<span class="nc" id="L489">        beginRead(false);</span>
+<span class="fc" id="L489">        beginRead(false);</span>
         try
         {
-<span class="nc" id="L492">            parentModel = getSubConfigurationParentModel();</span>
+<span class="fc" id="L492">            parentModel = getSubConfigurationParentModel();</span>
         }
         finally
         {
-<span class="nc" id="L496">            endRead();</span>
+<span class="fc" id="L496">            endRead();</span>
         }
 
-<span class="nc" id="L499">        Collection&lt;NodeSelector&gt; selectors =</span>
-<span class="nc" id="L500">                parentModel.selectAndTrackNodes(key, this);</span>
-<span class="nc" id="L501">        return createConnectedSubConfigurations(this, selectors);</span>
+<span class="fc" id="L499">        Collection&lt;NodeSelector&gt; selectors =</span>
+<span class="fc" id="L500">                parentModel.selectAndTrackNodes(key, this);</span>
+<span class="fc" id="L501">        return createConnectedSubConfigurations(this, selectors);</span>
     }
 
     /**
@@ -511,7 +511,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     public List&lt;ImmutableHierarchicalConfiguration&gt; immutableConfigurationsAt(
             String key)
     {
-<span class="nc" id="L514">        return toImmutable(configurationsAt(key));</span>
+<span class="fc" id="L514">        return toImmutable(configurationsAt(key));</span>
     }
 
     /**
@@ -524,31 +524,31 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
             String key)
     {
         List&lt;ImmutableNode&gt; nodes;
-<span class="nc" id="L527">        beginRead(false);</span>
+<span class="fc" id="L527">        beginRead(false);</span>
         try
         {
-<span class="nc" id="L530">            nodes = fetchFilteredNodeResults(key);</span>
+<span class="fc" id="L530">            nodes = fetchFilteredNodeResults(key);</span>
         }
         finally
         {
-<span class="nc" id="L534">            endRead();</span>
+<span class="fc" id="L534">            endRead();</span>
         }
 
-<span class="nc bnc" id="L537" title="All 2 branches missed.">        if (nodes.size() != 1)</span>
+<span class="fc bfc" id="L537" title="All 2 branches covered.">        if (nodes.size() != 1)</span>
         {
-<span class="nc" id="L539">            return Collections.emptyList();</span>
+<span class="fc" id="L539">            return Collections.emptyList();</span>
         }
 
-<span class="nc" id="L542">        ImmutableNode parent = nodes.get(0);</span>
-<span class="nc" id="L543">        List&lt;HierarchicalConfiguration&lt;ImmutableNode&gt;&gt; subs =</span>
+<span class="fc" id="L542">        ImmutableNode parent = nodes.get(0);</span>
+<span class="fc" id="L543">        List&lt;HierarchicalConfiguration&lt;ImmutableNode&gt;&gt; subs =</span>
                 new ArrayList&lt;&gt;(parent
-<span class="nc" id="L545">                        .getChildren().size());</span>
-<span class="nc bnc" id="L546" title="All 2 branches missed.">        for (ImmutableNode node : parent.getChildren())</span>
+<span class="fc" id="L545">                        .getChildren().size());</span>
+<span class="fc bfc" id="L546" title="All 2 branches covered.">        for (ImmutableNode node : parent.getChildren())</span>
         {
-<span class="nc" id="L548">            subs.add(createIndependentSubConfigurationForNode(node));</span>
-<span class="nc" id="L549">        }</span>
+<span class="fc" id="L548">            subs.add(createIndependentSubConfigurationForNode(node));</span>
+<span class="fc" id="L549">        }</span>
 
-<span class="nc" id="L551">        return subs;</span>
+<span class="fc" id="L551">        return subs;</span>
     }
 
     /**
@@ -561,14 +561,14 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     public List&lt;HierarchicalConfiguration&lt;ImmutableNode&gt;&gt; childConfigurationsAt(
             String key, boolean supportUpdates)
     {
-<span class="nc bnc" id="L564" title="All 2 branches missed.">        if (!supportUpdates)</span>
+<span class="pc bpc" id="L564" title="1 of 2 branches missed.">        if (!supportUpdates)</span>
         {
 <span class="nc" id="L566">            return childConfigurationsAt(key);</span>
         }
 
-<span class="nc" id="L569">        InMemoryNodeModel parentModel = getSubConfigurationParentModel();</span>
-<span class="nc" id="L570">        return createConnectedSubConfigurations(this,</span>
-<span class="nc" id="L571">                parentModel.trackChildNodes(key, this));</span>
+<span class="fc" id="L569">        InMemoryNodeModel parentModel = getSubConfigurationParentModel();</span>
+<span class="fc" id="L570">        return createConnectedSubConfigurations(this,</span>
+<span class="fc" id="L571">                parentModel.trackChildNodes(key, this));</span>
     }
 
     /**
@@ -581,7 +581,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     public List&lt;ImmutableHierarchicalConfiguration&gt; immutableChildConfigurationsAt(
             String key)
     {
-<span class="nc" id="L584">        return toImmutable(childConfigurationsAt(key));</span>
+<span class="fc" id="L584">        return toImmutable(childConfigurationsAt(key));</span>
     }
 
     /**
@@ -595,8 +595,8 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
      */
     protected void subnodeConfigurationChanged(ConfigurationEvent event)
     {
-<span class="nc" id="L598">        fireEvent(ConfigurationEvent.SUBNODE_CHANGED, null, event, event.isBeforeUpdate());</span>
-<span class="nc" id="L599">    }</span>
+<span class="fc" id="L598">        fireEvent(ConfigurationEvent.SUBNODE_CHANGED, null, event, event.isBeforeUpdate());</span>
+<span class="fc" id="L599">    }</span>
 
     /**
      * Initializes properties of a sub configuration. A sub configuration
@@ -607,12 +607,12 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
      */
     private void initSubConfiguration(BaseHierarchicalConfiguration sub)
     {
-<span class="nc" id="L610">        sub.setSynchronizer(getSynchronizer());</span>
-<span class="nc" id="L611">        sub.setExpressionEngine(getExpressionEngine());</span>
-<span class="nc" id="L612">        sub.setListDelimiterHandler(getListDelimiterHandler());</span>
-<span class="nc" id="L613">        sub.setThrowExceptionOnMissing(isThrowExceptionOnMissing());</span>
-<span class="nc" id="L614">        sub.getInterpolator().setParentInterpolator(getInterpolator());</span>
-<span class="nc" id="L615">    }</span>
+<span class="fc" id="L610">        sub.setSynchronizer(getSynchronizer());</span>
+<span class="fc" id="L611">        sub.setExpressionEngine(getExpressionEngine());</span>
+<span class="fc" id="L612">        sub.setListDelimiterHandler(getListDelimiterHandler());</span>
+<span class="fc" id="L613">        sub.setThrowExceptionOnMissing(isThrowExceptionOnMissing());</span>
+<span class="fc" id="L614">        sub.getInterpolator().setParentInterpolator(getInterpolator());</span>
+<span class="fc" id="L615">    }</span>
 
     /**
      * Creates a listener which reacts on all changes on this configuration or
@@ -623,13 +623,13 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
      */
     private EventListener&lt;ConfigurationEvent&gt; createChangeListener()
     {
-<span class="nc" id="L626">        return new EventListener&lt;ConfigurationEvent&gt;()</span>
-<span class="nc" id="L627">        {</span>
+<span class="fc" id="L626">        return new EventListener&lt;ConfigurationEvent&gt;()</span>
+<span class="fc" id="L627">        {</span>
             @Override
             public void onEvent(ConfigurationEvent event)
             {
-<span class="nc" id="L631">                subnodeConfigurationChanged(event);</span>
-<span class="nc" id="L632">            }</span>
+<span class="fc" id="L631">                subnodeConfigurationChanged(event);</span>
+<span class="fc" id="L632">            }</span>
         };
     }
 
@@ -646,15 +646,15 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     @Override
     public Configuration interpolatedConfiguration()
     {
-<span class="nc" id="L649">        InterpolatedVisitor visitor = new InterpolatedVisitor();</span>
-<span class="nc" id="L650">        NodeHandler&lt;ImmutableNode&gt; handler = getModel().getNodeHandler();</span>
-<span class="nc" id="L651">        NodeTreeWalker.INSTANCE</span>
-<span class="nc" id="L652">                .walkDFS(handler.getRootNode(), visitor, handler);</span>
+<span class="fc" id="L649">        InterpolatedVisitor visitor = new InterpolatedVisitor();</span>
+<span class="fc" id="L650">        NodeHandler&lt;ImmutableNode&gt; handler = getModel().getNodeHandler();</span>
+<span class="fc" id="L651">        NodeTreeWalker.INSTANCE</span>
+<span class="fc" id="L652">                .walkDFS(handler.getRootNode(), visitor, handler);</span>
 
-<span class="nc" id="L654">        BaseHierarchicalConfiguration c =</span>
-<span class="nc" id="L655">                (BaseHierarchicalConfiguration) clone();</span>
-<span class="nc" id="L656">        c.getNodeModel().setRootNode(visitor.getInterpolatedRoot());</span>
-<span class="nc" id="L657">        return c;</span>
+<span class="fc" id="L654">        BaseHierarchicalConfiguration c =</span>
+<span class="fc" id="L655">                (BaseHierarchicalConfiguration) clone();</span>
+<span class="fc" id="L656">        c.getNodeModel().setRootNode(visitor.getInterpolatedRoot());</span>
+<span class="fc" id="L657">        return c;</span>
     }
 
     /**
@@ -666,7 +666,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     @Override
     protected NodeModel&lt;ImmutableNode&gt; cloneNodeModel()
     {
-<span class="nc" id="L669">        return new InMemoryNodeModel(getModel().getNodeHandler().getRootNode());</span>
+<span class="fc" id="L669">        return new InMemoryNodeModel(getModel().getNodeHandler().getRootNode());</span>
     }
 
     /**
@@ -678,13 +678,13 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     private static List&lt;ImmutableHierarchicalConfiguration&gt; toImmutable(
             List&lt;? extends HierarchicalConfiguration&lt;?&gt;&gt; subs)
     {
-<span class="nc" id="L681">        List&lt;ImmutableHierarchicalConfiguration&gt; res =</span>
-<span class="nc" id="L682">                new ArrayList&lt;&gt;(subs.size());</span>
-<span class="nc bnc" id="L683" title="All 2 branches missed.">        for (HierarchicalConfiguration&lt;?&gt; sub : subs)</span>
+<span class="fc" id="L681">        List&lt;ImmutableHierarchicalConfiguration&gt; res =</span>
+<span class="fc" id="L682">                new ArrayList&lt;&gt;(subs.size());</span>
+<span class="fc bfc" id="L683" title="All 2 branches covered.">        for (HierarchicalConfiguration&lt;?&gt; sub : subs)</span>
         {
-<span class="nc" id="L685">            res.add(ConfigurationUtils.unmodifiableConfiguration(sub));</span>
-<span class="nc" id="L686">        }</span>
-<span class="nc" id="L687">        return res;</span>
+<span class="fc" id="L685">            res.add(ConfigurationUtils.unmodifiableConfiguration(sub));</span>
+<span class="fc" id="L686">        }</span>
+<span class="fc" id="L687">        return res;</span>
     }
 
     /**
@@ -700,8 +700,8 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     private static NodeModel&lt;ImmutableNode&gt; createNodeModel(
             HierarchicalConfiguration&lt;ImmutableNode&gt; c)
     {
-<span class="nc bnc" id="L703" title="All 2 branches missed.">        ImmutableNode root = (c != null) ? obtainRootNode(c) : null;</span>
-<span class="nc" id="L704">        return new InMemoryNodeModel(root);</span>
+<span class="fc bfc" id="L703" title="All 2 branches covered.">        ImmutableNode root = (c != null) ? obtainRootNode(c) : null;</span>
+<span class="fc" id="L704">        return new InMemoryNodeModel(root);</span>
     }
 
     /**
@@ -714,7 +714,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
     private static ImmutableNode obtainRootNode(
             HierarchicalConfiguration&lt;ImmutableNode&gt; c)
     {
-<span class="nc" id="L717">        return c.getNodeModel().getNodeHandler().getRootNode();</span>
+<span class="fc" id="L717">        return c.getNodeModel().getNodeHandler().getRootNode();</span>
     }
 
     /**
@@ -731,16 +731,16 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
      * method can perform all steps to integrate the new node into the original
      * structure.
      */
-<span class="nc" id="L734">    protected abstract static class BuilderVisitor extends</span>
+<span class="fc" id="L734">    protected abstract static class BuilderVisitor extends</span>
             ConfigurationNodeVisitorAdapter&lt;ImmutableNode&gt;
     {
         @Override
         public void visitBeforeChildren(ImmutableNode node, NodeHandler&lt;ImmutableNode&gt; handler)
         {
-<span class="nc" id="L740">            ReferenceNodeHandler refHandler = (ReferenceNodeHandler) handler;</span>
-<span class="nc" id="L741">            updateNode(node, refHandler);</span>
-<span class="nc" id="L742">            insertNewChildNodes(node, refHandler);</span>
-<span class="nc" id="L743">        }</span>
+<span class="fc" id="L740">            ReferenceNodeHandler refHandler = (ReferenceNodeHandler) handler;</span>
+<span class="fc" id="L741">            updateNode(node, refHandler);</span>
+<span class="fc" id="L742">            insertNewChildNodes(node, refHandler);</span>
+<span class="fc" id="L743">        }</span>
 
         /**
          * Inserts a new node into the structure constructed by this builder.
@@ -787,12 +787,12 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
         private void updateNode(ImmutableNode node,
                 ReferenceNodeHandler refHandler)
         {
-<span class="nc" id="L790">            Object reference = refHandler.getReference(node);</span>
-<span class="nc bnc" id="L791" title="All 2 branches missed.">            if (reference != null)</span>
+<span class="fc" id="L790">            Object reference = refHandler.getReference(node);</span>
+<span class="fc bfc" id="L791" title="All 2 branches covered.">            if (reference != null)</span>
             {
-<span class="nc" id="L793">                update(node, reference, refHandler);</span>
+<span class="fc" id="L793">                update(node, reference, refHandler);</span>
             }
-<span class="nc" id="L795">        }</span>
+<span class="fc" id="L795">        }</span>
 
         /**
          * Inserts new children that have been added to the specified node.
@@ -803,34 +803,34 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
         private void insertNewChildNodes(ImmutableNode node,
                 ReferenceNodeHandler refHandler)
         {
-<span class="nc" id="L806">            Collection&lt;ImmutableNode&gt; subNodes =</span>
-<span class="nc" id="L807">                    new LinkedList&lt;&gt;(refHandler.getChildren(node));</span>
-<span class="nc" id="L808">            Iterator&lt;ImmutableNode&gt; children = subNodes.iterator();</span>
+<span class="fc" id="L806">            Collection&lt;ImmutableNode&gt; subNodes =</span>
+<span class="fc" id="L807">                    new LinkedList&lt;&gt;(refHandler.getChildren(node));</span>
+<span class="fc" id="L808">            Iterator&lt;ImmutableNode&gt; children = subNodes.iterator();</span>
             ImmutableNode sibling1;
-<span class="nc" id="L810">            ImmutableNode nd = null;</span>
+<span class="fc" id="L810">            ImmutableNode nd = null;</span>
 
-<span class="nc bnc" id="L812" title="All 2 branches missed.">            while (children.hasNext())</span>
+<span class="fc bfc" id="L812" title="All 2 branches covered.">            while (children.hasNext())</span>
             {
                 // find the next new node
                 do
                 {
-<span class="nc" id="L817">                    sibling1 = nd;</span>
-<span class="nc" id="L818">                    nd = children.next();</span>
-<span class="nc bnc" id="L819" title="All 2 branches missed.">                } while (refHandler.getReference(nd) != null</span>
-<span class="nc bnc" id="L820" title="All 2 branches missed.">                        &amp;&amp; children.hasNext());</span>
+<span class="fc" id="L817">                    sibling1 = nd;</span>
+<span class="fc" id="L818">                    nd = children.next();</span>
+<span class="fc bfc" id="L819" title="All 2 branches covered.">                } while (refHandler.getReference(nd) != null</span>
+<span class="fc bfc" id="L820" title="All 2 branches covered.">                        &amp;&amp; children.hasNext());</span>
 
-<span class="nc bnc" id="L822" title="All 2 branches missed.">                if (refHandler.getReference(nd) == null)</span>
+<span class="fc bfc" id="L822" title="All 2 branches covered.">                if (refHandler.getReference(nd) == null)</span>
                 {
                     // find all following new nodes
-<span class="nc" id="L825">                    List&lt;ImmutableNode&gt; newNodes =</span>
+<span class="fc" id="L825">                    List&lt;ImmutableNode&gt; newNodes =</span>
                             new LinkedList&lt;&gt;();
-<span class="nc" id="L827">                    newNodes.add(nd);</span>
-<span class="nc bnc" id="L828" title="All 2 branches missed.">                    while (children.hasNext())</span>
+<span class="fc" id="L827">                    newNodes.add(nd);</span>
+<span class="fc bfc" id="L828" title="All 2 branches covered.">                    while (children.hasNext())</span>
                     {
-<span class="nc" id="L830">                        nd = children.next();</span>
-<span class="nc bnc" id="L831" title="All 2 branches missed.">                        if (refHandler.getReference(nd) == null)</span>
+<span class="fc" id="L830">                        nd = children.next();</span>
+<span class="fc bfc" id="L831" title="All 2 branches covered.">                        if (refHandler.getReference(nd) == null)</span>
                         {
-<span class="nc" id="L833">                            newNodes.add(nd);</span>
+<span class="fc" id="L833">                            newNodes.add(nd);</span>
                         }
                         else
                         {
@@ -840,19 +840,19 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
 
                     // Insert all new nodes
                     ImmutableNode sibling2 =
-<span class="nc bnc" id="L843" title="All 2 branches missed.">                            (refHandler.getReference(nd) == null) ? null : nd;</span>
-<span class="nc bnc" id="L844" title="All 2 branches missed.">                    for (ImmutableNode insertNode : newNodes)</span>
+<span class="fc bfc" id="L843" title="All 2 branches covered.">                            (refHandler.getReference(nd) == null) ? null : nd;</span>
+<span class="fc bfc" id="L844" title="All 2 branches covered.">                    for (ImmutableNode insertNode : newNodes)</span>
                     {
-<span class="nc bnc" id="L846" title="All 2 branches missed.">                        if (refHandler.getReference(insertNode) == null)</span>
+<span class="pc bpc" id="L846" title="1 of 2 branches missed.">                        if (refHandler.getReference(insertNode) == null)</span>
                         {
-<span class="nc" id="L848">                            insert(insertNode, node, sibling1, sibling2,</span>
+<span class="fc" id="L848">                            insert(insertNode, node, sibling1, sibling2,</span>
                                     refHandler);
-<span class="nc" id="L850">                            sibling1 = insertNode;</span>
+<span class="fc" id="L850">                            sibling1 = insertNode;</span>
                         }
-<span class="nc" id="L852">                    }</span>
-<span class="nc" id="L853">                }</span>
+<span class="fc" id="L852">                    }</span>
+<span class="fc" id="L853">                }</span>
             }
-<span class="nc" id="L855">        }</span>
+<span class="fc" id="L855">        }</span>
     }
 
     /**
@@ -872,9 +872,9 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
          * Creates a new instance of {@code InterpolatedVisitor}.
          */
         public InterpolatedVisitor()
-<span class="nc" id="L875">        {</span>
-<span class="nc" id="L876">            builderStack = new LinkedList&lt;&gt;();</span>
-<span class="nc" id="L877">        }</span>
+<span class="fc" id="L875">        {</span>
+<span class="fc" id="L876">            builderStack = new LinkedList&lt;&gt;();</span>
+<span class="fc" id="L877">        }</span>
 
         /**
          * Returns the result of this builder: the root node of the interpolated
@@ -884,40 +884,40 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
          */
         public ImmutableNode getInterpolatedRoot()
         {
-<span class="nc" id="L887">            return interpolatedRoot;</span>
+<span class="fc" id="L887">            return interpolatedRoot;</span>
         }
 
         @Override
         public void visitBeforeChildren(ImmutableNode node,
                 NodeHandler&lt;ImmutableNode&gt; handler)
         {
-<span class="nc bnc" id="L894" title="All 2 branches missed.">            if (isLeafNode(node, handler))</span>
+<span class="fc bfc" id="L894" title="All 2 branches covered.">            if (isLeafNode(node, handler))</span>
             {
-<span class="nc" id="L896">                handleLeafNode(node, handler);</span>
+<span class="fc" id="L896">                handleLeafNode(node, handler);</span>
             }
             else
             {
-<span class="nc" id="L900">                ImmutableNode.Builder builder =</span>
-<span class="nc" id="L901">                        new ImmutableNode.Builder(handler.getChildrenCount(</span>
+<span class="fc" id="L900">                ImmutableNode.Builder builder =</span>
+<span class="fc" id="L901">                        new ImmutableNode.Builder(handler.getChildrenCount(</span>
                                 node, null))
-<span class="nc" id="L903">                                .name(handler.nodeName(node))</span>
-<span class="nc" id="L904">                                .value(interpolate(handler.getValue(node)))</span>
-<span class="nc" id="L905">                                .addAttributes(</span>
-<span class="nc" id="L906">                                        interpolateAttributes(node, handler));</span>
-<span class="nc" id="L907">                push(builder);</span>
+<span class="fc" id="L903">                                .name(handler.nodeName(node))</span>
+<span class="fc" id="L904">                                .value(interpolate(handler.getValue(node)))</span>
+<span class="fc" id="L905">                                .addAttributes(</span>
+<span class="fc" id="L906">                                        interpolateAttributes(node, handler));</span>
+<span class="fc" id="L907">                push(builder);</span>
             }
-<span class="nc" id="L909">        }</span>
+<span class="fc" id="L909">        }</span>
 
         @Override
         public void visitAfterChildren(ImmutableNode node,
                 NodeHandler&lt;ImmutableNode&gt; handler)
         {
-<span class="nc bnc" id="L915" title="All 2 branches missed.">            if (!isLeafNode(node, handler))</span>
+<span class="fc bfc" id="L915" title="All 2 branches covered.">            if (!isLeafNode(node, handler))</span>
             {
-<span class="nc" id="L917">                ImmutableNode newNode = pop().create();</span>
-<span class="nc" id="L918">                storeInterpolatedNode(newNode);</span>
+<span class="fc" id="L917">                ImmutableNode newNode = pop().create();</span>
+<span class="fc" id="L918">                storeInterpolatedNode(newNode);</span>
             }
-<span class="nc" id="L920">        }</span>
+<span class="fc" id="L920">        }</span>
 
         /**
          * Pushes a new builder on the stack.
@@ -926,8 +926,8 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
          */
         private void push(ImmutableNode.Builder builder)
         {
-<span class="nc" id="L929">            builderStack.add(0, builder);</span>
-<span class="nc" id="L930">        }</span>
+<span class="fc" id="L929">            builderStack.add(0, builder);</span>
+<span class="fc" id="L930">        }</span>
 
         /**
          * Pops the top-level element from the stack.
@@ -936,7 +936,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
          */
         private ImmutableNode.Builder pop()
         {
-<span class="nc" id="L939">            return builderStack.remove(0);</span>
+<span class="fc" id="L939">            return builderStack.remove(0);</span>
         }
 
         /**
@@ -946,7 +946,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
          */
         private ImmutableNode.Builder peek()
         {
-<span class="nc" id="L949">            return builderStack.get(0);</span>
+<span class="fc" id="L949">            return builderStack.get(0);</span>
         }
 
         /**
@@ -960,7 +960,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
         private boolean isLeafNode(ImmutableNode node,
                 NodeHandler&lt;ImmutableNode&gt; handler)
         {
-<span class="nc" id="L963">            return handler.getChildren(node).isEmpty();</span>
+<span class="fc" id="L963">            return handler.getChildren(node).isEmpty();</span>
         }
 
         /**
@@ -975,18 +975,18 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
         private void handleLeafNode(ImmutableNode node,
                 NodeHandler&lt;ImmutableNode&gt; handler)
         {
-<span class="nc" id="L978">            Object value = interpolate(node.getValue());</span>
-<span class="nc" id="L979">            Map&lt;String, Object&gt; interpolatedAttributes =</span>
+<span class="fc" id="L978">            Object value = interpolate(node.getValue());</span>
+<span class="fc" id="L979">            Map&lt;String, Object&gt; interpolatedAttributes =</span>
                     new HashMap&lt;&gt;();
-<span class="nc" id="L981">            boolean attributeChanged =</span>
-<span class="nc" id="L982">                    interpolateAttributes(node, handler, interpolatedAttributes);</span>
+<span class="fc" id="L981">            boolean attributeChanged =</span>
+<span class="fc" id="L982">                    interpolateAttributes(node, handler, interpolatedAttributes);</span>
             ImmutableNode newNode =
-<span class="nc bnc" id="L984" title="All 4 branches missed.">                    (valueChanged(value, handler.getValue(node)) || attributeChanged) ? new ImmutableNode.Builder()</span>
-<span class="nc" id="L985">                            .name(handler.nodeName(node)).value(value)</span>
-<span class="nc" id="L986">                            .addAttributes(interpolatedAttributes).create()</span>
-<span class="nc" id="L987">                            : node;</span>
-<span class="nc" id="L988">            storeInterpolatedNode(newNode);</span>
-<span class="nc" id="L989">        }</span>
+<span class="pc bpc" id="L984" title="1 of 4 branches missed.">                    (valueChanged(value, handler.getValue(node)) || attributeChanged) ? new ImmutableNode.Builder()</span>
+<span class="fc" id="L985">                            .name(handler.nodeName(node)).value(value)</span>
+<span class="fc" id="L986">                            .addAttributes(interpolatedAttributes).create()</span>
+<span class="fc" id="L987">                            : node;</span>
+<span class="fc" id="L988">            storeInterpolatedNode(newNode);</span>
+<span class="fc" id="L989">        }</span>
 
         /**
          * Stores a processed node. Per default, the node is added to the
@@ -997,15 +997,15 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
          */
         private void storeInterpolatedNode(ImmutableNode node)
         {
-<span class="nc bnc" id="L1000" title="All 2 branches missed.">            if (builderStack.isEmpty())</span>
+<span class="fc bfc" id="L1000" title="All 2 branches covered.">            if (builderStack.isEmpty())</span>
             {
-<span class="nc" id="L1002">                interpolatedRoot = node;</span>
+<span class="fc" id="L1002">                interpolatedRoot = node;</span>
             }
             else
             {
-<span class="nc" id="L1006">                peek().addChild(node);</span>
+<span class="fc" id="L1006">                peek().addChild(node);</span>
             }
-<span class="nc" id="L1008">        }</span>
+<span class="fc" id="L1008">        }</span>
 
         /**
          * Populates a map with interpolated attributes of the passed in node.
@@ -1020,8 +1020,8 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
                 NodeHandler&lt;ImmutableNode&gt; handler,
                 Map&lt;String, Object&gt; interpolatedAttributes)
         {
-<span class="nc" id="L1023">            boolean attributeChanged = false;</span>
-<span class="nc bnc" id="L1024" title="All 2 branches missed.">            for (String attr : handler.getAttributes(node))</span>
+<span class="fc" id="L1023">            boolean attributeChanged = false;</span>
+<span class="pc bpc" id="L1024" title="1 of 2 branches missed.">            for (String attr : handler.getAttributes(node))</span>
             {
 <span class="nc" id="L1026">                Object attrValue =</span>
 <span class="nc" id="L1027">                        interpolate(handler.getAttributeValue(node, attr));</span>
@@ -1032,7 +1032,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
                 }
 <span class="nc" id="L1033">                interpolatedAttributes.put(attr, attrValue);</span>
 <span class="nc" id="L1034">            }</span>
-<span class="nc" id="L1035">            return attributeChanged;</span>
+<span class="fc" id="L1035">            return attributeChanged;</span>
         }
 
         /**
@@ -1045,9 +1045,9 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
         private Map&lt;String, Object&gt; interpolateAttributes(ImmutableNode node,
                 NodeHandler&lt;ImmutableNode&gt; handler)
         {
-<span class="nc" id="L1048">            Map&lt;String, Object&gt; attributes = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L1049">            interpolateAttributes(node, handler, attributes);</span>
-<span class="nc" id="L1050">            return attributes;</span>
+<span class="fc" id="L1048">            Map&lt;String, Object&gt; attributes = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L1049">            interpolateAttributes(node, handler, attributes);</span>
+<span class="fc" id="L1050">            return attributes;</span>
         }
 
         /**
@@ -1059,7 +1059,7 @@ public class BaseHierarchicalConfiguration extends AbstractHierarchicalConfigura
          */
         private boolean valueChanged(Object interpolatedValue, Object value)
         {
-<span class="nc" id="L1062">            return ObjectUtils.notEqual(interpolatedValue, value);</span>
+<span class="fc" id="L1062">            return ObjectUtils.notEqual(interpolatedValue, value);</span>
         }
     }
 }

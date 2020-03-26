@@ -57,17 +57,17 @@ public class ConfigurationPropertiesFactoryBean implements InitializingBean, Fac
     private Resource[] locations;
 
     /** @see org.apache.commons.configuration2.AbstractConfiguration#throwExceptionOnMissing **/
-<span class="nc" id="L60">    private boolean throwExceptionOnMissing = true;</span>
+<span class="fc" id="L60">    private boolean throwExceptionOnMissing = true;</span>
 
     public ConfigurationPropertiesFactoryBean()
-<span class="nc" id="L63">    {</span>
-<span class="nc" id="L64">    }</span>
+<span class="fc" id="L63">    {</span>
+<span class="fc" id="L64">    }</span>
 
     public ConfigurationPropertiesFactoryBean(Configuration configuration)
-<span class="nc" id="L67">    {</span>
-<span class="nc" id="L68">        Assert.notNull(configuration);</span>
-<span class="nc" id="L69">        this.compositeConfiguration = new CompositeConfiguration(configuration);</span>
-<span class="nc" id="L70">    }</span>
+<span class="fc" id="L67">    {</span>
+<span class="fc" id="L68">        Assert.notNull(configuration);</span>
+<span class="fc" id="L69">        this.compositeConfiguration = new CompositeConfiguration(configuration);</span>
+<span class="fc" id="L70">    }</span>
 
     /**
      * @see org.springframework.beans.factory.FactoryBean#getObject()
@@ -75,7 +75,7 @@ public class ConfigurationPropertiesFactoryBean implements InitializingBean, Fac
     @Override
     public Properties getObject() throws Exception
     {
-<span class="nc bnc" id="L78" title="All 2 branches missed.">        return (compositeConfiguration != null) ? ConfigurationConverter.getProperties(compositeConfiguration) : null;</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        return (compositeConfiguration != null) ? ConfigurationConverter.getProperties(compositeConfiguration) : null;</span>
     }
 
     /**
@@ -102,40 +102,40 @@ public class ConfigurationPropertiesFactoryBean implements InitializingBean, Fac
     @Override
     public void afterPropertiesSet() throws Exception
     {
-<span class="nc bnc" id="L105" title="All 6 branches missed.">        if (compositeConfiguration == null &amp;&amp; ArrayUtils.isEmpty(configurations) &amp;&amp; ArrayUtils.isEmpty(locations))</span>
+<span class="pc bpc" id="L105" title="1 of 6 branches missed.">        if (compositeConfiguration == null &amp;&amp; ArrayUtils.isEmpty(configurations) &amp;&amp; ArrayUtils.isEmpty(locations))</span>
         {
-<span class="nc" id="L107">            throw new IllegalArgumentException(&quot;no configuration object or location specified&quot;);</span>
+<span class="fc" id="L107">            throw new IllegalArgumentException(&quot;no configuration object or location specified&quot;);</span>
         }
 
-<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (compositeConfiguration == null)</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (compositeConfiguration == null)</span>
         {
-<span class="nc" id="L112">            compositeConfiguration = new CompositeConfiguration();</span>
+<span class="fc" id="L112">            compositeConfiguration = new CompositeConfiguration();</span>
         }
 
-<span class="nc" id="L115">        compositeConfiguration.setThrowExceptionOnMissing(throwExceptionOnMissing);</span>
+<span class="fc" id="L115">        compositeConfiguration.setThrowExceptionOnMissing(throwExceptionOnMissing);</span>
 
-<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (configurations != null)</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if (configurations != null)</span>
         {
-<span class="nc bnc" id="L119" title="All 2 branches missed.">            for (Configuration configuration : configurations)</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">            for (Configuration configuration : configurations)</span>
             {
-<span class="nc" id="L121">                compositeConfiguration.addConfiguration(configuration);</span>
+<span class="fc" id="L121">                compositeConfiguration.addConfiguration(configuration);</span>
             }
         }
 
-<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (locations != null)</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if (locations != null)</span>
         {
-<span class="nc bnc" id="L127" title="All 2 branches missed.">            for (Resource location : locations)</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            for (Resource location : locations)</span>
             {
-<span class="nc" id="L129">                URL url = location.getURL();</span>
-<span class="nc" id="L130">                Configuration props = new Configurations().properties(url);</span>
-<span class="nc" id="L131">                compositeConfiguration.addConfiguration(props);</span>
+<span class="fc" id="L129">                URL url = location.getURL();</span>
+<span class="fc" id="L130">                Configuration props = new Configurations().properties(url);</span>
+<span class="fc" id="L131">                compositeConfiguration.addConfiguration(props);</span>
             }
         }
-<span class="nc" id="L134">    }</span>
+<span class="fc" id="L134">    }</span>
 
     public Configuration[] getConfigurations()
     {
-<span class="nc" id="L138">        return defensiveCopy(configurations);</span>
+<span class="fc" id="L138">        return defensiveCopy(configurations);</span>
     }
 
     /**
@@ -145,12 +145,12 @@ public class ConfigurationPropertiesFactoryBean implements InitializingBean, Fac
      */
     public void setConfigurations(Configuration[] configurations)
     {
-<span class="nc" id="L148">        this.configurations = defensiveCopy(configurations);</span>
-<span class="nc" id="L149">    }</span>
+<span class="fc" id="L148">        this.configurations = defensiveCopy(configurations);</span>
+<span class="fc" id="L149">    }</span>
 
     public Resource[] getLocations()
     {
-<span class="nc" id="L153">        return defensiveCopy(locations);</span>
+<span class="fc" id="L153">        return defensiveCopy(locations);</span>
     }
 
     /**
@@ -162,8 +162,8 @@ public class ConfigurationPropertiesFactoryBean implements InitializingBean, Fac
      */
     public void setLocations(Resource[] locations)
     {
-<span class="nc" id="L165">        this.locations = defensiveCopy(locations);</span>
-<span class="nc" id="L166">    }</span>
+<span class="fc" id="L165">        this.locations = defensiveCopy(locations);</span>
+<span class="fc" id="L166">    }</span>
 
     public boolean isThrowExceptionOnMissing()
     {
@@ -183,7 +183,7 @@ public class ConfigurationPropertiesFactoryBean implements InitializingBean, Fac
 
     public CompositeConfiguration getConfiguration()
     {
-<span class="nc" id="L186">        return compositeConfiguration;</span>
+<span class="fc" id="L186">        return compositeConfiguration;</span>
     }
 
     /**
@@ -196,7 +196,7 @@ public class ConfigurationPropertiesFactoryBean implements InitializingBean, Fac
      */
     private static &lt;T&gt; T[] defensiveCopy(T[] src)
     {
-<span class="nc bnc" id="L199" title="All 2 branches missed.">        return (src != null) ? src.clone() : null;</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">        return (src != null) ? src.clone() : null;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

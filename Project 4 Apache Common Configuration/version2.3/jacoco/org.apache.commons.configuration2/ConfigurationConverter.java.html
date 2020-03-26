@@ -53,7 +53,7 @@ public final class ConfigurationConverter
      */
     public static Configuration getConfiguration(Properties props)
     {
-<span class="nc" id="L56">        return new MapConfiguration(props);</span>
+<span class="fc" id="L56">        return new MapConfiguration(props);</span>
     }
 
     /**
@@ -68,51 +68,51 @@ public final class ConfigurationConverter
      */
     public static Properties getProperties(ImmutableConfiguration config)
     {
-<span class="nc" id="L71">        Properties props = new Properties();</span>
+<span class="fc" id="L71">        Properties props = new Properties();</span>
         ListDelimiterHandler listHandler;
         boolean useDelimiterHandler;
 
-<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (config instanceof AbstractConfiguration)</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        if (config instanceof AbstractConfiguration)</span>
         {
-<span class="nc" id="L77">            listHandler = ((AbstractConfiguration) config).getListDelimiterHandler();</span>
-<span class="nc" id="L78">            useDelimiterHandler = true;</span>
+<span class="fc" id="L77">            listHandler = ((AbstractConfiguration) config).getListDelimiterHandler();</span>
+<span class="fc" id="L78">            useDelimiterHandler = true;</span>
         }
         else
         {
-<span class="nc" id="L82">            listHandler = null;</span>
-<span class="nc" id="L83">            useDelimiterHandler = false;</span>
+<span class="fc" id="L82">            listHandler = null;</span>
+<span class="fc" id="L83">            useDelimiterHandler = false;</span>
         }
 
-<span class="nc bnc" id="L86" title="All 2 branches missed.">        for (Iterator&lt;String&gt; keys = config.getKeys(); keys.hasNext();)</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        for (Iterator&lt;String&gt; keys = config.getKeys(); keys.hasNext();)</span>
         {
-<span class="nc" id="L88">            String key = keys.next();</span>
-<span class="nc" id="L89">            List&lt;Object&gt; list = config.getList(key);</span>
+<span class="fc" id="L88">            String key = keys.next();</span>
+<span class="fc" id="L89">            List&lt;Object&gt; list = config.getList(key);</span>
 
             String propValue;
-<span class="nc bnc" id="L92" title="All 2 branches missed.">            if (useDelimiterHandler)</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">            if (useDelimiterHandler)</span>
             {
                 try
                 {
-<span class="nc" id="L96">                    propValue =</span>
-<span class="nc" id="L97">                            String.valueOf(listHandler.escapeList(list,</span>
+<span class="fc" id="L96">                    propValue =</span>
+<span class="fc" id="L97">                            String.valueOf(listHandler.escapeList(list,</span>
                                     ListDelimiterHandler.NOOP_TRANSFORMER));
                 }
-<span class="nc" id="L100">                catch (Exception ex)</span>
+<span class="fc" id="L100">                catch (Exception ex)</span>
                 {
                     // obviously, the list handler does not support splitting
-<span class="nc" id="L103">                    useDelimiterHandler = false;</span>
-<span class="nc" id="L104">                    propValue = listToString(list);</span>
-<span class="nc" id="L105">                }</span>
+<span class="fc" id="L103">                    useDelimiterHandler = false;</span>
+<span class="fc" id="L104">                    propValue = listToString(list);</span>
+<span class="fc" id="L105">                }</span>
             }
             else
             {
-<span class="nc" id="L109">                propValue = listToString(list);</span>
+<span class="fc" id="L109">                propValue = listToString(list);</span>
             }
 
-<span class="nc" id="L112">            props.setProperty(key, propValue);</span>
-<span class="nc" id="L113">        }</span>
+<span class="fc" id="L112">            props.setProperty(key, propValue);</span>
+<span class="fc" id="L113">        }</span>
 
-<span class="nc" id="L115">        return props;</span>
+<span class="fc" id="L115">        return props;</span>
     }
 
     /**
@@ -127,7 +127,7 @@ public final class ConfigurationConverter
      */
     public static Properties getProperties(Configuration config)
     {
-<span class="nc" id="L130">        return getProperties((ImmutableConfiguration) config);</span>
+<span class="fc" id="L130">        return getProperties((ImmutableConfiguration) config);</span>
     }
 
     /**
@@ -138,7 +138,7 @@ public final class ConfigurationConverter
      */
     public static Map&lt;Object, Object&gt; getMap(Configuration config)
     {
-<span class="nc" id="L141">        return new ConfigurationMap(config);</span>
+<span class="fc" id="L141">        return new ConfigurationMap(config);</span>
     }
 
     /**
@@ -150,7 +150,7 @@ public final class ConfigurationConverter
      */
     private static String listToString(List&lt;?&gt; list)
     {
-<span class="nc" id="L153">        return StringUtils.join(list, DEFAULT_SEPARATOR);</span>
+<span class="fc" id="L153">        return StringUtils.join(list, DEFAULT_SEPARATOR);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

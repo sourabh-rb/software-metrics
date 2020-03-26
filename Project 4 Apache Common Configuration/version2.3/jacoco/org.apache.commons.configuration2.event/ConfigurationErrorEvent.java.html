@@ -58,7 +58,7 @@ public class ConfigurationErrorEvent extends Event
      *
      * @since 2.0
      */
-<span class="nc" id="L61">    public static final EventType&lt;ConfigurationErrorEvent&gt; ANY =</span>
+<span class="fc" id="L61">    public static final EventType&lt;ConfigurationErrorEvent&gt; ANY =</span>
             new EventType&lt;&gt;(Event.ANY, &quot;ERROR&quot;);
 
     /**
@@ -68,7 +68,7 @@ public class ConfigurationErrorEvent extends Event
      *
      * @since 2.0
      */
-<span class="nc" id="L71">    public static final EventType&lt;ConfigurationErrorEvent&gt; READ =</span>
+<span class="fc" id="L71">    public static final EventType&lt;ConfigurationErrorEvent&gt; READ =</span>
             new EventType&lt;&gt;(ANY, &quot;READ_ERROR&quot;);
 
     /**
@@ -78,7 +78,7 @@ public class ConfigurationErrorEvent extends Event
      *
      * @since 2.0
      */
-<span class="nc" id="L81">    public static final EventType&lt;ConfigurationErrorEvent&gt; WRITE =</span>
+<span class="fc" id="L81">    public static final EventType&lt;ConfigurationErrorEvent&gt; WRITE =</span>
             new EventType&lt;&gt;(ANY, &quot;WRITE_ERROR&quot;);
 
     /**
@@ -114,12 +114,12 @@ public class ConfigurationErrorEvent extends Event
             EventType&lt;?&gt; operationType, String propName, Object propValue,
             Throwable cause)
     {
-<span class="nc" id="L117">        super(source, eventType);</span>
-<span class="nc" id="L118">        errorOperationType = operationType;</span>
-<span class="nc" id="L119">        propertyName = propName;</span>
-<span class="nc" id="L120">        propertyValue = propValue;</span>
-<span class="nc" id="L121">        this.cause = cause;</span>
-<span class="nc" id="L122">    }</span>
+<span class="fc" id="L117">        super(source, eventType);</span>
+<span class="fc" id="L118">        errorOperationType = operationType;</span>
+<span class="fc" id="L119">        propertyName = propName;</span>
+<span class="fc" id="L120">        propertyValue = propValue;</span>
+<span class="fc" id="L121">        this.cause = cause;</span>
+<span class="fc" id="L122">    }</span>
 
     /**
      * Returns the {@code EventType} of the operation which caused this error.
@@ -128,7 +128,7 @@ public class ConfigurationErrorEvent extends Event
      */
     public EventType&lt;?&gt; getErrorOperationType()
     {
-<span class="nc" id="L131">        return errorOperationType;</span>
+<span class="fc" id="L131">        return errorOperationType;</span>
     }
 
     /**
@@ -139,7 +139,7 @@ public class ConfigurationErrorEvent extends Event
      */
     public String getPropertyName()
     {
-<span class="nc" id="L142">        return propertyName;</span>
+<span class="fc" id="L142">        return propertyName;</span>
     }
 
     /**
@@ -150,7 +150,7 @@ public class ConfigurationErrorEvent extends Event
      */
     public Object getPropertyValue()
     {
-<span class="nc" id="L153">        return propertyValue;</span>
+<span class="fc" id="L153">        return propertyValue;</span>
     }
 
     /**
@@ -161,7 +161,7 @@ public class ConfigurationErrorEvent extends Event
      */
     public Throwable getCause()
     {
-<span class="nc" id="L164">        return cause;</span>
+<span class="fc" id="L164">        return cause;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -35,10 +35,10 @@ import org.xml.sax.SAXException;
  * @since 1.7
  * @version $Id: DefaultEntityResolver.java 1790899 2017-04-10 21:56:46Z ggregory $
  */
-<span class="nc" id="L38">public class DefaultEntityResolver implements EntityResolver, EntityRegistry</span>
+<span class="fc" id="L38">public class DefaultEntityResolver implements EntityResolver, EntityRegistry</span>
 {
     /** Stores a map with the registered public IDs.*/
-<span class="nc" id="L41">    private final Map&lt;String, URL&gt; registeredEntities = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L41">    private final Map&lt;String, URL&gt; registeredEntities = new HashMap&lt;&gt;();</span>
 
     /**
      * &lt;p&gt;
@@ -88,13 +88,13 @@ import org.xml.sax.SAXException;
             throws SAXException
     {
         // Has this system identifier been registered?
-<span class="nc" id="L91">        URL entityURL = null;</span>
-<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (publicId != null)</span>
+<span class="fc" id="L91">        URL entityURL = null;</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        if (publicId != null)</span>
         {
-<span class="nc" id="L94">            entityURL = getRegisteredEntities().get(publicId);</span>
+<span class="fc" id="L94">            entityURL = getRegisteredEntities().get(publicId);</span>
         }
 
-<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (entityURL != null)</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        if (entityURL != null)</span>
         {
             // Obtain an InputSource for this URL. This code is based on the
             // createInputSourceFromURL() method of Commons Digester.
@@ -115,7 +115,7 @@ import org.xml.sax.SAXException;
         else
         {
             // default processing behavior
-<span class="nc" id="L118">            return null;</span>
+<span class="fc" id="L118">            return null;</span>
         }
     }
 
@@ -128,7 +128,7 @@ import org.xml.sax.SAXException;
     @Override
     public Map&lt;String, URL&gt; getRegisteredEntities()
     {
-<span class="nc" id="L131">        return registeredEntities;</span>
+<span class="fc" id="L131">        return registeredEntities;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

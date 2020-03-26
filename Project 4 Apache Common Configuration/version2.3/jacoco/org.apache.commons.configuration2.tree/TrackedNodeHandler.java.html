@@ -56,10 +56,10 @@ class TrackedNodeHandler extends AbstractImmutableNodeHandler
      */
     public TrackedNodeHandler(ImmutableNode root,
             NodeHandler&lt;ImmutableNode&gt; handler)
-<span class="nc" id="L59">    {</span>
-<span class="nc" id="L60">        rootNode = root;</span>
-<span class="nc" id="L61">        parentHandler = handler;</span>
-<span class="nc" id="L62">    }</span>
+<span class="fc" id="L59">    {</span>
+<span class="fc" id="L60">        rootNode = root;</span>
+<span class="fc" id="L61">        parentHandler = handler;</span>
+<span class="fc" id="L62">    }</span>
 
     /**
      * Returns the parent handler. This is the {@code NodeHandler} which is
@@ -69,7 +69,7 @@ class TrackedNodeHandler extends AbstractImmutableNodeHandler
      */
     public NodeHandler&lt;ImmutableNode&gt; getParentHandler()
     {
-<span class="nc" id="L72">        return parentHandler;</span>
+<span class="fc" id="L72">        return parentHandler;</span>
     }
 
     /**
@@ -79,7 +79,7 @@ class TrackedNodeHandler extends AbstractImmutableNodeHandler
     @Override
     public ImmutableNode getParent(ImmutableNode node)
     {
-<span class="nc" id="L82">        return getParentHandler().getParent(node);</span>
+<span class="fc" id="L82">        return getParentHandler().getParent(node);</span>
     }
 
     /**
@@ -89,7 +89,7 @@ class TrackedNodeHandler extends AbstractImmutableNodeHandler
     @Override
     public ImmutableNode getRootNode()
     {
-<span class="nc" id="L92">        return rootNode;</span>
+<span class="fc" id="L92">        return rootNode;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

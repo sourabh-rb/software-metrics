@@ -53,11 +53,11 @@ class ConfigurationAttributePointer&lt;T&gt; extends NodePointer
     public ConfigurationAttributePointer(ConfigurationNodePointer&lt;T&gt; parent,
             String attrName)
     {
-<span class="nc" id="L56">        super(parent);</span>
-<span class="nc" id="L57">        attributeResult =</span>
-<span class="nc" id="L58">                QueryResult.createAttributeResult(</span>
-<span class="nc" id="L59">                        parent.getConfigurationNode(), attrName);</span>
-<span class="nc" id="L60">    }</span>
+<span class="fc" id="L56">        super(parent);</span>
+<span class="fc" id="L57">        attributeResult =</span>
+<span class="fc" id="L58">                QueryResult.createAttributeResult(</span>
+<span class="fc" id="L59">                        parent.getConfigurationNode(), attrName);</span>
+<span class="fc" id="L60">    }</span>
 
     /**
      * Returns a reference to the parent node pointer.
@@ -69,9 +69,9 @@ class ConfigurationAttributePointer&lt;T&gt; extends NodePointer
         // safe to cast because the constructor only expects pointers of this
         // type
         @SuppressWarnings(&quot;unchecked&quot;)
-<span class="nc" id="L72">        ConfigurationNodePointer&lt;T&gt; configurationNodePointer =</span>
-<span class="nc" id="L73">                (ConfigurationNodePointer&lt;T&gt;) getParent();</span>
-<span class="nc" id="L74">        return configurationNodePointer;</span>
+<span class="fc" id="L72">        ConfigurationNodePointer&lt;T&gt; configurationNodePointer =</span>
+<span class="fc" id="L73">                (ConfigurationNodePointer&lt;T&gt;) getParent();</span>
+<span class="fc" id="L74">        return configurationNodePointer;</span>
     }
 
     /**
@@ -96,7 +96,7 @@ class ConfigurationAttributePointer&lt;T&gt; extends NodePointer
     @Override
     public Object getBaseValue()
     {
-<span class="nc" id="L99">        return getValue();</span>
+<span class="fc" id="L99">        return getValue();</span>
     }
 
     /**
@@ -108,7 +108,7 @@ class ConfigurationAttributePointer&lt;T&gt; extends NodePointer
     @Override
     public Object getImmediateNode()
     {
-<span class="nc" id="L111">        return attributeResult;</span>
+<span class="fc" id="L111">        return attributeResult;</span>
     }
 
     /**
@@ -119,7 +119,7 @@ class ConfigurationAttributePointer&lt;T&gt; extends NodePointer
     @Override
     public int getLength()
     {
-<span class="nc" id="L122">        return 1;</span>
+<span class="fc" id="L122">        return 1;</span>
     }
 
     /**
@@ -130,7 +130,7 @@ class ConfigurationAttributePointer&lt;T&gt; extends NodePointer
     @Override
     public QName getName()
     {
-<span class="nc" id="L133">        return new QName(null, attributeResult.getAttributeName());</span>
+<span class="fc" id="L133">        return new QName(null, attributeResult.getAttributeName());</span>
     }
 
     /**
@@ -142,7 +142,7 @@ class ConfigurationAttributePointer&lt;T&gt; extends NodePointer
     @Override
     public boolean isCollection()
     {
-<span class="nc" id="L145">        return false;</span>
+<span class="fc" id="L145">        return false;</span>
     }
 
     /**
@@ -154,7 +154,7 @@ class ConfigurationAttributePointer&lt;T&gt; extends NodePointer
     @Override
     public boolean isLeaf()
     {
-<span class="nc" id="L157">        return true;</span>
+<span class="fc" id="L157">        return true;</span>
     }
 
     /**
@@ -166,7 +166,7 @@ class ConfigurationAttributePointer&lt;T&gt; extends NodePointer
     @Override
     public boolean isAttribute()
     {
-<span class="nc" id="L169">        return true;</span>
+<span class="fc" id="L169">        return true;</span>
     }
 
     /**
@@ -177,7 +177,7 @@ class ConfigurationAttributePointer&lt;T&gt; extends NodePointer
     @Override
     public Object getValue()
     {
-<span class="nc" id="L180">        return attributeResult.getAttributeValue(getNodeHandler());</span>
+<span class="fc" id="L180">        return attributeResult.getAttributeValue(getNodeHandler());</span>
     }
 
     /**
@@ -190,7 +190,7 @@ class ConfigurationAttributePointer&lt;T&gt; extends NodePointer
     @Override
     public void setValue(Object value)
     {
-<span class="nc" id="L193">        throw new UnsupportedOperationException(</span>
+<span class="fc" id="L193">        throw new UnsupportedOperationException(</span>
                 &quot;Updating the value is not supported!&quot;);
     }
 
@@ -204,12 +204,12 @@ class ConfigurationAttributePointer&lt;T&gt; extends NodePointer
     @Override
     public boolean testNode(NodeTest test)
     {
-<span class="nc bnc" id="L207" title="All 2 branches missed.">        if (test instanceof NodeTypeTest</span>
-<span class="nc bnc" id="L208" title="All 2 branches missed.">                &amp;&amp; ((NodeTypeTest) test).getNodeType() == Compiler.NODE_TYPE_TEXT)</span>
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">        if (test instanceof NodeTypeTest</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">                &amp;&amp; ((NodeTypeTest) test).getNodeType() == Compiler.NODE_TYPE_TEXT)</span>
         {
-<span class="nc" id="L210">            return true;</span>
+<span class="fc" id="L210">            return true;</span>
         }
-<span class="nc" id="L212">        return super.testNode(test);</span>
+<span class="fc" id="L212">        return super.testNode(test);</span>
     }
 
     /**
@@ -220,7 +220,7 @@ class ConfigurationAttributePointer&lt;T&gt; extends NodePointer
      */
     private NodeHandler&lt;T&gt; getNodeHandler()
     {
-<span class="nc" id="L223">        return getParentPointer().getNodeHandler();</span>
+<span class="fc" id="L223">        return getParentPointer().getNodeHandler();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

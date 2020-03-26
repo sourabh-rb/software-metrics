@@ -52,11 +52,11 @@ import org.apache.commons.vfs2.provider.UriParser;
 public class VFSFileSystem extends DefaultFileSystem
 {
     /** The logger. */
-<span class="nc" id="L55">    private final Log log = LogFactory.getLog(getClass());</span>
+<span class="fc" id="L55">    private final Log log = LogFactory.getLog(getClass());</span>
 
     public VFSFileSystem()
-<span class="nc" id="L58">    {</span>
-<span class="nc" id="L59">    }</span>
+<span class="fc" id="L58">    {</span>
+<span class="fc" id="L59">    }</span>
 
     @Override
     public InputStream getInputStream(URL url) throws ConfigurationException
@@ -64,20 +64,20 @@ public class VFSFileSystem extends DefaultFileSystem
         FileObject file;
         try
         {
-<span class="nc" id="L67">            FileSystemOptions opts = getOptions(url.getProtocol());</span>
-<span class="nc bnc" id="L68" title="All 2 branches missed.">            file = (opts == null) ? VFS.getManager().resolveFile(url.toString())</span>
-<span class="nc" id="L69">                    : VFS.getManager().resolveFile(url.toString(), opts);</span>
-<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (file.getType() != FileType.FILE)</span>
+<span class="fc" id="L67">            FileSystemOptions opts = getOptions(url.getProtocol());</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">            file = (opts == null) ? VFS.getManager().resolveFile(url.toString())</span>
+<span class="pc" id="L69">                    : VFS.getManager().resolveFile(url.toString(), opts);</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">            if (file.getType() != FileType.FILE)</span>
             {
 <span class="nc" id="L72">                throw new ConfigurationException(&quot;Cannot load a configuration from a directory&quot;);</span>
             }
-<span class="nc" id="L74">            FileContent content = file.getContent();</span>
-<span class="nc bnc" id="L75" title="All 2 branches missed.">            if (content == null)</span>
+<span class="fc" id="L74">            FileContent content = file.getContent();</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">            if (content == null)</span>
             {
 <span class="nc" id="L77">                String msg = &quot;Cannot access content of &quot; + file.getName().getFriendlyURI();</span>
 <span class="nc" id="L78">                throw new ConfigurationException(msg);</span>
             }
-<span class="nc" id="L80">            return content.getInputStream();</span>
+<span class="fc" id="L80">            return content.getInputStream();</span>
         }
 <span class="nc" id="L82">        catch (FileSystemException fse)</span>
         {
@@ -117,30 +117,30 @@ public class VFSFileSystem extends DefaultFileSystem
     @Override
     public String getPath(File file, URL url, String basePath, String fileName)
     {
-<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (file != null)</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (file != null)</span>
         {
 <span class="nc" id="L122">            return super.getPath(file, url, basePath, fileName);</span>
         }
         try
         {
-<span class="nc" id="L126">            FileSystemManager fsManager = VFS.getManager();</span>
-<span class="nc bnc" id="L127" title="All 2 branches missed.">            if (url != null)</span>
+<span class="fc" id="L126">            FileSystemManager fsManager = VFS.getManager();</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            if (url != null)</span>
             {
-<span class="nc" id="L129">                FileName name = fsManager.resolveURI(url.toString());</span>
-<span class="nc bnc" id="L130" title="All 2 branches missed.">                if (name != null)</span>
+<span class="fc" id="L129">                FileName name = fsManager.resolveURI(url.toString());</span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">                if (name != null)</span>
                 {
-<span class="nc" id="L132">                    return name.toString();</span>
+<span class="fc" id="L132">                    return name.toString();</span>
                 }
             }
 
-<span class="nc bnc" id="L136" title="All 2 branches missed.">            if (UriParser.extractScheme(fileName) != null)</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">            if (UriParser.extractScheme(fileName) != null)</span>
             {
 <span class="nc" id="L138">                return fileName;</span>
             }
-<span class="nc bnc" id="L140" title="All 2 branches missed.">            else if (basePath != null)</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">            else if (basePath != null)</span>
             {
-<span class="nc" id="L142">                FileName base = fsManager.resolveURI(basePath);</span>
-<span class="nc" id="L143">                return fsManager.resolveName(base, fileName).getURI();</span>
+<span class="fc" id="L142">                FileName base = fsManager.resolveURI(basePath);</span>
+<span class="fc" id="L143">                return fsManager.resolveName(base, fileName).getURI();</span>
             }
             else
             {
@@ -232,12 +232,12 @@ public class VFSFileSystem extends DefaultFileSystem
     @Override
     public URL locateFromURL(String basePath, String fileName)
     {
-<span class="nc" id="L235">        String fileScheme = UriParser.extractScheme(fileName);</span>
+<span class="fc" id="L235">        String fileScheme = UriParser.extractScheme(fileName);</span>
 
         // Use DefaultFileSystem if basePath and fileName don't have a scheme.
-<span class="nc bnc" id="L238" title="All 6 branches missed.">        if ((basePath == null || UriParser.extractScheme(basePath) == null) &amp;&amp; fileScheme == null)</span>
+<span class="pc bpc" id="L238" title="3 of 6 branches missed.">        if ((basePath == null || UriParser.extractScheme(basePath) == null) &amp;&amp; fileScheme == null)</span>
         {
-<span class="nc" id="L240">            return super.locateFromURL(basePath, fileName);</span>
+<span class="fc" id="L240">            return super.locateFromURL(basePath, fileName);</span>
         }
         try
         {
@@ -285,18 +285,18 @@ public class VFSFileSystem extends DefaultFileSystem
 
     private FileSystemOptions getOptions(String scheme)
     {
-<span class="nc" id="L288">        FileSystemOptions opts = new FileSystemOptions();</span>
+<span class="fc" id="L288">        FileSystemOptions opts = new FileSystemOptions();</span>
         FileSystemConfigBuilder builder;
         try
         {
-<span class="nc" id="L292">            builder = VFS.getManager().getFileSystemConfigBuilder(scheme);</span>
+<span class="fc" id="L292">            builder = VFS.getManager().getFileSystemConfigBuilder(scheme);</span>
         }
 <span class="nc" id="L294">        catch (Exception ex)</span>
         {
 <span class="nc" id="L296">            return null;</span>
-<span class="nc" id="L297">        }</span>
-<span class="nc" id="L298">        FileOptionsProvider provider = getFileOptionsProvider();</span>
-<span class="nc bnc" id="L299" title="All 2 branches missed.">        if (provider != null)</span>
+<span class="fc" id="L297">        }</span>
+<span class="fc" id="L298">        FileOptionsProvider provider = getFileOptionsProvider();</span>
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">        if (provider != null)</span>
         {
 <span class="nc" id="L301">            Map&lt;String, Object&gt; map = provider.getOptions();</span>
 <span class="nc bnc" id="L302" title="All 2 branches missed.">            if (map == null)</span>
@@ -327,7 +327,7 @@ public class VFSFileSystem extends DefaultFileSystem
 <span class="nc" id="L327">                return opts;</span>
             }
         }
-<span class="nc" id="L330">        return null;</span>
+<span class="fc" id="L330">        return null;</span>
 
     }
 

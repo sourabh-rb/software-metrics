@@ -44,40 +44,40 @@ public class ServletRequestConfiguration extends BaseWebConfiguration
      * @param request the servlet request
      */
     public ServletRequestConfiguration(ServletRequest request)
-<span class="nc" id="L47">    {</span>
-<span class="nc" id="L48">        this.request = request;</span>
-<span class="nc" id="L49">    }</span>
+<span class="fc" id="L47">    {</span>
+<span class="fc" id="L48">        this.request = request;</span>
+<span class="fc" id="L49">    }</span>
 
     @Override
     protected Object getPropertyInternal(String key)
     {
-<span class="nc" id="L54">        String[] values = request.getParameterValues(key);</span>
+<span class="fc" id="L54">        String[] values = request.getParameterValues(key);</span>
 
-<span class="nc bnc" id="L56" title="All 4 branches missed.">        if (values == null || values.length == 0)</span>
+<span class="pc bpc" id="L56" title="1 of 4 branches missed.">        if (values == null || values.length == 0)</span>
         {
-<span class="nc" id="L58">            return null;</span>
+<span class="fc" id="L58">            return null;</span>
         }
-<span class="nc bnc" id="L60" title="All 2 branches missed.">        else if (values.length == 1)</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        else if (values.length == 1)</span>
         {
-<span class="nc" id="L62">            return handleDelimiters(values[0]);</span>
+<span class="fc" id="L62">            return handleDelimiters(values[0]);</span>
         }
         else
         {
             // ensure that escape characters in all list elements are removed
-<span class="nc" id="L67">            List&lt;Object&gt; result = new ArrayList&lt;&gt;(values.length);</span>
-<span class="nc bnc" id="L68" title="All 2 branches missed.">            for (String value : values)</span>
+<span class="fc" id="L67">            List&lt;Object&gt; result = new ArrayList&lt;&gt;(values.length);</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">            for (String value : values)</span>
             {
-<span class="nc" id="L70">                Object val = handleDelimiters(value);</span>
-<span class="nc bnc" id="L71" title="All 2 branches missed.">                if (val instanceof Collection)</span>
+<span class="fc" id="L70">                Object val = handleDelimiters(value);</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">                if (val instanceof Collection)</span>
                 {
 <span class="nc" id="L73">                    result.addAll((Collection&lt;?&gt;) val);</span>
                 }
                 else
                 {
-<span class="nc" id="L77">                    result.add(val);</span>
+<span class="fc" id="L77">                    result.add(val);</span>
                 }
             }
-<span class="nc" id="L80">            return result;</span>
+<span class="fc" id="L80">            return result;</span>
         }
     }
 
@@ -86,8 +86,8 @@ public class ServletRequestConfiguration extends BaseWebConfiguration
     {
         // According to the documentation of getParameterMap(), keys are Strings.
         @SuppressWarnings(&quot;unchecked&quot;)
-<span class="nc" id="L89">        Map&lt;String, ?&gt; parameterMap = request.getParameterMap();</span>
-<span class="nc" id="L90">        return parameterMap.keySet().iterator();</span>
+<span class="fc" id="L89">        Map&lt;String, ?&gt; parameterMap = request.getParameterMap();</span>
+<span class="fc" id="L90">        return parameterMap.keySet().iterator();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

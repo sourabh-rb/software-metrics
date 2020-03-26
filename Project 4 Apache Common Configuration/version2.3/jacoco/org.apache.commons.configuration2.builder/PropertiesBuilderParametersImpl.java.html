@@ -41,7 +41,7 @@ import org.apache.commons.configuration2.PropertiesConfigurationLayout;
  * @version $Id: PropertiesBuilderParametersImpl.java 1775894 2016-12-23 20:09:35Z oheger $
  * @since 2.0
  */
-<span class="nc" id="L44">public class PropertiesBuilderParametersImpl extends</span>
+<span class="fc" id="L44">public class PropertiesBuilderParametersImpl extends</span>
         FileBasedBuilderParametersImpl implements
         PropertiesBuilderProperties&lt;PropertiesBuilderParametersImpl&gt;
 {
@@ -57,8 +57,8 @@ import org.apache.commons.configuration2.PropertiesConfigurationLayout;
     @Override
     public PropertiesBuilderParametersImpl setIncludesAllowed(boolean f)
     {
-<span class="nc" id="L60">        storeProperty(PROP_INCLUDES_ALLOWED, Boolean.valueOf(f));</span>
-<span class="nc" id="L61">        return this;</span>
+<span class="fc" id="L60">        storeProperty(PROP_INCLUDES_ALLOWED, Boolean.valueOf(f));</span>
+<span class="fc" id="L61">        return this;</span>
     }
 
     /**
@@ -68,23 +68,23 @@ import org.apache.commons.configuration2.PropertiesConfigurationLayout;
     @Override
     public void inheritFrom(Map&lt;String, ?&gt; source)
     {
-<span class="nc" id="L71">        super.inheritFrom(source);</span>
-<span class="nc" id="L72">        copyPropertiesFrom(source, PROP_INCLUDES_ALLOWED, PROP_IO_FACTORY);</span>
-<span class="nc" id="L73">    }</span>
+<span class="fc" id="L71">        super.inheritFrom(source);</span>
+<span class="fc" id="L72">        copyPropertiesFrom(source, PROP_INCLUDES_ALLOWED, PROP_IO_FACTORY);</span>
+<span class="fc" id="L73">    }</span>
 
     @Override
     public PropertiesBuilderParametersImpl setLayout(
             PropertiesConfigurationLayout layout)
     {
-<span class="nc" id="L79">        storeProperty(PROP_LAYOUT, layout);</span>
-<span class="nc" id="L80">        return this;</span>
+<span class="fc" id="L79">        storeProperty(PROP_LAYOUT, layout);</span>
+<span class="fc" id="L80">        return this;</span>
     }
 
     @Override
     public PropertiesBuilderParametersImpl setIOFactory(IOFactory factory)
     {
-<span class="nc" id="L86">        storeProperty(PROP_IO_FACTORY, factory);</span>
-<span class="nc" id="L87">        return this;</span>
+<span class="fc" id="L86">        storeProperty(PROP_IO_FACTORY, factory);</span>
+<span class="fc" id="L87">        return this;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

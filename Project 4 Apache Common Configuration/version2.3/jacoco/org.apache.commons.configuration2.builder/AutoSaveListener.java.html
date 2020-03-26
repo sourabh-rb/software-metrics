@@ -49,7 +49,7 @@ class AutoSaveListener extends FileHandlerListenerAdapter implements
         EventListener&lt;ConfigurationEvent&gt;
 {
     /** The logger. */
-<span class="nc" id="L52">    private final Log log = LogFactory.getLog(getClass());</span>
+<span class="fc" id="L52">    private final Log log = LogFactory.getLog(getClass());</span>
 
     /** The associated builder. */
     private final FileBasedConfigurationBuilder&lt;?&gt; builder;
@@ -70,9 +70,9 @@ class AutoSaveListener extends FileHandlerListenerAdapter implements
      * @param bldr the associated builder
      */
     public AutoSaveListener(FileBasedConfigurationBuilder&lt;?&gt; bldr)
-<span class="nc" id="L73">    {</span>
-<span class="nc" id="L74">        builder = bldr;</span>
-<span class="nc" id="L75">    }</span>
+<span class="fc" id="L73">    {</span>
+<span class="fc" id="L74">        builder = bldr;</span>
+<span class="fc" id="L75">    }</span>
 
     /**
      * {@inheritDoc} This implementation checks whether an auto-safe operation
@@ -83,18 +83,18 @@ class AutoSaveListener extends FileHandlerListenerAdapter implements
     @Override
     public void onEvent(ConfigurationEvent event)
     {
-<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (autoSaveRequired(event))</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (autoSaveRequired(event))</span>
         {
             try
             {
-<span class="nc" id="L90">                builder.save();</span>
+<span class="fc" id="L90">                builder.save();</span>
             }
-<span class="nc" id="L92">            catch (ConfigurationException ce)</span>
+<span class="fc" id="L92">            catch (ConfigurationException ce)</span>
             {
-<span class="nc" id="L94">                log.warn(&quot;Auto save failed!&quot;, ce);</span>
-<span class="nc" id="L95">            }</span>
+<span class="fc" id="L94">                log.warn(&quot;Auto save failed!&quot;, ce);</span>
+<span class="fc" id="L95">            }</span>
         }
-<span class="nc" id="L97">    }</span>
+<span class="fc" id="L97">    }</span>
 
     /**
      * {@inheritDoc} This implementation increments the counter for load
@@ -103,8 +103,8 @@ class AutoSaveListener extends FileHandlerListenerAdapter implements
     @Override
     public synchronized void loading(FileHandler handler)
     {
-<span class="nc" id="L106">        loading++;</span>
-<span class="nc" id="L107">    }</span>
+<span class="fc" id="L106">        loading++;</span>
+<span class="fc" id="L107">    }</span>
 
     /**
      * {@inheritDoc} This implementation decrements the counter for load
@@ -113,8 +113,8 @@ class AutoSaveListener extends FileHandlerListenerAdapter implements
     @Override
     public synchronized void loaded(FileHandler handler)
     {
-<span class="nc" id="L116">        loading--;</span>
-<span class="nc" id="L117">    }</span>
+<span class="fc" id="L116">        loading--;</span>
+<span class="fc" id="L117">    }</span>
 
     /**
      * Updates the {@code FileHandler}. This method is called by the builder
@@ -126,17 +126,17 @@ class AutoSaveListener extends FileHandlerListenerAdapter implements
      */
     public synchronized void updateFileHandler(FileHandler fh)
     {
-<span class="nc bnc" id="L129" title="All 2 branches missed.">        if (handler != null)</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (handler != null)</span>
         {
-<span class="nc" id="L131">            handler.removeFileHandlerListener(this);</span>
+<span class="fc" id="L131">            handler.removeFileHandlerListener(this);</span>
         }
 
-<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (fh != null)</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if (fh != null)</span>
         {
-<span class="nc" id="L136">            fh.addFileHandlerListener(this);</span>
+<span class="fc" id="L136">            fh.addFileHandlerListener(this);</span>
         }
-<span class="nc" id="L138">        handler = fh;</span>
-<span class="nc" id="L139">    }</span>
+<span class="fc" id="L138">        handler = fh;</span>
+<span class="fc" id="L139">    }</span>
 
     /**
      * Returns a flag whether a load operation is currently in progress.
@@ -145,7 +145,7 @@ class AutoSaveListener extends FileHandlerListenerAdapter implements
      */
     private synchronized boolean inLoadOperation()
     {
-<span class="nc bnc" id="L148" title="All 2 branches missed.">        return loading &gt; 0;</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        return loading &gt; 0;</span>
     }
 
     /**
@@ -158,7 +158,7 @@ class AutoSaveListener extends FileHandlerListenerAdapter implements
      */
     private boolean autoSaveRequired(ConfigurationEvent event)
     {
-<span class="nc bnc" id="L161" title="All 4 branches missed.">        return !event.isBeforeUpdate() &amp;&amp; !inLoadOperation();</span>
+<span class="fc bfc" id="L161" title="All 4 branches covered.">        return !event.isBeforeUpdate() &amp;&amp; !inLoadOperation();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -62,12 +62,12 @@ public interface ListDelimiterHandler
      * passed in object without changes. This instance can be used by
      * configurations which do not require additional encoding.
      */
-<span class="nc" id="L65">    ValueTransformer NOOP_TRANSFORMER = new ValueTransformer()</span>
-<span class="nc" id="L66">    {</span>
+<span class="fc" id="L65">    ValueTransformer NOOP_TRANSFORMER = new ValueTransformer()</span>
+<span class="fc" id="L66">    {</span>
         @Override
         public Object transformValue(Object value)
         {
-<span class="nc" id="L70">            return value;</span>
+<span class="fc" id="L70">            return value;</span>
         }
     };
 

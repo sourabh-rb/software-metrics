@@ -42,16 +42,16 @@ import org.apache.commons.lang3.text.StrLookup;
  * @version $Id: SystemPropertiesLookup.java 1679786 2015-05-16 17:47:09Z oheger $
  * @since 2.0
  */
-<span class="nc" id="L45">public class SystemPropertiesLookup implements Lookup</span>
+<span class="fc" id="L45">public class SystemPropertiesLookup implements Lookup</span>
 {
     /** The underlying StrLookup object. */
-<span class="nc" id="L48">    private final StrLookup&lt;String&gt; sysLookup = StrLookup</span>
-<span class="nc" id="L49">            .systemPropertiesLookup();</span>
+<span class="fc" id="L48">    private final StrLookup&lt;String&gt; sysLookup = StrLookup</span>
+<span class="fc" id="L49">            .systemPropertiesLookup();</span>
 
     @Override
     public Object lookup(String variable)
     {
-<span class="nc" id="L54">        return sysLookup.lookup(variable);</span>
+<span class="fc" id="L54">        return sysLookup.lookup(variable);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

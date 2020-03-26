@@ -43,7 +43,7 @@ import org.apache.commons.jxpath.ri.model.NodePointerFactory;
  * @since 1.3
  * @version $Id: ConfigurationNodePointerFactory.java 1790899 2017-04-10 21:56:46Z ggregory $
  */
-<span class="nc" id="L46">public class ConfigurationNodePointerFactory implements NodePointerFactory</span>
+<span class="fc" id="L46">public class ConfigurationNodePointerFactory implements NodePointerFactory</span>
 {
     /** Constant for the order of this factory. */
     public static final int CONFIGURATION_NODE_POINTER_FACTORY_ORDER = 200;
@@ -56,7 +56,7 @@ import org.apache.commons.jxpath.ri.model.NodePointerFactory;
     @Override
     public int getOrder()
     {
-<span class="nc" id="L59">        return CONFIGURATION_NODE_POINTER_FACTORY_ORDER;</span>
+<span class="fc" id="L59">        return CONFIGURATION_NODE_POINTER_FACTORY_ORDER;</span>
     }
 
     /**
@@ -76,13 +76,13 @@ import org.apache.commons.jxpath.ri.model.NodePointerFactory;
      */
     public NodePointer createNodePointer(QName name, Object bean, Locale locale)
     {
-<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (bean instanceof NodeWrapper)</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (bean instanceof NodeWrapper)</span>
         {
-<span class="nc" id="L81">            NodeWrapper&lt;?&gt; wrapper = (NodeWrapper&lt;?&gt;) bean;</span>
-<span class="nc" id="L82">            return new ConfigurationNodePointer(wrapper.getNode(),</span>
-<span class="nc" id="L83">                    locale, wrapper.getNodeHandler());</span>
+<span class="fc" id="L81">            NodeWrapper&lt;?&gt; wrapper = (NodeWrapper&lt;?&gt;) bean;</span>
+<span class="fc" id="L82">            return new ConfigurationNodePointer(wrapper.getNode(),</span>
+<span class="fc" id="L83">                    locale, wrapper.getNodeHandler());</span>
         }
-<span class="nc" id="L85">        return null;</span>
+<span class="fc" id="L85">        return null;</span>
     }
 
     /**
@@ -123,7 +123,7 @@ import org.apache.commons.jxpath.ri.model.NodePointerFactory;
      */
     public static &lt;T&gt; Object wrapNode(T node, NodeHandler&lt;T&gt; handler)
     {
-<span class="nc" id="L126">        return new NodeWrapper&lt;&gt;(node, handler);</span>
+<span class="fc" id="L126">        return new NodeWrapper&lt;&gt;(node, handler);</span>
     }
 
     /**
@@ -147,10 +147,10 @@ import org.apache.commons.jxpath.ri.model.NodePointerFactory;
          * @param handler the node handler
          */
         public NodeWrapper(T nd, NodeHandler&lt;T&gt; handler)
-<span class="nc" id="L150">        {</span>
-<span class="nc" id="L151">            node = nd;</span>
-<span class="nc" id="L152">            nodeHandler = handler;</span>
-<span class="nc" id="L153">        }</span>
+<span class="fc" id="L150">        {</span>
+<span class="fc" id="L151">            node = nd;</span>
+<span class="fc" id="L152">            nodeHandler = handler;</span>
+<span class="fc" id="L153">        }</span>
 
         /**
          * Returns the wrapped node.
@@ -159,7 +159,7 @@ import org.apache.commons.jxpath.ri.model.NodePointerFactory;
          */
         public T getNode()
         {
-<span class="nc" id="L162">            return node;</span>
+<span class="fc" id="L162">            return node;</span>
         }
 
         /**
@@ -169,7 +169,7 @@ import org.apache.commons.jxpath.ri.model.NodePointerFactory;
          */
         public NodeHandler&lt;T&gt; getNodeHandler()
         {
-<span class="nc" id="L172">            return nodeHandler;</span>
+<span class="fc" id="L172">            return nodeHandler;</span>
         }
     }
 }

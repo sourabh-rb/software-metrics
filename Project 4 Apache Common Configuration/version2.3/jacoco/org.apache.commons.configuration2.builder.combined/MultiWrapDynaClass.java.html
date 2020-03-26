@@ -37,7 +37,7 @@ import org.apache.commons.beanutils.DynaProperty;
 class MultiWrapDynaClass implements DynaClass
 {
     /** An empty array for converting the properties collection to an array. */
-<span class="nc" id="L40">    private static final DynaProperty[] EMPTY_PROPS = new DynaProperty[0];</span>
+<span class="fc" id="L40">    private static final DynaProperty[] EMPTY_PROPS = new DynaProperty[0];</span>
 
     /** A collection with all properties of this class. */
     private final Collection&lt;DynaProperty&gt; properties;
@@ -52,11 +52,11 @@ class MultiWrapDynaClass implements DynaClass
      * @param wrappedCls the collection with wrapped classes
      */
     public MultiWrapDynaClass(Collection&lt;? extends DynaClass&gt; wrappedCls)
-<span class="nc" id="L55">    {</span>
-<span class="nc" id="L56">        properties = new LinkedList&lt;&gt;();</span>
-<span class="nc" id="L57">        namedProperties = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L58">        initProperties(wrappedCls);</span>
-<span class="nc" id="L59">    }</span>
+<span class="fc" id="L55">    {</span>
+<span class="fc" id="L56">        properties = new LinkedList&lt;&gt;();</span>
+<span class="fc" id="L57">        namedProperties = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L58">        initProperties(wrappedCls);</span>
+<span class="fc" id="L59">    }</span>
 
     /**
      * {@inheritDoc} The name of this class is not relevant.
@@ -64,13 +64,13 @@ class MultiWrapDynaClass implements DynaClass
     @Override
     public String getName()
     {
-<span class="nc" id="L67">        return null;</span>
+<span class="fc" id="L67">        return null;</span>
     }
 
     @Override
     public DynaProperty getDynaProperty(String name)
     {
-<span class="nc" id="L73">        return namedProperties.get(name);</span>
+<span class="fc" id="L73">        return namedProperties.get(name);</span>
     }
 
     @Override
@@ -87,7 +87,7 @@ class MultiWrapDynaClass implements DynaClass
     public DynaBean newInstance() throws IllegalAccessException,
             InstantiationException
     {
-<span class="nc" id="L90">        throw new UnsupportedOperationException(</span>
+<span class="fc" id="L90">        throw new UnsupportedOperationException(</span>
                 &quot;Cannot create an instance of MultiWrapDynaBean!&quot;);
     }
 
@@ -98,15 +98,15 @@ class MultiWrapDynaClass implements DynaClass
      */
     private void initProperties(Collection&lt;? extends DynaClass&gt; wrappedCls)
     {
-<span class="nc bnc" id="L101" title="All 2 branches missed.">        for (DynaClass cls : wrappedCls)</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        for (DynaClass cls : wrappedCls)</span>
         {
-<span class="nc" id="L103">            DynaProperty[] props = cls.getDynaProperties();</span>
-<span class="nc bnc" id="L104" title="All 2 branches missed.">            for (DynaProperty p : props)</span>
+<span class="fc" id="L103">            DynaProperty[] props = cls.getDynaProperties();</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            for (DynaProperty p : props)</span>
             {
-<span class="nc" id="L106">                properties.add(p);</span>
-<span class="nc" id="L107">                namedProperties.put(p.getName(), p);</span>
+<span class="fc" id="L106">                properties.add(p);</span>
+<span class="fc" id="L107">                namedProperties.put(p.getName(), p);</span>
             }
-<span class="nc" id="L109">        }</span>
-<span class="nc" id="L110">    }</span>
+<span class="fc" id="L109">        }</span>
+<span class="fc" id="L110">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

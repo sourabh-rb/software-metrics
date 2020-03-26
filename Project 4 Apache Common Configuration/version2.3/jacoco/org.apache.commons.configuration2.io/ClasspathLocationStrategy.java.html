@@ -34,7 +34,7 @@ import org.apache.commons.lang3.StringUtils;
  * @version $Id: ClasspathLocationStrategy.java 1624601 2014-09-12 18:04:36Z oheger $
  * @since 2.0
  */
-<span class="nc" id="L37">public class ClasspathLocationStrategy implements FileLocationStrategy</span>
+<span class="fc" id="L37">public class ClasspathLocationStrategy implements FileLocationStrategy</span>
 {
     /**
      * {@inheritDoc} This implementation looks up the locator's file name as a
@@ -43,8 +43,8 @@ import org.apache.commons.lang3.StringUtils;
     @Override
     public URL locate(FileSystem fileSystem, FileLocator locator)
     {
-<span class="nc bnc" id="L46" title="All 2 branches missed.">        return StringUtils.isEmpty(locator.getFileName()) ? null</span>
-<span class="nc" id="L47">                : FileLocatorUtils.locateFromClasspath(locator.getFileName());</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        return StringUtils.isEmpty(locator.getFileName()) ? null</span>
+<span class="fc" id="L47">                : FileLocatorUtils.locateFromClasspath(locator.getFileName());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -116,11 +116,11 @@ public class ConfigurationInterpolator
      * Creates a new instance of {@code ConfigurationInterpolator}.
      */
     public ConfigurationInterpolator()
-<span class="nc" id="L119">    {</span>
-<span class="nc" id="L120">        prefixLookups = new ConcurrentHashMap&lt;&gt;();</span>
-<span class="nc" id="L121">        defaultLookups = new CopyOnWriteArrayList&lt;&gt;();</span>
-<span class="nc" id="L122">        substitutor = initSubstitutor();</span>
-<span class="nc" id="L123">    }</span>
+<span class="fc" id="L119">    {</span>
+<span class="fc" id="L120">        prefixLookups = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L121">        defaultLookups = new CopyOnWriteArrayList&lt;&gt;();</span>
+<span class="fc" id="L122">        substitutor = initSubstitutor();</span>
+<span class="fc" id="L123">    }</span>
 
     /**
      * Creates a new {@code ConfigurationInterpolator} instance based on the
@@ -139,13 +139,13 @@ public class ConfigurationInterpolator
     public static ConfigurationInterpolator fromSpecification(
             InterpolatorSpecification spec)
     {
-<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (spec == null)</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        if (spec == null)</span>
         {
-<span class="nc" id="L144">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L144">            throw new IllegalArgumentException(</span>
                     &quot;InterpolatorSpecification must not be null!&quot;);
         }
-<span class="nc bnc" id="L147" title="All 2 branches missed.">        return (spec.getInterpolator() != null) ? spec.getInterpolator()</span>
-<span class="nc" id="L148">                : createInterpolator(spec);</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">        return (spec.getInterpolator() != null) ? spec.getInterpolator()</span>
+<span class="fc" id="L148">                : createInterpolator(spec);</span>
     }
 
     /**
@@ -160,7 +160,7 @@ public class ConfigurationInterpolator
      */
     public static Map&lt;String, Lookup&gt; getDefaultPrefixLookups()
     {
-<span class="nc" id="L163">        return DEFAULT_PREFIX_LOOKUPS;</span>
+<span class="fc" id="L163">        return DEFAULT_PREFIX_LOOKUPS;</span>
     }
 
     /**
@@ -176,11 +176,11 @@ public class ConfigurationInterpolator
      */
     public static Lookup nullSafeLookup(Lookup lookup)
     {
-<span class="nc bnc" id="L179" title="All 2 branches missed.">        if (lookup == null)</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        if (lookup == null)</span>
         {
-<span class="nc" id="L181">            lookup = DummyLookup.INSTANCE;</span>
+<span class="fc" id="L181">            lookup = DummyLookup.INSTANCE;</span>
         }
-<span class="nc" id="L183">        return lookup;</span>
+<span class="fc" id="L183">        return lookup;</span>
     }
 
     /**
@@ -193,7 +193,7 @@ public class ConfigurationInterpolator
      */
     public Map&lt;String, Lookup&gt; getLookups()
     {
-<span class="nc" id="L196">        return new HashMap&lt;&gt;(prefixLookups);</span>
+<span class="fc" id="L196">        return new HashMap&lt;&gt;(prefixLookups);</span>
     }
 
     /**
@@ -209,18 +209,18 @@ public class ConfigurationInterpolator
      */
     public void registerLookup(String prefix, Lookup lookup)
     {
-<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (prefix == null)</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        if (prefix == null)</span>
         {
-<span class="nc" id="L214">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L214">            throw new IllegalArgumentException(</span>
                     &quot;Prefix for lookup object must not be null!&quot;);
         }
-<span class="nc bnc" id="L217" title="All 2 branches missed.">        if (lookup == null)</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        if (lookup == null)</span>
         {
-<span class="nc" id="L219">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L219">            throw new IllegalArgumentException(</span>
                     &quot;Lookup object must not be null!&quot;);
         }
-<span class="nc" id="L222">        prefixLookups.put(prefix, lookup);</span>
-<span class="nc" id="L223">    }</span>
+<span class="fc" id="L222">        prefixLookups.put(prefix, lookup);</span>
+<span class="fc" id="L223">    }</span>
 
     /**
      * Registers all {@code Lookup} objects in the given map with their prefixes
@@ -233,11 +233,11 @@ public class ConfigurationInterpolator
      */
     public void registerLookups(Map&lt;String, ? extends Lookup&gt; lookups)
     {
-<span class="nc bnc" id="L236" title="All 2 branches missed.">        if (lookups != null)</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        if (lookups != null)</span>
         {
-<span class="nc" id="L238">            prefixLookups.putAll(lookups);</span>
+<span class="fc" id="L238">            prefixLookups.putAll(lookups);</span>
         }
-<span class="nc" id="L240">    }</span>
+<span class="fc" id="L240">    }</span>
 
     /**
      * Deregisters the {@code Lookup} object for the specified prefix at this
@@ -249,7 +249,7 @@ public class ConfigurationInterpolator
      */
     public boolean deregisterLookup(String prefix)
     {
-<span class="nc bnc" id="L252" title="All 2 branches missed.">        return prefixLookups.remove(prefix) != null;</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">        return prefixLookups.remove(prefix) != null;</span>
     }
 
     /**
@@ -261,7 +261,7 @@ public class ConfigurationInterpolator
      */
     public Set&lt;String&gt; prefixSet()
     {
-<span class="nc" id="L264">        return Collections.unmodifiableSet(prefixLookups.keySet());</span>
+<span class="fc" id="L264">        return Collections.unmodifiableSet(prefixLookups.keySet());</span>
     }
 
     /**
@@ -275,7 +275,7 @@ public class ConfigurationInterpolator
      */
     public List&lt;Lookup&gt; getDefaultLookups()
     {
-<span class="nc" id="L278">        return new ArrayList&lt;&gt;(defaultLookups);</span>
+<span class="fc" id="L278">        return new ArrayList&lt;&gt;(defaultLookups);</span>
     }
 
     /**
@@ -291,8 +291,8 @@ public class ConfigurationInterpolator
      */
     public void addDefaultLookup(Lookup defaultLookup)
     {
-<span class="nc" id="L294">        defaultLookups.add(defaultLookup);</span>
-<span class="nc" id="L295">    }</span>
+<span class="fc" id="L294">        defaultLookups.add(defaultLookup);</span>
+<span class="fc" id="L295">    }</span>
 
     /**
      * Adds all {@code Lookup} objects in the given collection as default
@@ -305,11 +305,11 @@ public class ConfigurationInterpolator
      */
     public void addDefaultLookups(Collection&lt;? extends Lookup&gt; lookups)
     {
-<span class="nc bnc" id="L308" title="All 2 branches missed.">        if (lookups != null)</span>
+<span class="fc bfc" id="L308" title="All 2 branches covered.">        if (lookups != null)</span>
         {
-<span class="nc" id="L310">            defaultLookups.addAll(lookups);</span>
+<span class="fc" id="L310">            defaultLookups.addAll(lookups);</span>
         }
-<span class="nc" id="L312">    }</span>
+<span class="fc" id="L312">    }</span>
 
     /**
      * Removes the specified {@code Lookup} object from the list of default
@@ -321,7 +321,7 @@ public class ConfigurationInterpolator
      */
     public boolean removeDefaultLookup(Lookup lookup)
     {
-<span class="nc" id="L324">        return defaultLookups.remove(lookup);</span>
+<span class="fc" id="L324">        return defaultLookups.remove(lookup);</span>
     }
 
     /**
@@ -335,8 +335,8 @@ public class ConfigurationInterpolator
     public void setParentInterpolator(
             ConfigurationInterpolator parentInterpolator)
     {
-<span class="nc" id="L338">        this.parentInterpolator = parentInterpolator;</span>
-<span class="nc" id="L339">    }</span>
+<span class="fc" id="L338">        this.parentInterpolator = parentInterpolator;</span>
+<span class="fc" id="L339">    }</span>
 
     /**
      * Returns the parent {@code ConfigurationInterpolator}.
@@ -345,7 +345,7 @@ public class ConfigurationInterpolator
      */
     public ConfigurationInterpolator getParentInterpolator()
     {
-<span class="nc" id="L348">        return this.parentInterpolator;</span>
+<span class="fc" id="L348">        return this.parentInterpolator;</span>
     }
 
     /**
@@ -356,7 +356,7 @@ public class ConfigurationInterpolator
      */
     public boolean isEnableSubstitutionInVariables()
     {
-<span class="nc" id="L359">        return substitutor.isEnableSubstitutionInVariables();</span>
+<span class="fc" id="L359">        return substitutor.isEnableSubstitutionInVariables();</span>
     }
 
     /**
@@ -368,8 +368,8 @@ public class ConfigurationInterpolator
      */
     public void setEnableSubstitutionInVariables(boolean f)
     {
-<span class="nc" id="L371">        substitutor.setEnableSubstitutionInVariables(f);</span>
-<span class="nc" id="L372">    }</span>
+<span class="fc" id="L371">        substitutor.setEnableSubstitutionInVariables(f);</span>
+<span class="fc" id="L372">    }</span>
 
     /**
      * Performs interpolation of the passed in value. If the value is of type
@@ -382,24 +382,24 @@ public class ConfigurationInterpolator
      */
     public Object interpolate(Object value)
     {
-<span class="nc bnc" id="L385" title="All 2 branches missed.">        if (value instanceof String)</span>
+<span class="fc bfc" id="L385" title="All 2 branches covered.">        if (value instanceof String)</span>
         {
-<span class="nc" id="L387">            String strValue = (String) value;</span>
-<span class="nc bnc" id="L388" title="All 2 branches missed.">            if (looksLikeSingleVariable(strValue))</span>
+<span class="fc" id="L387">            String strValue = (String) value;</span>
+<span class="fc bfc" id="L388" title="All 2 branches covered.">            if (looksLikeSingleVariable(strValue))</span>
             {
-<span class="nc" id="L390">                Object resolvedValue = resolveSingleVariable(strValue);</span>
-<span class="nc bnc" id="L391" title="All 4 branches missed.">                if (resolvedValue != null &amp;&amp; !(resolvedValue instanceof String))</span>
+<span class="fc" id="L390">                Object resolvedValue = resolveSingleVariable(strValue);</span>
+<span class="fc bfc" id="L391" title="All 4 branches covered.">                if (resolvedValue != null &amp;&amp; !(resolvedValue instanceof String))</span>
                 {
                     // If the value is again a string, it needs no special
                     // treatment; it may also contain further variables which
                     // must be resolved; therefore, the default mechanism is
                     // applied.
-<span class="nc" id="L397">                    return resolvedValue;</span>
+<span class="fc" id="L397">                    return resolvedValue;</span>
                 }
             }
-<span class="nc" id="L400">            return substitutor.replace(strValue);</span>
+<span class="fc" id="L400">            return substitutor.replace(strValue);</span>
         }
-<span class="nc" id="L402">        return value;</span>
+<span class="fc" id="L402">        return value;</span>
     }
 
     /**
@@ -418,38 +418,38 @@ public class ConfigurationInterpolator
      */
     public Object resolve(String var)
     {
-<span class="nc bnc" id="L421" title="All 2 branches missed.">        if (var == null)</span>
+<span class="fc bfc" id="L421" title="All 2 branches covered.">        if (var == null)</span>
         {
-<span class="nc" id="L423">            return null;</span>
+<span class="fc" id="L423">            return null;</span>
         }
 
-<span class="nc" id="L426">        int prefixPos = var.indexOf(PREFIX_SEPARATOR);</span>
-<span class="nc bnc" id="L427" title="All 2 branches missed.">        if (prefixPos &gt;= 0)</span>
+<span class="fc" id="L426">        int prefixPos = var.indexOf(PREFIX_SEPARATOR);</span>
+<span class="fc bfc" id="L427" title="All 2 branches covered.">        if (prefixPos &gt;= 0)</span>
         {
-<span class="nc" id="L429">            String prefix = var.substring(0, prefixPos);</span>
-<span class="nc" id="L430">            String name = var.substring(prefixPos + 1);</span>
-<span class="nc" id="L431">            Object value = fetchLookupForPrefix(prefix).lookup(name);</span>
-<span class="nc bnc" id="L432" title="All 2 branches missed.">            if (value != null)</span>
+<span class="fc" id="L429">            String prefix = var.substring(0, prefixPos);</span>
+<span class="fc" id="L430">            String name = var.substring(prefixPos + 1);</span>
+<span class="fc" id="L431">            Object value = fetchLookupForPrefix(prefix).lookup(name);</span>
+<span class="fc bfc" id="L432" title="All 2 branches covered.">            if (value != null)</span>
             {
-<span class="nc" id="L434">                return value;</span>
+<span class="fc" id="L434">                return value;</span>
             }
         }
 
-<span class="nc bnc" id="L438" title="All 2 branches missed.">        for (Lookup l : defaultLookups)</span>
+<span class="fc bfc" id="L438" title="All 2 branches covered.">        for (Lookup l : defaultLookups)</span>
         {
-<span class="nc" id="L440">            Object value = l.lookup(var);</span>
-<span class="nc bnc" id="L441" title="All 2 branches missed.">            if (value != null)</span>
+<span class="fc" id="L440">            Object value = l.lookup(var);</span>
+<span class="fc bfc" id="L441" title="All 2 branches covered.">            if (value != null)</span>
             {
-<span class="nc" id="L443">                return value;</span>
+<span class="fc" id="L443">                return value;</span>
             }
-<span class="nc" id="L445">        }</span>
+<span class="fc" id="L445">        }</span>
 
-<span class="nc" id="L447">        ConfigurationInterpolator parent = getParentInterpolator();</span>
-<span class="nc bnc" id="L448" title="All 2 branches missed.">        if (parent != null)</span>
+<span class="fc" id="L447">        ConfigurationInterpolator parent = getParentInterpolator();</span>
+<span class="fc bfc" id="L448" title="All 2 branches covered.">        if (parent != null)</span>
         {
-<span class="nc" id="L450">            return getParentInterpolator().resolve(var);</span>
+<span class="fc" id="L450">            return getParentInterpolator().resolve(var);</span>
         }
-<span class="nc" id="L452">        return null;</span>
+<span class="fc" id="L452">        return null;</span>
     }
 
     /**
@@ -463,7 +463,7 @@ public class ConfigurationInterpolator
      */
     protected Lookup fetchLookupForPrefix(String prefix)
     {
-<span class="nc" id="L466">        return nullSafeLookup(prefixLookups.get(prefix));</span>
+<span class="fc" id="L466">        return nullSafeLookup(prefixLookups.get(prefix));</span>
     }
 
     /**
@@ -476,13 +476,13 @@ public class ConfigurationInterpolator
      */
     private StrSubstitutor initSubstitutor()
     {
-<span class="nc" id="L479">        return new StrSubstitutor(new StrLookup&lt;Object&gt;()</span>
-<span class="nc" id="L480">        {</span>
+<span class="fc" id="L479">        return new StrSubstitutor(new StrLookup&lt;Object&gt;()</span>
+<span class="fc" id="L480">        {</span>
             @Override
             public String lookup(String key)
             {
-<span class="nc" id="L484">                Object result = resolve(key);</span>
-<span class="nc bnc" id="L485" title="All 2 branches missed.">                return (result != null) ? result.toString() : null;</span>
+<span class="fc" id="L484">                Object result = resolve(key);</span>
+<span class="fc bfc" id="L485" title="All 2 branches covered.">                return (result != null) ? result.toString() : null;</span>
             }
         });
     }
@@ -495,7 +495,7 @@ public class ConfigurationInterpolator
      */
     private Object resolveSingleVariable(String strValue)
     {
-<span class="nc" id="L498">        return resolve(extractVariableName(strValue));</span>
+<span class="fc" id="L498">        return resolve(extractVariableName(strValue));</span>
     }
 
     /**
@@ -510,7 +510,7 @@ public class ConfigurationInterpolator
      */
     private static boolean looksLikeSingleVariable(String strValue)
     {
-<span class="nc bnc" id="L513" title="All 4 branches missed.">        return strValue.startsWith(VAR_START) &amp;&amp; strValue.endsWith(VAR_END);</span>
+<span class="fc bfc" id="L513" title="All 4 branches covered.">        return strValue.startsWith(VAR_START) &amp;&amp; strValue.endsWith(VAR_END);</span>
     }
 
     /**
@@ -522,8 +522,8 @@ public class ConfigurationInterpolator
      */
     private static String extractVariableName(String strValue)
     {
-<span class="nc" id="L525">        return strValue.substring(VAR_START.length(),</span>
-<span class="nc" id="L526">                strValue.length() - VAR_END.length());</span>
+<span class="fc" id="L525">        return strValue.substring(VAR_START.length(),</span>
+<span class="fc" id="L526">                strValue.length() - VAR_END.length());</span>
     }
 
     /**
@@ -536,21 +536,21 @@ public class ConfigurationInterpolator
     private static ConfigurationInterpolator createInterpolator(
             InterpolatorSpecification spec)
     {
-<span class="nc" id="L539">        ConfigurationInterpolator ci = new ConfigurationInterpolator();</span>
-<span class="nc" id="L540">        ci.addDefaultLookups(spec.getDefaultLookups());</span>
-<span class="nc" id="L541">        ci.registerLookups(spec.getPrefixLookups());</span>
-<span class="nc" id="L542">        ci.setParentInterpolator(spec.getParentInterpolator());</span>
-<span class="nc" id="L543">        return ci;</span>
+<span class="fc" id="L539">        ConfigurationInterpolator ci = new ConfigurationInterpolator();</span>
+<span class="fc" id="L540">        ci.addDefaultLookups(spec.getDefaultLookups());</span>
+<span class="fc" id="L541">        ci.registerLookups(spec.getPrefixLookups());</span>
+<span class="fc" id="L542">        ci.setParentInterpolator(spec.getParentInterpolator());</span>
+<span class="fc" id="L543">        return ci;</span>
     }
 
     static
     {
-<span class="nc" id="L548">        Map&lt;String, Lookup&gt; lookups = new HashMap&lt;&gt;();</span>
-<span class="nc bnc" id="L549" title="All 2 branches missed.">        for (DefaultLookups l : DefaultLookups.values())</span>
+<span class="fc" id="L548">        Map&lt;String, Lookup&gt; lookups = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L549" title="All 2 branches covered.">        for (DefaultLookups l : DefaultLookups.values())</span>
         {
-<span class="nc" id="L551">            lookups.put(l.getPrefix(), l.getLookup());</span>
+<span class="fc" id="L551">            lookups.put(l.getPrefix(), l.getLookup());</span>
         }
-<span class="nc" id="L553">        DEFAULT_PREFIX_LOOKUPS = Collections.unmodifiableMap(lookups);</span>
-<span class="nc" id="L554">    }</span>
+<span class="fc" id="L553">        DEFAULT_PREFIX_LOOKUPS = Collections.unmodifiableMap(lookups);</span>
+<span class="fc" id="L554">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -33,7 +33,7 @@ import org.apache.commons.configuration2.tree.ExpressionEngine;
  * @version $Id: HierarchicalBuilderParametersImpl.java 1730380 2016-02-14 19:03:20Z oheger $
  * @since 2.0
  */
-<span class="nc" id="L36">public class HierarchicalBuilderParametersImpl extends</span>
+<span class="fc" id="L36">public class HierarchicalBuilderParametersImpl extends</span>
         FileBasedBuilderParametersImpl implements
         HierarchicalBuilderProperties&lt;HierarchicalBuilderParametersImpl&gt;
 {
@@ -47,9 +47,9 @@ import org.apache.commons.configuration2.tree.ExpressionEngine;
     @Override
     public void inheritFrom(Map&lt;String, ?&gt; source)
     {
-<span class="nc" id="L50">        super.inheritFrom(source);</span>
-<span class="nc" id="L51">        copyPropertiesFrom(source, PROP_EXPRESSION_ENGINE);</span>
-<span class="nc" id="L52">    }</span>
+<span class="fc" id="L50">        super.inheritFrom(source);</span>
+<span class="fc" id="L51">        copyPropertiesFrom(source, PROP_EXPRESSION_ENGINE);</span>
+<span class="fc" id="L52">    }</span>
 
     /**
      * {@inheritDoc} This implementation stores the expression engine in the
@@ -59,8 +59,8 @@ import org.apache.commons.configuration2.tree.ExpressionEngine;
     public HierarchicalBuilderParametersImpl setExpressionEngine(
             ExpressionEngine engine)
     {
-<span class="nc" id="L62">        storeProperty(PROP_EXPRESSION_ENGINE, engine);</span>
-<span class="nc" id="L63">        return this;</span>
+<span class="fc" id="L62">        storeProperty(PROP_EXPRESSION_ENGINE, engine);</span>
+<span class="fc" id="L63">        return this;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

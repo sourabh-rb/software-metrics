@@ -81,9 +81,9 @@ public class MultiFileConfigurationBuilderProvider extends
     public MultiFileConfigurationBuilderProvider(String configCls,
             String paramCls)
     {
-<span class="nc" id="L84">        super(BUILDER_CLASS, RELOADING_BUILDER_CLASS, configCls, Arrays.asList(</span>
+<span class="fc" id="L84">        super(BUILDER_CLASS, RELOADING_BUILDER_CLASS, configCls, Arrays.asList(</span>
                 paramCls, PARAM_CLASS));
-<span class="nc" id="L86">    }</span>
+<span class="fc" id="L86">    }</span>
 
     /**
      * {@inheritDoc} This implementation lets the super class create a fully
@@ -93,10 +93,10 @@ public class MultiFileConfigurationBuilderProvider extends
     public ConfigurationBuilder&lt;? extends Configuration&gt; getConfigurationBuilder(
             ConfigurationDeclaration decl) throws ConfigurationException
     {
-<span class="nc" id="L96">        ConfigurationBuilder&lt;? extends Configuration&gt; multiBuilder =</span>
-<span class="nc" id="L97">                super.getConfigurationBuilder(decl);</span>
-<span class="nc" id="L98">        Configuration wrapConfig = createWrapperConfiguration(multiBuilder);</span>
-<span class="nc" id="L99">        return createWrapperBuilder(multiBuilder, wrapConfig);</span>
+<span class="fc" id="L96">        ConfigurationBuilder&lt;? extends Configuration&gt; multiBuilder =</span>
+<span class="fc" id="L97">                super.getConfigurationBuilder(decl);</span>
+<span class="fc" id="L98">        Configuration wrapConfig = createWrapperConfiguration(multiBuilder);</span>
+<span class="fc" id="L99">        return createWrapperBuilder(multiBuilder, wrapConfig);</span>
     }
 
     /**
@@ -113,13 +113,13 @@ public class MultiFileConfigurationBuilderProvider extends
     private Configuration createWrapperConfiguration(
             ConfigurationBuilder builder)
     {
-<span class="nc" id="L116">        Class&lt;?&gt; configClass =</span>
-<span class="nc" id="L117">                ConfigurationUtils.loadClassNoEx(getConfigurationClass());</span>
+<span class="fc" id="L116">        Class&lt;?&gt; configClass =</span>
+<span class="fc" id="L117">                ConfigurationUtils.loadClassNoEx(getConfigurationClass());</span>
         Class ifcClass =
-<span class="nc bnc" id="L119" title="All 2 branches missed.">                HierarchicalConfiguration.class.isAssignableFrom(configClass) ? HierarchicalConfiguration.class</span>
-<span class="nc" id="L120">                        : Configuration.class;</span>
-<span class="nc" id="L121">        return (Configuration) BuilderConfigurationWrapperFactory</span>
-<span class="nc" id="L122">                .createBuilderConfigurationWrapper(ifcClass, builder,</span>
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">                HierarchicalConfiguration.class.isAssignableFrom(configClass) ? HierarchicalConfiguration.class</span>
+<span class="pc" id="L120">                        : Configuration.class;</span>
+<span class="fc" id="L121">        return (Configuration) BuilderConfigurationWrapperFactory</span>
+<span class="fc" id="L122">                .createBuilderConfigurationWrapper(ifcClass, builder,</span>
                         EventSourceSupport.BUILDER);
     }
 
@@ -139,13 +139,13 @@ public class MultiFileConfigurationBuilderProvider extends
             ConfigurationBuilder&lt;? extends Configuration&gt; multiBuilder,
             Configuration wrapConfig)
     {
-<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (multiBuilder instanceof ReloadingControllerSupport)</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        if (multiBuilder instanceof ReloadingControllerSupport)</span>
         {
-<span class="nc" id="L144">            return new ReloadableWrapperBuilder(wrapConfig, multiBuilder);</span>
+<span class="fc" id="L144">            return new ReloadableWrapperBuilder(wrapConfig, multiBuilder);</span>
         }
         else
         {
-<span class="nc" id="L148">            return new WrapperBuilder(wrapConfig, multiBuilder);</span>
+<span class="fc" id="L148">            return new WrapperBuilder(wrapConfig, multiBuilder);</span>
         }
     }
 
@@ -171,29 +171,29 @@ public class MultiFileConfigurationBuilderProvider extends
          */
         public WrapperBuilder(Configuration conf,
                 ConfigurationBuilder&lt;? extends Configuration&gt; bldr)
-<span class="nc" id="L174">        {</span>
-<span class="nc" id="L175">            configuration = conf;</span>
-<span class="nc" id="L176">            builder = bldr;</span>
-<span class="nc" id="L177">        }</span>
+<span class="fc" id="L174">        {</span>
+<span class="fc" id="L175">            configuration = conf;</span>
+<span class="fc" id="L176">            builder = bldr;</span>
+<span class="fc" id="L177">        }</span>
 
         @Override
         public Configuration getConfiguration() throws ConfigurationException
         {
-<span class="nc" id="L182">            return configuration;</span>
+<span class="fc" id="L182">            return configuration;</span>
         }
 
         @Override
         public &lt;T extends Event&gt; void addEventListener(
                 EventType&lt;T&gt; eventType, EventListener&lt;? super T&gt; listener)
         {
-<span class="nc" id="L189">            builder.addEventListener(eventType, listener);</span>
-<span class="nc" id="L190">        }</span>
+<span class="fc" id="L189">            builder.addEventListener(eventType, listener);</span>
+<span class="fc" id="L190">        }</span>
 
         @Override
         public &lt;T extends Event&gt; boolean removeEventListener(
                 EventType&lt;T&gt; eventType, EventListener&lt;? super T&gt; listener)
         {
-<span class="nc" id="L196">            return builder.removeEventListener(eventType, listener);</span>
+<span class="fc" id="L196">            return builder.removeEventListener(eventType, listener);</span>
         }
     }
 
@@ -219,14 +219,14 @@ public class MultiFileConfigurationBuilderProvider extends
         public ReloadableWrapperBuilder(Configuration conf,
                 ConfigurationBuilder&lt;? extends Configuration&gt; bldr)
         {
-<span class="nc" id="L222">            super(conf, bldr);</span>
-<span class="nc" id="L223">            ctrlSupport = (ReloadingControllerSupport) bldr;</span>
-<span class="nc" id="L224">        }</span>
+<span class="fc" id="L222">            super(conf, bldr);</span>
+<span class="fc" id="L223">            ctrlSupport = (ReloadingControllerSupport) bldr;</span>
+<span class="fc" id="L224">        }</span>
 
         @Override
         public ReloadingController getReloadingController()
         {
-<span class="nc" id="L229">            return ctrlSupport.getReloadingController();</span>
+<span class="fc" id="L229">            return ctrlSupport.getReloadingController();</span>
         }
     }
 }

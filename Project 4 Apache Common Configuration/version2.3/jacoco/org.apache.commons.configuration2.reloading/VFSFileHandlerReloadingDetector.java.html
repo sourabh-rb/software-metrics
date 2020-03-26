@@ -51,7 +51,7 @@ import org.apache.commons.vfs2.VFS;
 public class VFSFileHandlerReloadingDetector extends FileHandlerReloadingDetector
 {
     /** Stores the logger.*/
-<span class="nc" id="L54">    private final Log log = LogFactory.getLog(getClass());</span>
+<span class="fc" id="L54">    private final Log log = LogFactory.getLog(getClass());</span>
 
     /**
      * Creates a new instance of {@code VFSFileHandlerReloadingDetector} and
@@ -59,8 +59,8 @@ public class VFSFileHandlerReloadingDetector extends FileHandlerReloadingDetecto
      */
     public VFSFileHandlerReloadingDetector()
     {
-<span class="nc" id="L62">        super();</span>
-<span class="nc" id="L63">    }</span>
+<span class="fc" id="L62">        super();</span>
+<span class="fc" id="L63">    }</span>
 
     /**
      * Creates a new instance of {@code VFSFileHandlerReloadingDetector} and
@@ -73,8 +73,8 @@ public class VFSFileHandlerReloadingDetector extends FileHandlerReloadingDetecto
     public VFSFileHandlerReloadingDetector(FileHandler handler,
             long refreshDelay)
     {
-<span class="nc" id="L76">        super(handler, refreshDelay);</span>
-<span class="nc" id="L77">    }</span>
+<span class="fc" id="L76">        super(handler, refreshDelay);</span>
+<span class="fc" id="L77">    }</span>
 
     /**
      * Creates a new instance of {@code VFSFileHandlerReloadingDetector} and
@@ -84,8 +84,8 @@ public class VFSFileHandlerReloadingDetector extends FileHandlerReloadingDetecto
      */
     public VFSFileHandlerReloadingDetector(FileHandler handler)
     {
-<span class="nc" id="L87">        super(handler);</span>
-<span class="nc" id="L88">    }</span>
+<span class="fc" id="L87">        super(handler);</span>
+<span class="fc" id="L88">    }</span>
 
     /**
      * {@inheritDoc} This implementation uses Commons VFS to obtain a
@@ -94,21 +94,21 @@ public class VFSFileHandlerReloadingDetector extends FileHandlerReloadingDetecto
     @Override
     protected long getLastModificationDate()
     {
-<span class="nc" id="L97">        FileObject file = getFileObject();</span>
+<span class="fc" id="L97">        FileObject file = getFileObject();</span>
         try
         {
-<span class="nc bnc" id="L100" title="All 4 branches missed.">            if (file == null || !file.exists())</span>
+<span class="fc bfc" id="L100" title="All 4 branches covered.">            if (file == null || !file.exists())</span>
             {
-<span class="nc" id="L102">                return 0;</span>
+<span class="fc" id="L102">                return 0;</span>
             }
 
-<span class="nc" id="L105">            return file.getContent().getLastModifiedTime();</span>
+<span class="fc" id="L105">            return file.getContent().getLastModifiedTime();</span>
         }
-<span class="nc" id="L107">        catch (FileSystemException ex)</span>
+<span class="fc" id="L107">        catch (FileSystemException ex)</span>
         {
-<span class="nc" id="L109">            log.error(&quot;Unable to get last modified time for&quot;</span>
-<span class="nc" id="L110">                    + file.getName().getURI(), ex);</span>
-<span class="nc" id="L111">            return 0;</span>
+<span class="fc" id="L109">            log.error(&quot;Unable to get last modified time for&quot;</span>
+<span class="fc" id="L110">                    + file.getName().getURI(), ex);</span>
+<span class="fc" id="L111">            return 0;</span>
         }
     }
 
@@ -120,20 +120,20 @@ public class VFSFileHandlerReloadingDetector extends FileHandlerReloadingDetecto
      */
     protected FileObject getFileObject()
     {
-<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (!getFileHandler().isLocationDefined())</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (!getFileHandler().isLocationDefined())</span>
         {
-<span class="nc" id="L125">            return null;</span>
+<span class="fc" id="L125">            return null;</span>
         }
 
         try
         {
-<span class="nc" id="L130">            FileSystemManager fsManager = VFS.getManager();</span>
-<span class="nc" id="L131">            String uri = resolveFileURI();</span>
-<span class="nc bnc" id="L132" title="All 2 branches missed.">            if (uri == null)</span>
+<span class="fc" id="L130">            FileSystemManager fsManager = VFS.getManager();</span>
+<span class="fc" id="L131">            String uri = resolveFileURI();</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">            if (uri == null)</span>
             {
-<span class="nc" id="L134">                throw new ConfigurationRuntimeException(&quot;Unable to determine file to monitor&quot;);</span>
+<span class="fc" id="L134">                throw new ConfigurationRuntimeException(&quot;Unable to determine file to monitor&quot;);</span>
             }
-<span class="nc" id="L136">            return fsManager.resolveFile(uri);</span>
+<span class="fc" id="L136">            return fsManager.resolveFile(uri);</span>
         }
 <span class="nc" id="L138">        catch (FileSystemException fse)</span>
         {
@@ -151,11 +151,11 @@ public class VFSFileHandlerReloadingDetector extends FileHandlerReloadingDetecto
      */
     protected String resolveFileURI()
     {
-<span class="nc" id="L154">        FileSystem fs = getFileHandler().getFileSystem();</span>
-<span class="nc" id="L155">        String uri =</span>
-<span class="nc" id="L156">                fs.getPath(null, getFileHandler().getURL(), getFileHandler()</span>
-<span class="nc" id="L157">                        .getBasePath(), getFileHandler().getFileName());</span>
-<span class="nc" id="L158">        return uri;</span>
+<span class="fc" id="L154">        FileSystem fs = getFileHandler().getFileSystem();</span>
+<span class="fc" id="L155">        String uri =</span>
+<span class="fc" id="L156">                fs.getPath(null, getFileHandler().getURL(), getFileHandler()</span>
+<span class="fc" id="L157">                        .getBasePath(), getFileHandler().getFileName());</span>
+<span class="fc" id="L158">        return uri;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

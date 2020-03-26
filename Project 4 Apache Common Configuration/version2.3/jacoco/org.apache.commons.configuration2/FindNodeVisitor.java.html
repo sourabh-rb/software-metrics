@@ -43,18 +43,18 @@ class FindNodeVisitor&lt;T&gt; extends ConfigurationNodeVisitorAdapter&lt;T&gt;
      * @param node the search node
      */
     public FindNodeVisitor(T node)
-<span class="nc" id="L46">    {</span>
-<span class="nc" id="L47">        searchNode = node;</span>
-<span class="nc" id="L48">    }</span>
+<span class="fc" id="L46">    {</span>
+<span class="fc" id="L47">        searchNode = node;</span>
+<span class="fc" id="L48">    }</span>
 
     @Override
     public void visitBeforeChildren(T node, NodeHandler&lt;T&gt; handler)
     {
-<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (node.equals(searchNode))</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (node.equals(searchNode))</span>
         {
-<span class="nc" id="L55">            found = true;</span>
+<span class="fc" id="L55">            found = true;</span>
         }
-<span class="nc" id="L57">    }</span>
+<span class="fc" id="L57">    }</span>
 
     /**
      * {@inheritDoc} This implementation returns &lt;b&gt;true&lt;/b&gt; as soon as the node
@@ -63,7 +63,7 @@ class FindNodeVisitor&lt;T&gt; extends ConfigurationNodeVisitorAdapter&lt;T&gt;
     @Override
     public boolean terminate()
     {
-<span class="nc" id="L66">        return found;</span>
+<span class="fc" id="L66">        return found;</span>
     }
 
     /**
@@ -74,7 +74,7 @@ class FindNodeVisitor&lt;T&gt; extends ConfigurationNodeVisitorAdapter&lt;T&gt;
      */
     public boolean isFound()
     {
-<span class="nc" id="L77">        return found;</span>
+<span class="fc" id="L77">        return found;</span>
     }
 
     /**
@@ -84,7 +84,7 @@ class FindNodeVisitor&lt;T&gt; extends ConfigurationNodeVisitorAdapter&lt;T&gt;
      */
     public void reset()
     {
-<span class="nc" id="L87">        found = false;</span>
-<span class="nc" id="L88">    }</span>
+<span class="fc" id="L87">        found = false;</span>
+<span class="fc" id="L88">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

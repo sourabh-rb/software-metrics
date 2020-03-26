@@ -35,7 +35,7 @@ import javax.sql.DataSource;
  * @version $Id: DatabaseBuilderParametersImpl.java 1624601 2014-09-12 18:04:36Z oheger $
  * @since 2.0
  */
-<span class="nc" id="L38">public class DatabaseBuilderParametersImpl extends BasicBuilderParameters</span>
+<span class="fc" id="L38">public class DatabaseBuilderParametersImpl extends BasicBuilderParameters</span>
         implements DatabaseBuilderProperties&lt;DatabaseBuilderParametersImpl&gt;
 {
     /** Constant for the data source property. */
@@ -63,50 +63,50 @@ import javax.sql.DataSource;
     @Override
     public DatabaseBuilderParametersImpl setDataSource(DataSource src)
     {
-<span class="nc" id="L66">        storeProperty(PROP_DATA_SOURCE, src);</span>
-<span class="nc" id="L67">        return this;</span>
+<span class="fc" id="L66">        storeProperty(PROP_DATA_SOURCE, src);</span>
+<span class="fc" id="L67">        return this;</span>
     }
 
     @Override
     public DatabaseBuilderParametersImpl setTable(String tname)
     {
-<span class="nc" id="L73">        storeProperty(PROP_TABLE, tname);</span>
-<span class="nc" id="L74">        return this;</span>
+<span class="fc" id="L73">        storeProperty(PROP_TABLE, tname);</span>
+<span class="fc" id="L74">        return this;</span>
     }
 
     @Override
     public DatabaseBuilderParametersImpl setKeyColumn(String name)
     {
-<span class="nc" id="L80">        storeProperty(PROP_KEY_COLUMN, name);</span>
-<span class="nc" id="L81">        return this;</span>
+<span class="fc" id="L80">        storeProperty(PROP_KEY_COLUMN, name);</span>
+<span class="fc" id="L81">        return this;</span>
     }
 
     @Override
     public DatabaseBuilderParametersImpl setValueColumn(String name)
     {
-<span class="nc" id="L87">        storeProperty(PROP_VALUE_COLUMN, name);</span>
-<span class="nc" id="L88">        return this;</span>
+<span class="fc" id="L87">        storeProperty(PROP_VALUE_COLUMN, name);</span>
+<span class="fc" id="L88">        return this;</span>
     }
 
     @Override
     public DatabaseBuilderParametersImpl setConfigurationNameColumn(String name)
     {
-<span class="nc" id="L94">        storeProperty(PROP_CONFIG_NAME_COLUMN, name);</span>
-<span class="nc" id="L95">        return this;</span>
+<span class="fc" id="L94">        storeProperty(PROP_CONFIG_NAME_COLUMN, name);</span>
+<span class="fc" id="L95">        return this;</span>
     }
 
     @Override
     public DatabaseBuilderParametersImpl setConfigurationName(String name)
     {
-<span class="nc" id="L101">        storeProperty(PROP_CONFIG_NAME, name);</span>
-<span class="nc" id="L102">        return this;</span>
+<span class="fc" id="L101">        storeProperty(PROP_CONFIG_NAME, name);</span>
+<span class="fc" id="L102">        return this;</span>
     }
 
     @Override
     public DatabaseBuilderParametersImpl setAutoCommit(boolean f)
     {
-<span class="nc" id="L108">        storeProperty(PROP_AUTO_COMMIT, Boolean.valueOf(f));</span>
-<span class="nc" id="L109">        return this;</span>
+<span class="fc" id="L108">        storeProperty(PROP_AUTO_COMMIT, Boolean.valueOf(f));</span>
+<span class="fc" id="L109">        return this;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

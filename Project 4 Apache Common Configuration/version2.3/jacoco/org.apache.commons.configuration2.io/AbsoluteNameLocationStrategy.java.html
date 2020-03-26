@@ -35,7 +35,7 @@ import org.apache.commons.lang3.StringUtils;
  * @version $Id: AbsoluteNameLocationStrategy.java 1624601 2014-09-12 18:04:36Z oheger $
  * @since 2.0
  */
-<span class="nc" id="L38">public class AbsoluteNameLocationStrategy implements FileLocationStrategy</span>
+<span class="fc" id="L38">public class AbsoluteNameLocationStrategy implements FileLocationStrategy</span>
 {
     /**
      * {@inheritDoc} This implementation constructs a {@code File} object from
@@ -45,16 +45,16 @@ import org.apache.commons.lang3.StringUtils;
     @Override
     public URL locate(FileSystem fileSystem, FileLocator locator)
     {
-<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (StringUtils.isNotEmpty(locator.getFileName()))</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (StringUtils.isNotEmpty(locator.getFileName()))</span>
         {
-<span class="nc" id="L50">            File file = new File(locator.getFileName());</span>
-<span class="nc bnc" id="L51" title="All 4 branches missed.">            if (file.isAbsolute() &amp;&amp; file.exists())</span>
+<span class="fc" id="L50">            File file = new File(locator.getFileName());</span>
+<span class="fc bfc" id="L51" title="All 4 branches covered.">            if (file.isAbsolute() &amp;&amp; file.exists())</span>
             {
-<span class="nc" id="L53">                return FileLocatorUtils.convertFileToURL(file);</span>
+<span class="fc" id="L53">                return FileLocatorUtils.convertFileToURL(file);</span>
             }
         }
 
-<span class="nc" id="L57">        return null;</span>
+<span class="fc" id="L57">        return null;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

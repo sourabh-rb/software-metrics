@@ -31,10 +31,10 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
  * href=&quot;http://commons.apache.org/configuration/team-list.html&quot;&gt;Commons Configuration team&lt;/a&gt;
  * @version $Id: FileSystem.java 1735895 2016-03-20 18:40:47Z oheger $
  */
-<span class="nc" id="L34">public abstract class FileSystem</span>
+<span class="fc" id="L34">public abstract class FileSystem</span>
 {
     /** Constant for the default logger. */
-<span class="nc" id="L37">    private static final ConfigurationLogger DEFAULT_LOG = ConfigurationLogger.newDummyLogger();</span>
+<span class="fc" id="L37">    private static final ConfigurationLogger DEFAULT_LOG = ConfigurationLogger.newDummyLogger();</span>
 
     /** The Logger */
     private volatile ConfigurationLogger log;
@@ -49,8 +49,8 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
      */
     public ConfigurationLogger getLogger()
     {
-<span class="nc" id="L52">        ConfigurationLogger result = log;</span>
-<span class="nc bnc" id="L53" title="All 2 branches missed.">        return (result != null) ? result : DEFAULT_LOG;</span>
+<span class="fc" id="L52">        ConfigurationLogger result = log;</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        return (result != null) ? result : DEFAULT_LOG;</span>
     }
 
     /**
@@ -65,8 +65,8 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
      */
     public void setLogger(ConfigurationLogger log)
     {
-<span class="nc" id="L68">        this.log = log;</span>
-<span class="nc" id="L69">    }</span>
+<span class="fc" id="L68">        this.log = log;</span>
+<span class="fc" id="L69">    }</span>
 
     /**
      * Set the FileOptionsProvider
@@ -79,7 +79,7 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
 
     public FileOptionsProvider getFileOptionsProvider()
     {
-<span class="nc" id="L82">        return this.optionsProvider;</span>
+<span class="fc" id="L82">        return this.optionsProvider;</span>
     }
 
     public abstract InputStream getInputStream(URL url) throws ConfigurationException;

@@ -89,20 +89,20 @@ public class PeriodicReloadingTrigger
      */
     public PeriodicReloadingTrigger(ReloadingController ctrl, Object ctrlParam,
             long triggerPeriod, TimeUnit unit, ScheduledExecutorService exec)
-<span class="nc" id="L92">    {</span>
-<span class="nc bnc" id="L93" title="All 2 branches missed.">        if (ctrl == null)</span>
+<span class="fc" id="L92">    {</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (ctrl == null)</span>
         {
-<span class="nc" id="L95">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L95">            throw new IllegalArgumentException(</span>
                     &quot;ReloadingController must not be null!&quot;);
         }
 
-<span class="nc" id="L99">        controller = ctrl;</span>
-<span class="nc" id="L100">        controllerParam = ctrlParam;</span>
-<span class="nc" id="L101">        period = triggerPeriod;</span>
-<span class="nc" id="L102">        timeUnit = unit;</span>
-<span class="nc" id="L103">        executorService =</span>
-<span class="nc bnc" id="L104" title="All 2 branches missed.">                (exec != null) ? exec : createDefaultExecutorService();</span>
-<span class="nc" id="L105">    }</span>
+<span class="fc" id="L99">        controller = ctrl;</span>
+<span class="fc" id="L100">        controllerParam = ctrlParam;</span>
+<span class="fc" id="L101">        period = triggerPeriod;</span>
+<span class="fc" id="L102">        timeUnit = unit;</span>
+<span class="fc" id="L103">        executorService =</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">                (exec != null) ? exec : createDefaultExecutorService();</span>
+<span class="fc" id="L105">    }</span>
 
     /**
      * Creates a new instance of {@code PeriodicReloadingTrigger} with a default
@@ -118,8 +118,8 @@ public class PeriodicReloadingTrigger
     public PeriodicReloadingTrigger(ReloadingController ctrl, Object ctrlParam,
             long triggerPeriod, TimeUnit unit)
     {
-<span class="nc" id="L121">        this(ctrl, ctrlParam, triggerPeriod, unit, null);</span>
-<span class="nc" id="L122">    }</span>
+<span class="fc" id="L121">        this(ctrl, ctrlParam, triggerPeriod, unit, null);</span>
+<span class="fc" id="L122">    }</span>
 
     /**
      * Starts this trigger. The associated {@code ReloadingController} will be
@@ -129,14 +129,14 @@ public class PeriodicReloadingTrigger
      */
     public synchronized void start()
     {
-<span class="nc bnc" id="L132" title="All 2 branches missed.">        if (!isRunning())</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        if (!isRunning())</span>
         {
-<span class="nc" id="L134">            triggerTask =</span>
-<span class="nc" id="L135">                    getExecutorService().scheduleAtFixedRate(</span>
-<span class="nc" id="L136">                            createTriggerTaskCommand(), period, period,</span>
+<span class="fc" id="L134">            triggerTask =</span>
+<span class="fc" id="L135">                    getExecutorService().scheduleAtFixedRate(</span>
+<span class="fc" id="L136">                            createTriggerTaskCommand(), period, period,</span>
                             timeUnit);
         }
-<span class="nc" id="L139">    }</span>
+<span class="fc" id="L139">    }</span>
 
     /**
      * Stops this trigger. The associated {@code ReloadingController} is no more
@@ -145,12 +145,12 @@ public class PeriodicReloadingTrigger
      */
     public synchronized void stop()
     {
-<span class="nc bnc" id="L148" title="All 2 branches missed.">        if (isRunning())</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        if (isRunning())</span>
         {
-<span class="nc" id="L150">            triggerTask.cancel(false);</span>
-<span class="nc" id="L151">            triggerTask = null;</span>
+<span class="fc" id="L150">            triggerTask.cancel(false);</span>
+<span class="fc" id="L151">            triggerTask = null;</span>
         }
-<span class="nc" id="L153">    }</span>
+<span class="fc" id="L153">    }</span>
 
     /**
      * Returns a flag whether this trigger is currently active.
@@ -159,7 +159,7 @@ public class PeriodicReloadingTrigger
      */
     public synchronized boolean isRunning()
     {
-<span class="nc bnc" id="L162" title="All 2 branches missed.">        return triggerTask != null;</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        return triggerTask != null;</span>
     }
 
     /**
@@ -175,12 +175,12 @@ public class PeriodicReloadingTrigger
      */
     public void shutdown(boolean shutdownExecutor)
     {
-<span class="nc" id="L178">        stop();</span>
-<span class="nc bnc" id="L179" title="All 2 branches missed.">        if (shutdownExecutor)</span>
+<span class="fc" id="L178">        stop();</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        if (shutdownExecutor)</span>
         {
-<span class="nc" id="L181">            getExecutorService().shutdown();</span>
+<span class="fc" id="L181">            getExecutorService().shutdown();</span>
         }
-<span class="nc" id="L183">    }</span>
+<span class="fc" id="L183">    }</span>
 
     /**
      * Shuts down this trigger and its {@code ScheduledExecutorService}. This is
@@ -190,8 +190,8 @@ public class PeriodicReloadingTrigger
      */
     public void shutdown()
     {
-<span class="nc" id="L193">        shutdown(true);</span>
-<span class="nc" id="L194">    }</span>
+<span class="fc" id="L193">        shutdown(true);</span>
+<span class="fc" id="L194">    }</span>
 
     /**
      * Returns the {@code ScheduledExecutorService} used by this object.
@@ -200,7 +200,7 @@ public class PeriodicReloadingTrigger
      */
     ScheduledExecutorService getExecutorService()
     {
-<span class="nc" id="L203">        return executorService;</span>
+<span class="fc" id="L203">        return executorService;</span>
     }
 
     /**
@@ -210,13 +210,13 @@ public class PeriodicReloadingTrigger
      */
     private Runnable createTriggerTaskCommand()
     {
-<span class="nc" id="L213">        return new Runnable()</span>
-<span class="nc" id="L214">        {</span>
+<span class="fc" id="L213">        return new Runnable()</span>
+<span class="fc" id="L214">        {</span>
             @Override
             public void run()
             {
-<span class="nc" id="L218">                controller.checkForReloading(controllerParam);</span>
-<span class="nc" id="L219">            }</span>
+<span class="fc" id="L218">                controller.checkForReloading(controllerParam);</span>
+<span class="fc" id="L219">            }</span>
         };
     }
 
@@ -228,11 +228,11 @@ public class PeriodicReloadingTrigger
      */
     private static ScheduledExecutorService createDefaultExecutorService()
     {
-<span class="nc" id="L231">        ThreadFactory factory =</span>
+<span class="fc" id="L231">        ThreadFactory factory =</span>
                 new BasicThreadFactory.Builder()
-<span class="nc" id="L233">                        .namingPattern(&quot;ReloadingTrigger-%s&quot;).daemon(true)</span>
-<span class="nc" id="L234">                        .build();</span>
-<span class="nc" id="L235">        return Executors.newScheduledThreadPool(1, factory);</span>
+<span class="fc" id="L233">                        .namingPattern(&quot;ReloadingTrigger-%s&quot;).daemon(true)</span>
+<span class="fc" id="L234">                        .build();</span>
+<span class="fc" id="L235">        return Executors.newScheduledThreadPool(1, factory);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -53,9 +53,9 @@ public class ConfigurationDeclaration extends XMLBeanDeclaration
     public ConfigurationDeclaration(CombinedConfigurationBuilder builder,
             HierarchicalConfiguration&lt;?&gt; config)
     {
-<span class="nc" id="L56">        super(config);</span>
-<span class="nc" id="L57">        configurationBuilder = builder;</span>
-<span class="nc" id="L58">    }</span>
+<span class="fc" id="L56">        super(config);</span>
+<span class="fc" id="L57">        configurationBuilder = builder;</span>
+<span class="fc" id="L58">    }</span>
 
     /**
      * Returns the associated configuration builder.
@@ -64,7 +64,7 @@ public class ConfigurationDeclaration extends XMLBeanDeclaration
      */
     public CombinedConfigurationBuilder getConfigurationBuilder()
     {
-<span class="nc" id="L67">        return configurationBuilder;</span>
+<span class="fc" id="L67">        return configurationBuilder;</span>
     }
 
     /**
@@ -74,11 +74,11 @@ public class ConfigurationDeclaration extends XMLBeanDeclaration
      */
     public String getAt()
     {
-<span class="nc" id="L77">        String result =</span>
-<span class="nc" id="L78">                this.getConfiguration().getString(</span>
+<span class="fc" id="L77">        String result =</span>
+<span class="fc" id="L78">                this.getConfiguration().getString(</span>
                         CombinedConfigurationBuilder.ATTR_AT_RES);
-<span class="nc bnc" id="L80" title="All 2 branches missed.">        return (result == null) ? this.getConfiguration().getString(</span>
-<span class="nc" id="L81">                CombinedConfigurationBuilder.ATTR_AT) : result;</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        return (result == null) ? this.getConfiguration().getString(</span>
+<span class="fc" id="L81">                CombinedConfigurationBuilder.ATTR_AT) : result;</span>
     }
 
     /**
@@ -88,17 +88,17 @@ public class ConfigurationDeclaration extends XMLBeanDeclaration
      */
     public boolean isOptional()
     {
-<span class="nc" id="L91">        Boolean value =</span>
-<span class="nc" id="L92">                this.getConfiguration().getBoolean(</span>
+<span class="fc" id="L91">        Boolean value =</span>
+<span class="fc" id="L92">                this.getConfiguration().getBoolean(</span>
                         CombinedConfigurationBuilder.ATTR_OPTIONAL_RES, null);
-<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (value == null)</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        if (value == null)</span>
         {
-<span class="nc" id="L96">            value =</span>
-<span class="nc" id="L97">                    this.getConfiguration().getBoolean(</span>
+<span class="fc" id="L96">            value =</span>
+<span class="fc" id="L97">                    this.getConfiguration().getBoolean(</span>
                             CombinedConfigurationBuilder.ATTR_OPTIONAL,
                             Boolean.FALSE);
         }
-<span class="nc" id="L101">        return value.booleanValue();</span>
+<span class="fc" id="L101">        return value.booleanValue();</span>
     }
 
     /**
@@ -114,7 +114,7 @@ public class ConfigurationDeclaration extends XMLBeanDeclaration
      */
     public boolean isForceCreate()
     {
-<span class="nc" id="L117">        return this.getConfiguration().getBoolean(</span>
+<span class="fc" id="L117">        return this.getConfiguration().getBoolean(</span>
                 CombinedConfigurationBuilder.ATTR_FORCECREATE, false);
     }
 
@@ -127,7 +127,7 @@ public class ConfigurationDeclaration extends XMLBeanDeclaration
      */
     public boolean isReload()
     {
-<span class="nc" id="L130">        return getConfiguration().getBoolean(</span>
+<span class="fc" id="L130">        return getConfiguration().getBoolean(</span>
                 CombinedConfigurationBuilder.ATTR_RELOAD, false);
     }
 
@@ -139,7 +139,7 @@ public class ConfigurationDeclaration extends XMLBeanDeclaration
      */
     public String getName()
     {
-<span class="nc" id="L142">        return getConfiguration().getString(</span>
+<span class="fc" id="L142">        return getConfiguration().getString(</span>
                 CombinedConfigurationBuilder.ATTR_NAME);
     }
 
@@ -180,17 +180,17 @@ public class ConfigurationDeclaration extends XMLBeanDeclaration
     @Override
     protected boolean isReservedAttributeName(String name)
     {
-<span class="nc bnc" id="L183" title="All 2 branches missed.">        if (super.isReservedAttributeName(name))</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">        if (super.isReservedAttributeName(name))</span>
         {
-<span class="nc" id="L185">            return true;</span>
+<span class="fc" id="L185">            return true;</span>
         }
 
-<span class="nc" id="L188">        Set&lt;String&gt; attributes = getAttributeNames();</span>
-<span class="nc bnc" id="L189" title="All 2 branches missed.">        return (CombinedConfigurationBuilder.ATTR_ATNAME.equals(name) &amp;&amp; !attributes</span>
-<span class="nc bnc" id="L190" title="All 2 branches missed.">                .contains(RESERVED_PREFIX</span>
+<span class="fc" id="L188">        Set&lt;String&gt; attributes = getAttributeNames();</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        return (CombinedConfigurationBuilder.ATTR_ATNAME.equals(name) &amp;&amp; !attributes</span>
+<span class="fc bfc" id="L190" title="All 2 branches covered.">                .contains(RESERVED_PREFIX</span>
                         + CombinedConfigurationBuilder.ATTR_ATNAME))
-<span class="nc bnc" id="L192" title="All 2 branches missed.">                || (CombinedConfigurationBuilder.ATTR_OPTIONALNAME.equals(name) &amp;&amp; !attributes</span>
-<span class="nc bnc" id="L193" title="All 2 branches missed.">                        .contains(RESERVED_PREFIX</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">                || (CombinedConfigurationBuilder.ATTR_OPTIONALNAME.equals(name) &amp;&amp; !attributes</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">                        .contains(RESERVED_PREFIX</span>
                                 + CombinedConfigurationBuilder.ATTR_OPTIONALNAME));
     }
 }

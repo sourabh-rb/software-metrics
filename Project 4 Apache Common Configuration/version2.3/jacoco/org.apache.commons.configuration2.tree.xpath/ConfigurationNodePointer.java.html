@@ -62,10 +62,10 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     public ConfigurationNodePointer(T node, Locale locale,
             NodeHandler&lt;T&gt; handler)
     {
-<span class="nc" id="L65">        super(null, locale);</span>
-<span class="nc" id="L66">        this.node = node;</span>
-<span class="nc" id="L67">        this.handler = handler;</span>
-<span class="nc" id="L68">    }</span>
+<span class="fc" id="L65">        super(null, locale);</span>
+<span class="fc" id="L66">        this.node = node;</span>
+<span class="fc" id="L67">        this.handler = handler;</span>
+<span class="fc" id="L68">    }</span>
 
     /**
      * Creates a new instance of {@code ConfigurationNodePointer} and
@@ -78,10 +78,10 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     public ConfigurationNodePointer(ConfigurationNodePointer&lt;T&gt; parent, T node,
             NodeHandler&lt;T&gt; handler)
     {
-<span class="nc" id="L81">        super(parent);</span>
-<span class="nc" id="L82">        this.node = node;</span>
-<span class="nc" id="L83">        this.handler = handler;</span>
-<span class="nc" id="L84">    }</span>
+<span class="fc" id="L81">        super(parent);</span>
+<span class="fc" id="L82">        this.node = node;</span>
+<span class="fc" id="L83">        this.handler = handler;</span>
+<span class="fc" id="L84">    }</span>
 
     /**
      * Returns a flag whether this node is a leaf. This is the case if there are
@@ -92,7 +92,7 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     @Override
     public boolean isLeaf()
     {
-<span class="nc bnc" id="L95" title="All 2 branches missed.">        return getNodeHandler().getChildrenCount(node, null) &lt; 1;</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        return getNodeHandler().getChildrenCount(node, null) &lt; 1;</span>
     }
 
     /**
@@ -114,7 +114,7 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     @Override
     public int getLength()
     {
-<span class="nc" id="L117">        return 1;</span>
+<span class="fc" id="L117">        return 1;</span>
     }
 
     /**
@@ -126,7 +126,7 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     @Override
     public boolean isAttribute()
     {
-<span class="nc" id="L129">        return false;</span>
+<span class="fc" id="L129">        return false;</span>
     }
 
     /**
@@ -137,7 +137,7 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     @Override
     public QName getName()
     {
-<span class="nc" id="L140">        return new QName(null, getNodeHandler().nodeName(node));</span>
+<span class="fc" id="L140">        return new QName(null, getNodeHandler().nodeName(node));</span>
     }
 
     /**
@@ -149,7 +149,7 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     @Override
     public Object getBaseValue()
     {
-<span class="nc" id="L152">        return node;</span>
+<span class="fc" id="L152">        return node;</span>
     }
 
     /**
@@ -160,7 +160,7 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     @Override
     public Object getImmediateNode()
     {
-<span class="nc" id="L163">        return node;</span>
+<span class="fc" id="L163">        return node;</span>
     }
 
     /**
@@ -171,7 +171,7 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     @Override
     public Object getValue()
     {
-<span class="nc" id="L174">        return getNodeHandler().getValue(node);</span>
+<span class="fc" id="L174">        return getNodeHandler().getValue(node);</span>
     }
 
     /**
@@ -183,7 +183,7 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     @Override
     public void setValue(Object value)
     {
-<span class="nc" id="L186">        throw new UnsupportedOperationException(&quot;Node value cannot be set!&quot;);</span>
+<span class="fc" id="L186">        throw new UnsupportedOperationException(&quot;Node value cannot be set!&quot;);</span>
     }
 
     /**
@@ -197,22 +197,22 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     public int compareChildNodePointers(NodePointer pointer1,
             NodePointer pointer2)
     {
-<span class="nc" id="L200">        Object node1 = pointer1.getBaseValue();</span>
-<span class="nc" id="L201">        Object node2 = pointer2.getBaseValue();</span>
+<span class="fc" id="L200">        Object node1 = pointer1.getBaseValue();</span>
+<span class="fc" id="L201">        Object node2 = pointer2.getBaseValue();</span>
 
         // sort based on the occurrence in the sub node list
-<span class="nc bnc" id="L204" title="All 2 branches missed.">        for (T child : getNodeHandler().getChildren(node))</span>
+<span class="fc bfc" id="L204" title="All 2 branches covered.">        for (T child : getNodeHandler().getChildren(node))</span>
         {
-<span class="nc bnc" id="L206" title="All 2 branches missed.">            if (child == node1)</span>
+<span class="fc bfc" id="L206" title="All 2 branches covered.">            if (child == node1)</span>
             {
-<span class="nc" id="L208">                return -1;</span>
+<span class="fc" id="L208">                return -1;</span>
             }
-<span class="nc bnc" id="L210" title="All 2 branches missed.">            else if (child == node2)</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">            else if (child == node2)</span>
             {
-<span class="nc" id="L212">                return 1;</span>
+<span class="fc" id="L212">                return 1;</span>
             }
-<span class="nc" id="L214">        }</span>
-<span class="nc" id="L215">        return 0; // should not happen</span>
+<span class="fc" id="L214">        }</span>
+<span class="fc" id="L215">        return 0; // should not happen</span>
     }
 
     /**
@@ -224,7 +224,7 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     @Override
     public NodeIterator attributeIterator(QName name)
     {
-<span class="nc" id="L227">        return new ConfigurationNodeIteratorAttribute&lt;&gt;(this, name);</span>
+<span class="fc" id="L227">        return new ConfigurationNodeIteratorAttribute&lt;&gt;(this, name);</span>
     }
 
     /**
@@ -239,8 +239,8 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     public NodeIterator childIterator(NodeTest test, boolean reverse,
             NodePointer startWith)
     {
-<span class="nc" id="L242">        return new ConfigurationNodeIteratorChildren&lt;&gt;(this, test, reverse,</span>
-<span class="nc" id="L243">                castPointer(startWith));</span>
+<span class="fc" id="L242">        return new ConfigurationNodeIteratorChildren&lt;&gt;(this, test, reverse,</span>
+<span class="fc" id="L243">                castPointer(startWith));</span>
     }
 
     /**
@@ -253,12 +253,12 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     @Override
     public boolean testNode(NodeTest test)
     {
-<span class="nc bnc" id="L256" title="All 2 branches missed.">        if (test instanceof NodeTypeTest</span>
-<span class="nc bnc" id="L257" title="All 2 branches missed.">                &amp;&amp; ((NodeTypeTest) test).getNodeType() == Compiler.NODE_TYPE_TEXT)</span>
+<span class="fc bfc" id="L256" title="All 2 branches covered.">        if (test instanceof NodeTypeTest</span>
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">                &amp;&amp; ((NodeTypeTest) test).getNodeType() == Compiler.NODE_TYPE_TEXT)</span>
         {
 <span class="nc" id="L259">            return true;</span>
         }
-<span class="nc" id="L261">        return super.testNode(test);</span>
+<span class="fc" id="L261">        return super.testNode(test);</span>
     }
 
     /**
@@ -268,7 +268,7 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
      */
     public NodeHandler&lt;T&gt; getNodeHandler()
     {
-<span class="nc" id="L271">        return handler;</span>
+<span class="fc" id="L271">        return handler;</span>
     }
 
     /**
@@ -278,7 +278,7 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
      */
     public T getConfigurationNode()
     {
-<span class="nc" id="L281">        return node;</span>
+<span class="fc" id="L281">        return node;</span>
     }
 
     /**
@@ -293,8 +293,8 @@ class ConfigurationNodePointer&lt;T&gt; extends NodePointer
     private ConfigurationNodePointer&lt;T&gt; castPointer(NodePointer p)
     {
         @SuppressWarnings(&quot;unchecked&quot;) // see method comment
-<span class="nc" id="L296">        ConfigurationNodePointer&lt;T&gt; result = (ConfigurationNodePointer&lt;T&gt;) p;</span>
-<span class="nc" id="L297">        return result;</span>
+<span class="fc" id="L296">        ConfigurationNodePointer&lt;T&gt; result = (ConfigurationNodePointer&lt;T&gt;) p;</span>
+<span class="fc" id="L297">        return result;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

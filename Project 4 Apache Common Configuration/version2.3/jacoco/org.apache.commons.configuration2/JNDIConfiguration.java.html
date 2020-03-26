@@ -56,7 +56,7 @@ public class JNDIConfiguration extends AbstractConfiguration
     private Context baseContext;
 
     /** The Set of keys that have been virtually cleared. */
-<span class="nc" id="L59">    private final Set&lt;String&gt; clearedProperties = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L59">    private final Set&lt;String&gt; clearedProperties = new HashSet&lt;&gt;();</span>
 
     /**
      * Creates a JNDIConfiguration using the default initial context as the
@@ -66,8 +66,8 @@ public class JNDIConfiguration extends AbstractConfiguration
      */
     public JNDIConfiguration() throws NamingException
     {
-<span class="nc" id="L69">        this((String) null);</span>
-<span class="nc" id="L70">    }</span>
+<span class="fc" id="L69">        this((String) null);</span>
+<span class="fc" id="L70">    }</span>
 
     /**
      * Creates a JNDIConfiguration using the default initial context, shifted
@@ -79,8 +79,8 @@ public class JNDIConfiguration extends AbstractConfiguration
      */
     public JNDIConfiguration(String prefix) throws NamingException
     {
-<span class="nc" id="L82">        this(new InitialContext(), prefix);</span>
-<span class="nc" id="L83">    }</span>
+<span class="fc" id="L82">        this(new InitialContext(), prefix);</span>
+<span class="fc" id="L83">    }</span>
 
     /**
      * Creates a JNDIConfiguration using the specified initial context as the
@@ -90,8 +90,8 @@ public class JNDIConfiguration extends AbstractConfiguration
      */
     public JNDIConfiguration(Context context)
     {
-<span class="nc" id="L93">        this(context, null);</span>
-<span class="nc" id="L94">    }</span>
+<span class="fc" id="L93">        this(context, null);</span>
+<span class="fc" id="L94">    }</span>
 
     /**
      * Creates a JNDIConfiguration using the specified initial context shifted
@@ -101,12 +101,12 @@ public class JNDIConfiguration extends AbstractConfiguration
      * @param prefix the prefix
      */
     public JNDIConfiguration(Context context, String prefix)
-<span class="nc" id="L104">    {</span>
-<span class="nc" id="L105">        this.context = context;</span>
-<span class="nc" id="L106">        this.prefix = prefix;</span>
-<span class="nc" id="L107">        initLogger(new ConfigurationLogger(JNDIConfiguration.class));</span>
-<span class="nc" id="L108">        addErrorLogListener();</span>
-<span class="nc" id="L109">    }</span>
+<span class="fc" id="L104">    {</span>
+<span class="fc" id="L105">        this.context = context;</span>
+<span class="fc" id="L106">        this.prefix = prefix;</span>
+<span class="fc" id="L107">        initLogger(new ConfigurationLogger(JNDIConfiguration.class));</span>
+<span class="fc" id="L108">        addErrorLogListener();</span>
+<span class="fc" id="L109">    }</span>
 
     /**
      * This method recursive traverse the JNDI tree, looking for Context objects.
@@ -122,55 +122,55 @@ public class JNDIConfiguration extends AbstractConfiguration
     private void recursiveGetKeys(Set&lt;String&gt; keys, Context context, String prefix,
             Set&lt;Context&gt; processedCtx) throws NamingException
     {
-<span class="nc" id="L125">        processedCtx.add(context);</span>
-<span class="nc" id="L126">        NamingEnumeration&lt;NameClassPair&gt; elements = null;</span>
+<span class="fc" id="L125">        processedCtx.add(context);</span>
+<span class="fc" id="L126">        NamingEnumeration&lt;NameClassPair&gt; elements = null;</span>
 
         try
         {
-<span class="nc" id="L130">            elements = context.list(&quot;&quot;);</span>
+<span class="fc" id="L130">            elements = context.list(&quot;&quot;);</span>
 
             // iterates through the context's elements
-<span class="nc bnc" id="L133" title="All 2 branches missed.">            while (elements.hasMore())</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">            while (elements.hasMore())</span>
             {
-<span class="nc" id="L135">                NameClassPair nameClassPair = elements.next();</span>
-<span class="nc" id="L136">                String name = nameClassPair.getName();</span>
-<span class="nc" id="L137">                Object object = context.lookup(name);</span>
+<span class="fc" id="L135">                NameClassPair nameClassPair = elements.next();</span>
+<span class="fc" id="L136">                String name = nameClassPair.getName();</span>
+<span class="fc" id="L137">                Object object = context.lookup(name);</span>
 
                 // build the key
-<span class="nc" id="L140">                StringBuilder key = new StringBuilder();</span>
-<span class="nc" id="L141">                key.append(prefix);</span>
-<span class="nc bnc" id="L142" title="All 2 branches missed.">                if (key.length() &gt; 0)</span>
+<span class="fc" id="L140">                StringBuilder key = new StringBuilder();</span>
+<span class="fc" id="L141">                key.append(prefix);</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">                if (key.length() &gt; 0)</span>
                 {
-<span class="nc" id="L144">                    key.append(&quot;.&quot;);</span>
+<span class="fc" id="L144">                    key.append(&quot;.&quot;);</span>
                 }
-<span class="nc" id="L146">                key.append(name);</span>
+<span class="fc" id="L146">                key.append(name);</span>
 
-<span class="nc bnc" id="L148" title="All 2 branches missed.">                if (object instanceof Context)</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">                if (object instanceof Context)</span>
                 {
                     // add the keys of the sub context
-<span class="nc" id="L151">                    Context subcontext = (Context) object;</span>
-<span class="nc bnc" id="L152" title="All 2 branches missed.">                    if (!processedCtx.contains(subcontext))</span>
+<span class="fc" id="L151">                    Context subcontext = (Context) object;</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">                    if (!processedCtx.contains(subcontext))</span>
                     {
-<span class="nc" id="L154">                        recursiveGetKeys(keys, subcontext, key.toString(),</span>
+<span class="fc" id="L154">                        recursiveGetKeys(keys, subcontext, key.toString(),</span>
                                 processedCtx);
                     }
-<span class="nc" id="L157">                }</span>
+<span class="fc" id="L157">                }</span>
                 else
                 {
                     // add the key
-<span class="nc" id="L161">                    keys.add(key.toString());</span>
+<span class="fc" id="L161">                    keys.add(key.toString());</span>
                 }
-<span class="nc" id="L163">            }</span>
+<span class="fc" id="L163">            }</span>
         }
         finally
         {
             // close the enumeration
-<span class="nc bnc" id="L168" title="All 2 branches missed.">            if (elements != null)</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">            if (elements != null)</span>
             {
-<span class="nc" id="L170">                elements.close();</span>
+<span class="fc" id="L170">                elements.close();</span>
             }
         }
-<span class="nc" id="L173">    }</span>
+<span class="fc" id="L173">    }</span>
 
     /**
      * Returns an iterator with all property keys stored in this configuration.
@@ -180,7 +180,7 @@ public class JNDIConfiguration extends AbstractConfiguration
     @Override
     protected Iterator&lt;String&gt; getKeysInternal()
     {
-<span class="nc" id="L183">        return getKeysInternal(&quot;&quot;);</span>
+<span class="fc" id="L183">        return getKeysInternal(&quot;&quot;);</span>
     }
 
     /**
@@ -194,39 +194,39 @@ public class JNDIConfiguration extends AbstractConfiguration
     protected Iterator&lt;String&gt; getKeysInternal(String prefix)
     {
         // build the path
-<span class="nc" id="L197">        String[] splitPath = StringUtils.split(prefix, &quot;.&quot;);</span>
+<span class="fc" id="L197">        String[] splitPath = StringUtils.split(prefix, &quot;.&quot;);</span>
 
-<span class="nc" id="L199">        List&lt;String&gt; path = Arrays.asList(splitPath);</span>
+<span class="fc" id="L199">        List&lt;String&gt; path = Arrays.asList(splitPath);</span>
 
         try
         {
             // find the context matching the specified path
-<span class="nc" id="L204">            Context context = getContext(path, getBaseContext());</span>
+<span class="fc" id="L204">            Context context = getContext(path, getBaseContext());</span>
 
             // return all the keys under the context found
-<span class="nc" id="L207">            Set&lt;String&gt; keys = new HashSet&lt;&gt;();</span>
-<span class="nc bnc" id="L208" title="All 2 branches missed.">            if (context != null)</span>
+<span class="fc" id="L207">            Set&lt;String&gt; keys = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">            if (context != null)</span>
             {
-<span class="nc" id="L210">                recursiveGetKeys(keys, context, prefix, new HashSet&lt;Context&gt;());</span>
+<span class="fc" id="L210">                recursiveGetKeys(keys, context, prefix, new HashSet&lt;Context&gt;());</span>
             }
-<span class="nc bnc" id="L212" title="All 2 branches missed.">            else if (containsKey(prefix))</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">            else if (containsKey(prefix))</span>
             {
                 // add the prefix if it matches exactly a property key
-<span class="nc" id="L215">                keys.add(prefix);</span>
+<span class="fc" id="L215">                keys.add(prefix);</span>
             }
 
-<span class="nc" id="L218">            return keys.iterator();</span>
+<span class="fc" id="L218">            return keys.iterator();</span>
         }
-<span class="nc" id="L220">        catch (NameNotFoundException e)</span>
+<span class="fc" id="L220">        catch (NameNotFoundException e)</span>
         {
             // expected exception, no need to log it
-<span class="nc" id="L223">            return new ArrayList&lt;String&gt;().iterator();</span>
+<span class="fc" id="L223">            return new ArrayList&lt;String&gt;().iterator();</span>
         }
-<span class="nc" id="L225">        catch (NamingException e)</span>
+<span class="fc" id="L225">        catch (NamingException e)</span>
         {
-<span class="nc" id="L227">            fireError(ConfigurationErrorEvent.READ,</span>
+<span class="fc" id="L227">            fireError(ConfigurationErrorEvent.READ,</span>
                     ConfigurationErrorEvent.READ, null, null, e);
-<span class="nc" id="L229">            return new ArrayList&lt;String&gt;().iterator();</span>
+<span class="fc" id="L229">            return new ArrayList&lt;String&gt;().iterator();</span>
         }
     }
 
@@ -243,43 +243,43 @@ public class JNDIConfiguration extends AbstractConfiguration
     private Context getContext(List&lt;String&gt; path, Context context) throws NamingException
     {
         // return the current context if the path is empty
-<span class="nc bnc" id="L246" title="All 4 branches missed.">        if (path == null || path.isEmpty())</span>
+<span class="pc bpc" id="L246" title="1 of 4 branches missed.">        if (path == null || path.isEmpty())</span>
         {
-<span class="nc" id="L248">            return context;</span>
+<span class="fc" id="L248">            return context;</span>
         }
 
-<span class="nc" id="L251">        String key = path.get(0);</span>
+<span class="fc" id="L251">        String key = path.get(0);</span>
 
         // search a context matching the key in the context's elements
-<span class="nc" id="L254">        NamingEnumeration&lt;NameClassPair&gt; elements = null;</span>
+<span class="fc" id="L254">        NamingEnumeration&lt;NameClassPair&gt; elements = null;</span>
 
         try
         {
-<span class="nc" id="L258">            elements = context.list(&quot;&quot;);</span>
-<span class="nc bnc" id="L259" title="All 2 branches missed.">            while (elements.hasMore())</span>
+<span class="fc" id="L258">            elements = context.list(&quot;&quot;);</span>
+<span class="fc bfc" id="L259" title="All 2 branches covered.">            while (elements.hasMore())</span>
             {
-<span class="nc" id="L261">                NameClassPair nameClassPair = elements.next();</span>
-<span class="nc" id="L262">                String name = nameClassPair.getName();</span>
-<span class="nc" id="L263">                Object object = context.lookup(name);</span>
+<span class="fc" id="L261">                NameClassPair nameClassPair = elements.next();</span>
+<span class="fc" id="L262">                String name = nameClassPair.getName();</span>
+<span class="fc" id="L263">                Object object = context.lookup(name);</span>
 
-<span class="nc bnc" id="L265" title="All 4 branches missed.">                if (object instanceof Context &amp;&amp; name.equals(key))</span>
+<span class="fc bfc" id="L265" title="All 4 branches covered.">                if (object instanceof Context &amp;&amp; name.equals(key))</span>
                 {
-<span class="nc" id="L267">                    Context subcontext = (Context) object;</span>
+<span class="fc" id="L267">                    Context subcontext = (Context) object;</span>
 
                     // recursive search in the sub context
-<span class="nc" id="L270">                    return getContext(path.subList(1, path.size()), subcontext);</span>
+<span class="fc" id="L270">                    return getContext(path.subList(1, path.size()), subcontext);</span>
                 }
-<span class="nc" id="L272">            }</span>
+<span class="fc" id="L272">            }</span>
         }
         finally
         {
-<span class="nc bnc" id="L276" title="All 2 branches missed.">            if (elements != null)</span>
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">            if (elements != null)</span>
             {
-<span class="nc" id="L278">                elements.close();</span>
+<span class="fc" id="L278">                elements.close();</span>
             }
         }
 
-<span class="nc" id="L282">        return null;</span>
+<span class="fc" id="L282">        return null;</span>
     }
 
     /**
@@ -292,27 +292,27 @@ public class JNDIConfiguration extends AbstractConfiguration
     {
         try
         {
-<span class="nc" id="L295">            NamingEnumeration&lt;NameClassPair&gt; enumeration = null;</span>
+<span class="fc" id="L295">            NamingEnumeration&lt;NameClassPair&gt; enumeration = null;</span>
 
             try
             {
-<span class="nc" id="L299">                enumeration = getBaseContext().list(&quot;&quot;);</span>
-<span class="nc bnc" id="L300" title="All 2 branches missed.">                return !enumeration.hasMore();</span>
+<span class="fc" id="L299">                enumeration = getBaseContext().list(&quot;&quot;);</span>
+<span class="pc bpc" id="L300" title="1 of 2 branches missed.">                return !enumeration.hasMore();</span>
             }
             finally
             {
                 // close the enumeration
-<span class="nc bnc" id="L305" title="All 2 branches missed.">                if (enumeration != null)</span>
+<span class="fc bfc" id="L305" title="All 2 branches covered.">                if (enumeration != null)</span>
                 {
-<span class="nc" id="L307">                    enumeration.close();</span>
+<span class="fc" id="L307">                    enumeration.close();</span>
                 }
             }
         }
-<span class="nc" id="L311">        catch (NamingException e)</span>
+<span class="fc" id="L311">        catch (NamingException e)</span>
         {
-<span class="nc" id="L313">            fireError(ConfigurationErrorEvent.READ,</span>
+<span class="fc" id="L313">            fireError(ConfigurationErrorEvent.READ,</span>
                     ConfigurationErrorEvent.READ, null, null, e);
-<span class="nc" id="L315">            return true;</span>
+<span class="fc" id="L315">            return true;</span>
         }
     }
 
@@ -338,8 +338,8 @@ public class JNDIConfiguration extends AbstractConfiguration
     @Override
     protected void clearPropertyDirect(String key)
     {
-<span class="nc" id="L341">        clearedProperties.add(key);</span>
-<span class="nc" id="L342">    }</span>
+<span class="fc" id="L341">        clearedProperties.add(key);</span>
+<span class="fc" id="L342">    }</span>
 
     /**
      * Checks whether the specified key is contained in this configuration.
@@ -350,27 +350,27 @@ public class JNDIConfiguration extends AbstractConfiguration
     @Override
     protected boolean containsKeyInternal(String key)
     {
-<span class="nc bnc" id="L353" title="All 2 branches missed.">        if (clearedProperties.contains(key))</span>
+<span class="fc bfc" id="L353" title="All 2 branches covered.">        if (clearedProperties.contains(key))</span>
         {
-<span class="nc" id="L355">            return false;</span>
+<span class="fc" id="L355">            return false;</span>
         }
-<span class="nc" id="L357">        key = key.replaceAll(&quot;\\.&quot;, &quot;/&quot;);</span>
+<span class="fc" id="L357">        key = key.replaceAll(&quot;\\.&quot;, &quot;/&quot;);</span>
         try
         {
             // throws a NamingException if JNDI doesn't contain the key.
-<span class="nc" id="L361">            getBaseContext().lookup(key);</span>
-<span class="nc" id="L362">            return true;</span>
+<span class="fc" id="L361">            getBaseContext().lookup(key);</span>
+<span class="fc" id="L362">            return true;</span>
         }
-<span class="nc" id="L364">        catch (NameNotFoundException e)</span>
+<span class="fc" id="L364">        catch (NameNotFoundException e)</span>
         {
             // expected exception, no need to log it
-<span class="nc" id="L367">            return false;</span>
+<span class="fc" id="L367">            return false;</span>
         }
-<span class="nc" id="L369">        catch (NamingException e)</span>
+<span class="fc" id="L369">        catch (NamingException e)</span>
         {
-<span class="nc" id="L371">            fireError(ConfigurationErrorEvent.READ,</span>
+<span class="fc" id="L371">            fireError(ConfigurationErrorEvent.READ,</span>
                     ConfigurationErrorEvent.READ, key, null, e);
-<span class="nc" id="L373">            return false;</span>
+<span class="fc" id="L373">            return false;</span>
         }
     }
 
@@ -390,11 +390,11 @@ public class JNDIConfiguration extends AbstractConfiguration
      */
     public void setPrefix(String prefix)
     {
-<span class="nc" id="L393">        this.prefix = prefix;</span>
+<span class="fc" id="L393">        this.prefix = prefix;</span>
 
         // clear the previous baseContext
-<span class="nc" id="L396">        baseContext = null;</span>
-<span class="nc" id="L397">    }</span>
+<span class="fc" id="L396">        baseContext = null;</span>
+<span class="fc" id="L397">    }</span>
 
     /**
      * Returns the value of the specified property.
@@ -405,31 +405,31 @@ public class JNDIConfiguration extends AbstractConfiguration
     @Override
     protected Object getPropertyInternal(String key)
     {
-<span class="nc bnc" id="L408" title="All 2 branches missed.">        if (clearedProperties.contains(key))</span>
+<span class="fc bfc" id="L408" title="All 2 branches covered.">        if (clearedProperties.contains(key))</span>
         {
-<span class="nc" id="L410">            return null;</span>
+<span class="fc" id="L410">            return null;</span>
         }
 
         try
         {
-<span class="nc" id="L415">            key = key.replaceAll(&quot;\\.&quot;, &quot;/&quot;);</span>
-<span class="nc" id="L416">            return getBaseContext().lookup(key);</span>
+<span class="fc" id="L415">            key = key.replaceAll(&quot;\\.&quot;, &quot;/&quot;);</span>
+<span class="fc" id="L416">            return getBaseContext().lookup(key);</span>
         }
-<span class="nc" id="L418">        catch (NameNotFoundException e)</span>
+<span class="fc" id="L418">        catch (NameNotFoundException e)</span>
         {
             // expected exception, no need to log it
-<span class="nc" id="L421">            return null;</span>
+<span class="fc" id="L421">            return null;</span>
         }
 <span class="nc" id="L423">        catch (NotContextException nctxex)</span>
         {
             // expected exception, no need to log it
 <span class="nc" id="L426">            return null;</span>
         }
-<span class="nc" id="L428">        catch (NamingException e)</span>
+<span class="fc" id="L428">        catch (NamingException e)</span>
         {
-<span class="nc" id="L430">            fireError(ConfigurationErrorEvent.READ,</span>
+<span class="fc" id="L430">            fireError(ConfigurationErrorEvent.READ,</span>
                     ConfigurationErrorEvent.READ, key, null, e);
-<span class="nc" id="L432">            return null;</span>
+<span class="fc" id="L432">            return null;</span>
         }
     }
 
@@ -455,12 +455,12 @@ public class JNDIConfiguration extends AbstractConfiguration
      */
     public Context getBaseContext() throws NamingException
     {
-<span class="nc bnc" id="L458" title="All 2 branches missed.">        if (baseContext == null)</span>
+<span class="fc bfc" id="L458" title="All 2 branches covered.">        if (baseContext == null)</span>
         {
-<span class="nc bnc" id="L460" title="All 2 branches missed.">            baseContext = (Context) getContext().lookup(prefix == null ? &quot;&quot; : prefix);</span>
+<span class="fc bfc" id="L460" title="All 2 branches covered.">            baseContext = (Context) getContext().lookup(prefix == null ? &quot;&quot; : prefix);</span>
         }
 
-<span class="nc" id="L463">        return baseContext;</span>
+<span class="fc" id="L463">        return baseContext;</span>
     }
 
     /**
@@ -471,7 +471,7 @@ public class JNDIConfiguration extends AbstractConfiguration
      */
     public Context getContext()
     {
-<span class="nc" id="L474">        return context;</span>
+<span class="fc" id="L474">        return context;</span>
     }
 
     /**
@@ -482,10 +482,10 @@ public class JNDIConfiguration extends AbstractConfiguration
     public void setContext(Context context)
     {
         // forget the removed properties
-<span class="nc" id="L485">        clearedProperties.clear();</span>
+<span class="fc" id="L485">        clearedProperties.clear();</span>
 
         // change the context
-<span class="nc" id="L488">        this.context = context;</span>
-<span class="nc" id="L489">    }</span>
+<span class="fc" id="L488">        this.context = context;</span>
+<span class="fc" id="L489">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

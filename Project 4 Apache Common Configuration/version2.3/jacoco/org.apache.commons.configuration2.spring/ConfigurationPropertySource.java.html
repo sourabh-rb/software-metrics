@@ -32,8 +32,8 @@ public class ConfigurationPropertySource extends EnumerablePropertySource&lt;Con
 
     public ConfigurationPropertySource(String name, Configuration source)
     {
-<span class="nc" id="L35">       super(name, source);</span>
-<span class="nc" id="L36">    }</span>
+<span class="fc" id="L35">       super(name, source);</span>
+<span class="fc" id="L36">    }</span>
 
     protected ConfigurationPropertySource(String name)
     {
@@ -55,7 +55,7 @@ public class ConfigurationPropertySource extends EnumerablePropertySource&lt;Con
     @Override
     public Object getProperty(String name)
     {
-<span class="nc" id="L58">       return source.getProperty(name);</span>
+<span class="fc" id="L58">       return source.getProperty(name);</span>
    }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

@@ -60,14 +60,14 @@ class ImmutableConfigurationInvocationHandler implements InvocationHandler
      * @throws NullPointerException if the {@code Configuration} is &lt;b&gt;null&lt;/b&gt;
      */
     public ImmutableConfigurationInvocationHandler(Configuration conf)
-<span class="nc" id="L63">    {</span>
-<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (conf == null)</span>
+<span class="fc" id="L63">    {</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (conf == null)</span>
         {
-<span class="nc" id="L66">            throw new NullPointerException(</span>
+<span class="fc" id="L66">            throw new NullPointerException(</span>
                     &quot;Wrapped configuration must not be null!&quot;);
         }
-<span class="nc" id="L69">        wrappedConfiguration = conf;</span>
-<span class="nc" id="L70">    }</span>
+<span class="fc" id="L69">        wrappedConfiguration = conf;</span>
+<span class="fc" id="L70">    }</span>
 
     /**
      * {@inheritDoc} This implementation delegates to the wrapped configuration
@@ -79,12 +79,12 @@ class ImmutableConfigurationInvocationHandler implements InvocationHandler
     {
         try
         {
-<span class="nc" id="L82">            return handleResult(method.invoke(wrappedConfiguration, args));</span>
+<span class="fc" id="L82">            return handleResult(method.invoke(wrappedConfiguration, args));</span>
         }
-<span class="nc" id="L84">        catch (InvocationTargetException e)</span>
+<span class="fc" id="L84">        catch (InvocationTargetException e)</span>
         {
             // unwrap
-<span class="nc" id="L87">            throw e.getCause();</span>
+<span class="fc" id="L87">            throw e.getCause();</span>
         }
     }
 
@@ -98,11 +98,11 @@ class ImmutableConfigurationInvocationHandler implements InvocationHandler
      */
     private static Object handleResult(Object result)
     {
-<span class="nc bnc" id="L101" title="All 2 branches missed.">        if (result instanceof Iterator)</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        if (result instanceof Iterator)</span>
         {
-<span class="nc" id="L103">            return new ImmutableIterator((Iterator&lt;?&gt;) result);</span>
+<span class="fc" id="L103">            return new ImmutableIterator((Iterator&lt;?&gt;) result);</span>
         }
-<span class="nc" id="L105">        return result;</span>
+<span class="fc" id="L105">        return result;</span>
     }
 
     /**
@@ -121,9 +121,9 @@ class ImmutableConfigurationInvocationHandler implements InvocationHandler
          * @param it the underlying iterator
          */
         public ImmutableIterator(Iterator&lt;?&gt; it)
-<span class="nc" id="L124">        {</span>
-<span class="nc" id="L125">            wrappedIterator = it;</span>
-<span class="nc" id="L126">        }</span>
+<span class="fc" id="L124">        {</span>
+<span class="fc" id="L125">            wrappedIterator = it;</span>
+<span class="fc" id="L126">        }</span>
 
         /**
          * {@inheritDoc} This implementation just delegates to the underlying
@@ -132,7 +132,7 @@ class ImmutableConfigurationInvocationHandler implements InvocationHandler
         @Override
         public boolean hasNext()
         {
-<span class="nc" id="L135">            return wrappedIterator.hasNext();</span>
+<span class="fc" id="L135">            return wrappedIterator.hasNext();</span>
         }
 
         /**
@@ -142,7 +142,7 @@ class ImmutableConfigurationInvocationHandler implements InvocationHandler
         @Override
         public Object next()
         {
-<span class="nc" id="L145">            return wrappedIterator.next();</span>
+<span class="fc" id="L145">            return wrappedIterator.next();</span>
         }
 
         /**
@@ -152,7 +152,7 @@ class ImmutableConfigurationInvocationHandler implements InvocationHandler
         @Override
         public void remove()
         {
-<span class="nc" id="L155">            throw new UnsupportedOperationException(</span>
+<span class="fc" id="L155">            throw new UnsupportedOperationException(</span>
                     &quot;remove() operation not supported!&quot;);
         }
     }

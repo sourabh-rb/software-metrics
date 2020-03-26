@@ -78,7 +78,7 @@ public final class BeanHelper
      * instance can be used throughout an application. Otherwise, new instances
      * can be created with their own configuration.
      */
-<span class="nc" id="L81">    public static final BeanHelper INSTANCE = new BeanHelper();</span>
+<span class="fc" id="L81">    public static final BeanHelper INSTANCE = new BeanHelper();</span>
 
     /**
      * A special instance of {@code BeanUtilsBean} which is used for all
@@ -86,11 +86,11 @@ public final class BeanHelper
      * {@code BeanIntrospector} objects which support fluent interfaces. This is
      * required for handling builder parameter objects correctly.
      */
-<span class="nc" id="L89">    private static final BeanUtilsBean BEAN_UTILS_BEAN = initBeanUtilsBean();</span>
+<span class="fc" id="L89">    private static final BeanUtilsBean BEAN_UTILS_BEAN = initBeanUtilsBean();</span>
 
     /** Stores a map with the registered bean factories. */
-<span class="nc" id="L92">    private final Map&lt;String, BeanFactory&gt; beanFactories = Collections</span>
-<span class="nc" id="L93">            .synchronizedMap(new HashMap&lt;String, BeanFactory&gt;());</span>
+<span class="fc" id="L92">    private final Map&lt;String, BeanFactory&gt; beanFactories = Collections</span>
+<span class="fc" id="L93">            .synchronizedMap(new HashMap&lt;String, BeanFactory&gt;());</span>
 
     /**
      * Stores the default bean factory, which is used if no other factory
@@ -104,8 +104,8 @@ public final class BeanHelper
      */
     public BeanHelper()
     {
-<span class="nc" id="L107">        this(null);</span>
-<span class="nc" id="L108">    }</span>
+<span class="fc" id="L107">        this(null);</span>
+<span class="fc" id="L108">    }</span>
 
     /**
      * Creates a new instance of {@code BeanHelper} and sets the specified
@@ -115,10 +115,10 @@ public final class BeanHelper
      *        then a default instance is used)
      */
     public BeanHelper(BeanFactory defFactory)
-<span class="nc" id="L118">    {</span>
-<span class="nc" id="L119">        defaultBeanFactory =</span>
-<span class="nc bnc" id="L120" title="All 2 branches missed.">                (defFactory != null) ? defFactory : DefaultBeanFactory.INSTANCE;</span>
-<span class="nc" id="L121">    }</span>
+<span class="fc" id="L118">    {</span>
+<span class="fc" id="L119">        defaultBeanFactory =</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">                (defFactory != null) ? defFactory : DefaultBeanFactory.INSTANCE;</span>
+<span class="fc" id="L121">    }</span>
 
     /**
      * Register a bean factory under a symbolic name. This factory object can
@@ -131,18 +131,18 @@ public final class BeanHelper
      */
     public void registerBeanFactory(String name, BeanFactory factory)
     {
-<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (name == null)</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if (name == null)</span>
         {
-<span class="nc" id="L136">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L136">            throw new IllegalArgumentException(</span>
                     &quot;Name for bean factory must not be null!&quot;);
         }
-<span class="nc bnc" id="L139" title="All 2 branches missed.">        if (factory == null)</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        if (factory == null)</span>
         {
-<span class="nc" id="L141">            throw new IllegalArgumentException(&quot;Bean factory must not be null!&quot;);</span>
+<span class="fc" id="L141">            throw new IllegalArgumentException(&quot;Bean factory must not be null!&quot;);</span>
         }
 
-<span class="nc" id="L144">        beanFactories.put(name, factory);</span>
-<span class="nc" id="L145">    }</span>
+<span class="fc" id="L144">        beanFactories.put(name, factory);</span>
+<span class="fc" id="L145">    }</span>
 
     /**
      * Deregisters the bean factory with the given name. After that this factory
@@ -154,7 +154,7 @@ public final class BeanHelper
      */
     public BeanFactory deregisterBeanFactory(String name)
     {
-<span class="nc" id="L157">        return beanFactories.remove(name);</span>
+<span class="fc" id="L157">        return beanFactories.remove(name);</span>
     }
 
     /**
@@ -164,7 +164,7 @@ public final class BeanHelper
      */
     public Set&lt;String&gt; registeredFactoryNames()
     {
-<span class="nc" id="L167">        return beanFactories.keySet();</span>
+<span class="fc" id="L167">        return beanFactories.keySet();</span>
     }
 
     /**
@@ -174,7 +174,7 @@ public final class BeanHelper
      */
     public BeanFactory getDefaultBeanFactory()
     {
-<span class="nc" id="L177">        return defaultBeanFactory;</span>
+<span class="fc" id="L177">        return defaultBeanFactory;</span>
     }
 
     /**
@@ -189,12 +189,12 @@ public final class BeanHelper
      */
     public void initBean(Object bean, BeanDeclaration data)
     {
-<span class="nc" id="L192">        initBeanProperties(bean, data);</span>
+<span class="fc" id="L192">        initBeanProperties(bean, data);</span>
 
-<span class="nc" id="L194">        Map&lt;String, Object&gt; nestedBeans = data.getNestedBeanDeclarations();</span>
-<span class="nc bnc" id="L195" title="All 2 branches missed.">        if (nestedBeans != null)</span>
+<span class="fc" id="L194">        Map&lt;String, Object&gt; nestedBeans = data.getNestedBeanDeclarations();</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">        if (nestedBeans != null)</span>
         {
-<span class="nc bnc" id="L197" title="All 2 branches missed.">            if (bean instanceof Collection)</span>
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">            if (bean instanceof Collection)</span>
             {
                 // This is safe because the collection stores the values of the
                 // nested beans.
@@ -225,35 +225,35 @@ public final class BeanHelper
 <span class="nc" id="L225">            }</span>
             else
             {
-<span class="nc bnc" id="L228" title="All 2 branches missed.">                for (Map.Entry&lt;String, Object&gt; e : nestedBeans.entrySet())</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">                for (Map.Entry&lt;String, Object&gt; e : nestedBeans.entrySet())</span>
                 {
-<span class="nc" id="L230">                    String propName = e.getKey();</span>
-<span class="nc" id="L231">                    Class&lt;?&gt; defaultClass = getDefaultClass(bean, propName);</span>
+<span class="fc" id="L230">                    String propName = e.getKey();</span>
+<span class="fc" id="L231">                    Class&lt;?&gt; defaultClass = getDefaultClass(bean, propName);</span>
 
-<span class="nc" id="L233">                    Object prop = e.getValue();</span>
+<span class="fc" id="L233">                    Object prop = e.getValue();</span>
 
-<span class="nc bnc" id="L235" title="All 2 branches missed.">                    if (prop instanceof Collection)</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">                    if (prop instanceof Collection)</span>
                     {
-<span class="nc" id="L237">                        Collection&lt;Object&gt; beanCollection =</span>
-<span class="nc" id="L238">                                createPropertyCollection(propName, defaultClass);</span>
+<span class="fc" id="L237">                        Collection&lt;Object&gt; beanCollection =</span>
+<span class="fc" id="L238">                                createPropertyCollection(propName, defaultClass);</span>
 
-<span class="nc bnc" id="L240" title="All 2 branches missed.">                        for (Object elemDef : (Collection&lt;?&gt;) prop)</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">                        for (Object elemDef : (Collection&lt;?&gt;) prop)</span>
                         {
-<span class="nc" id="L242">                            beanCollection</span>
-<span class="nc" id="L243">                                    .add(createBean((BeanDeclaration) elemDef));</span>
-<span class="nc" id="L244">                        }</span>
+<span class="fc" id="L242">                            beanCollection</span>
+<span class="fc" id="L243">                                    .add(createBean((BeanDeclaration) elemDef));</span>
+<span class="fc" id="L244">                        }</span>
 
-<span class="nc" id="L246">                        initProperty(bean, propName, beanCollection);</span>
-<span class="nc" id="L247">                    }</span>
+<span class="fc" id="L246">                        initProperty(bean, propName, beanCollection);</span>
+<span class="fc" id="L247">                    }</span>
                     else
                     {
-<span class="nc" id="L250">                        initProperty(bean, propName, createBean(</span>
-<span class="nc" id="L251">                            (BeanDeclaration) e.getValue(), defaultClass));</span>
+<span class="fc" id="L250">                        initProperty(bean, propName, createBean(</span>
+<span class="fc" id="L251">                            (BeanDeclaration) e.getValue(), defaultClass));</span>
                     }
-<span class="nc" id="L253">                }</span>
+<span class="fc" id="L253">                }</span>
             }
         }
-<span class="nc" id="L256">    }</span>
+<span class="fc" id="L256">    }</span>
 
     /**
      * Initializes the beans properties.
@@ -264,16 +264,16 @@ public final class BeanHelper
      */
     public static void initBeanProperties(Object bean, BeanDeclaration data)
     {
-<span class="nc" id="L267">        Map&lt;String, Object&gt; properties = data.getBeanProperties();</span>
-<span class="nc bnc" id="L268" title="All 2 branches missed.">        if (properties != null)</span>
+<span class="fc" id="L267">        Map&lt;String, Object&gt; properties = data.getBeanProperties();</span>
+<span class="fc bfc" id="L268" title="All 2 branches covered.">        if (properties != null)</span>
         {
-<span class="nc bnc" id="L270" title="All 2 branches missed.">            for (Map.Entry&lt;String, Object&gt; e : properties.entrySet())</span>
+<span class="fc bfc" id="L270" title="All 2 branches covered.">            for (Map.Entry&lt;String, Object&gt; e : properties.entrySet())</span>
             {
-<span class="nc" id="L272">                String propName = e.getKey();</span>
-<span class="nc" id="L273">                initProperty(bean, propName, e.getValue());</span>
-<span class="nc" id="L274">            }</span>
+<span class="fc" id="L272">                String propName = e.getKey();</span>
+<span class="fc" id="L273">                initProperty(bean, propName, e.getValue());</span>
+<span class="fc" id="L274">            }</span>
         }
-<span class="nc" id="L276">    }</span>
+<span class="fc" id="L276">    }</span>
 
     /**
      * Creates a {@code DynaBean} instance which wraps the passed in bean.
@@ -285,14 +285,14 @@ public final class BeanHelper
      */
     public static DynaBean createWrapDynaBean(Object bean)
     {
-<span class="nc bnc" id="L288" title="All 2 branches missed.">        if (bean == null)</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">        if (bean == null)</span>
         {
-<span class="nc" id="L290">            throw new IllegalArgumentException(&quot;Bean must not be null!&quot;);</span>
+<span class="fc" id="L290">            throw new IllegalArgumentException(&quot;Bean must not be null!&quot;);</span>
         }
-<span class="nc" id="L292">        WrapDynaClass dynaClass =</span>
-<span class="nc" id="L293">                WrapDynaClass.createDynaClass(bean.getClass(),</span>
-<span class="nc" id="L294">                        BEAN_UTILS_BEAN.getPropertyUtils());</span>
-<span class="nc" id="L295">        return new WrapDynaBean(bean, dynaClass);</span>
+<span class="fc" id="L292">        WrapDynaClass dynaClass =</span>
+<span class="fc" id="L293">                WrapDynaClass.createDynaClass(bean.getClass(),</span>
+<span class="fc" id="L294">                        BEAN_UTILS_BEAN.getPropertyUtils());</span>
+<span class="fc" id="L295">        return new WrapDynaBean(bean, dynaClass);</span>
     }
 
     /**
@@ -315,8 +315,8 @@ public final class BeanHelper
             throws IllegalAccessException, InvocationTargetException,
             NoSuchMethodException
     {
-<span class="nc" id="L318">        BEAN_UTILS_BEAN.getPropertyUtils().copyProperties(dest, orig);</span>
-<span class="nc" id="L319">    }</span>
+<span class="fc" id="L318">        BEAN_UTILS_BEAN.getPropertyUtils().copyProperties(dest, orig);</span>
+<span class="fc" id="L319">    }</span>
 
     /**
      * Return the Class of the property if it can be determined.
@@ -328,14 +328,14 @@ public final class BeanHelper
     {
         try
         {
-<span class="nc" id="L331">            PropertyDescriptor desc =</span>
-<span class="nc" id="L332">                    BEAN_UTILS_BEAN.getPropertyUtils().getPropertyDescriptor(</span>
+<span class="fc" id="L331">            PropertyDescriptor desc =</span>
+<span class="fc" id="L332">                    BEAN_UTILS_BEAN.getPropertyUtils().getPropertyDescriptor(</span>
                             bean, propName);
-<span class="nc bnc" id="L334" title="All 2 branches missed.">            if (desc == null)</span>
+<span class="fc bfc" id="L334" title="All 2 branches covered.">            if (desc == null)</span>
             {
-<span class="nc" id="L336">                return null;</span>
+<span class="fc" id="L336">                return null;</span>
             }
-<span class="nc" id="L338">            return desc.getPropertyType();</span>
+<span class="fc" id="L338">            return desc.getPropertyType();</span>
         }
 <span class="nc" id="L340">        catch (Exception ex)</span>
         {
@@ -354,15 +354,15 @@ public final class BeanHelper
      */
     private static void initProperty(Object bean, String propName, Object value)
     {
-<span class="nc bnc" id="L357" title="All 2 branches missed.">        if (!isPropertyWriteable(bean, propName))</span>
+<span class="fc bfc" id="L357" title="All 2 branches covered.">        if (!isPropertyWriteable(bean, propName))</span>
         {
-<span class="nc" id="L359">            throw new ConfigurationRuntimeException(&quot;Property &quot; + propName</span>
-<span class="nc" id="L360">                    + &quot; cannot be set on &quot; + bean.getClass().getName());</span>
+<span class="fc" id="L359">            throw new ConfigurationRuntimeException(&quot;Property &quot; + propName</span>
+<span class="fc" id="L360">                    + &quot; cannot be set on &quot; + bean.getClass().getName());</span>
         }
 
         try
         {
-<span class="nc" id="L365">            BEAN_UTILS_BEAN.setProperty(bean, propName, value);</span>
+<span class="fc" id="L365">            BEAN_UTILS_BEAN.setProperty(bean, propName, value);</span>
         }
 <span class="nc" id="L367">        catch (IllegalAccessException iaex)</span>
         {
@@ -371,8 +371,8 @@ public final class BeanHelper
 <span class="nc" id="L371">        catch (InvocationTargetException itex)</span>
         {
 <span class="nc" id="L373">            throw new ConfigurationRuntimeException(itex);</span>
-<span class="nc" id="L374">        }</span>
-<span class="nc" id="L375">    }</span>
+<span class="fc" id="L374">        }</span>
+<span class="fc" id="L375">    }</span>
 
     /**
      * Creates a concrete collection instance to populate a property of type
@@ -389,9 +389,9 @@ public final class BeanHelper
     {
         Collection&lt;Object&gt; beanCollection;
 
-<span class="nc bnc" id="L392" title="All 2 branches missed.">        if (List.class.isAssignableFrom(propertyClass))</span>
+<span class="pc bpc" id="L392" title="1 of 2 branches missed.">        if (List.class.isAssignableFrom(propertyClass))</span>
         {
-<span class="nc" id="L394">            beanCollection = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L394">            beanCollection = new ArrayList&lt;&gt;();</span>
         }
 <span class="nc bnc" id="L396" title="All 2 branches missed.">        else if (Set.class.isAssignableFrom(propertyClass))</span>
         {
@@ -404,7 +404,7 @@ public final class BeanHelper
 <span class="nc" id="L404">                            + propertyClass.getName() + &quot; for property &quot;</span>
                             + propName);
         }
-<span class="nc" id="L407">        return beanCollection;</span>
+<span class="fc" id="L407">        return beanCollection;</span>
     }
 
     /**
@@ -418,11 +418,11 @@ public final class BeanHelper
      */
     public static void setProperty(Object bean, String propName, Object value)
     {
-<span class="nc bnc" id="L421" title="All 2 branches missed.">        if (isPropertyWriteable(bean, propName))</span>
+<span class="pc bpc" id="L421" title="1 of 2 branches missed.">        if (isPropertyWriteable(bean, propName))</span>
         {
-<span class="nc" id="L423">            initProperty(bean, propName, value);</span>
+<span class="fc" id="L423">            initProperty(bean, propName, value);</span>
         }
-<span class="nc" id="L425">    }</span>
+<span class="fc" id="L425">    }</span>
 
     /**
      * The main method for creating and initializing beans from a configuration.
@@ -445,22 +445,22 @@ public final class BeanHelper
     public Object createBean(BeanDeclaration data, Class&lt;?&gt; defaultClass,
             Object param)
     {
-<span class="nc bnc" id="L448" title="All 2 branches missed.">        if (data == null)</span>
+<span class="fc bfc" id="L448" title="All 2 branches covered.">        if (data == null)</span>
         {
-<span class="nc" id="L450">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L450">            throw new IllegalArgumentException(</span>
                     &quot;Bean declaration must not be null!&quot;);
         }
 
-<span class="nc" id="L454">        BeanFactory factory = fetchBeanFactory(data);</span>
-<span class="nc" id="L455">        BeanCreationContext bcc =</span>
-<span class="nc" id="L456">                createBeanCreationContext(data, defaultClass, param, factory);</span>
+<span class="fc" id="L454">        BeanFactory factory = fetchBeanFactory(data);</span>
+<span class="fc" id="L455">        BeanCreationContext bcc =</span>
+<span class="fc" id="L456">                createBeanCreationContext(data, defaultClass, param, factory);</span>
         try
         {
-<span class="nc" id="L459">            return factory.createBean(bcc);</span>
+<span class="fc" id="L459">            return factory.createBean(bcc);</span>
         }
-<span class="nc" id="L461">        catch (Exception ex)</span>
+<span class="fc" id="L461">        catch (Exception ex)</span>
         {
-<span class="nc" id="L463">            throw new ConfigurationRuntimeException(ex);</span>
+<span class="fc" id="L463">            throw new ConfigurationRuntimeException(ex);</span>
         }
     }
 
@@ -476,7 +476,7 @@ public final class BeanHelper
      */
     public Object createBean(BeanDeclaration data, Class&lt;?&gt; defaultClass)
     {
-<span class="nc" id="L479">        return createBean(data, defaultClass, null);</span>
+<span class="fc" id="L479">        return createBean(data, defaultClass, null);</span>
     }
 
     /**
@@ -489,7 +489,7 @@ public final class BeanHelper
      */
     public Object createBean(BeanDeclaration data)
     {
-<span class="nc" id="L492">        return createBean(data, null);</span>
+<span class="fc" id="L492">        return createBean(data, null);</span>
     }
 
     /**
@@ -504,7 +504,7 @@ public final class BeanHelper
      */
     static Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException
     {
-<span class="nc" id="L507">        return ClassUtils.getClass(name);</span>
+<span class="fc" id="L507">        return ClassUtils.getClass(name);</span>
     }
 
     /**
@@ -518,7 +518,7 @@ public final class BeanHelper
      */
     private static boolean isPropertyWriteable(Object bean, String propName)
     {
-<span class="nc" id="L521">        return BEAN_UTILS_BEAN.getPropertyUtils().isWriteable(bean, propName);</span>
+<span class="fc" id="L521">        return BEAN_UTILS_BEAN.getPropertyUtils().isWriteable(bean, propName);</span>
     }
 
     /**
@@ -537,31 +537,31 @@ public final class BeanHelper
     private static Class&lt;?&gt; fetchBeanClass(BeanDeclaration data,
             Class&lt;?&gt; defaultClass, BeanFactory factory)
     {
-<span class="nc" id="L540">        String clsName = data.getBeanClassName();</span>
-<span class="nc bnc" id="L541" title="All 2 branches missed.">        if (clsName != null)</span>
+<span class="fc" id="L540">        String clsName = data.getBeanClassName();</span>
+<span class="fc bfc" id="L541" title="All 2 branches covered.">        if (clsName != null)</span>
         {
             try
             {
-<span class="nc" id="L545">                return loadClass(clsName);</span>
+<span class="fc" id="L545">                return loadClass(clsName);</span>
             }
-<span class="nc" id="L547">            catch (ClassNotFoundException cex)</span>
+<span class="fc" id="L547">            catch (ClassNotFoundException cex)</span>
             {
-<span class="nc" id="L549">                throw new ConfigurationRuntimeException(cex);</span>
+<span class="fc" id="L549">                throw new ConfigurationRuntimeException(cex);</span>
             }
         }
 
-<span class="nc bnc" id="L553" title="All 2 branches missed.">        if (defaultClass != null)</span>
+<span class="fc bfc" id="L553" title="All 2 branches covered.">        if (defaultClass != null)</span>
         {
-<span class="nc" id="L555">            return defaultClass;</span>
+<span class="fc" id="L555">            return defaultClass;</span>
         }
 
-<span class="nc" id="L558">        Class&lt;?&gt; clazz = factory.getDefaultBeanClass();</span>
-<span class="nc bnc" id="L559" title="All 2 branches missed.">        if (clazz == null)</span>
+<span class="fc" id="L558">        Class&lt;?&gt; clazz = factory.getDefaultBeanClass();</span>
+<span class="fc bfc" id="L559" title="All 2 branches covered.">        if (clazz == null)</span>
         {
-<span class="nc" id="L561">            throw new ConfigurationRuntimeException(</span>
+<span class="fc" id="L561">            throw new ConfigurationRuntimeException(</span>
                     &quot;Bean class is not specified!&quot;);
         }
-<span class="nc" id="L564">        return clazz;</span>
+<span class="fc" id="L564">        return clazz;</span>
     }
 
     /**
@@ -575,23 +575,23 @@ public final class BeanHelper
      */
     private BeanFactory fetchBeanFactory(BeanDeclaration data)
     {
-<span class="nc" id="L578">        String factoryName = data.getBeanFactoryName();</span>
-<span class="nc bnc" id="L579" title="All 2 branches missed.">        if (factoryName != null)</span>
+<span class="fc" id="L578">        String factoryName = data.getBeanFactoryName();</span>
+<span class="fc bfc" id="L579" title="All 2 branches covered.">        if (factoryName != null)</span>
         {
-<span class="nc" id="L581">            BeanFactory factory = beanFactories.get(factoryName);</span>
-<span class="nc bnc" id="L582" title="All 2 branches missed.">            if (factory == null)</span>
+<span class="fc" id="L581">            BeanFactory factory = beanFactories.get(factoryName);</span>
+<span class="fc bfc" id="L582" title="All 2 branches covered.">            if (factory == null)</span>
             {
-<span class="nc" id="L584">                throw new ConfigurationRuntimeException(</span>
+<span class="fc" id="L584">                throw new ConfigurationRuntimeException(</span>
                         &quot;Unknown bean factory: &quot; + factoryName);
             }
             else
             {
-<span class="nc" id="L589">                return factory;</span>
+<span class="fc" id="L589">                return factory;</span>
             }
         }
         else
         {
-<span class="nc" id="L594">            return getDefaultBeanFactory();</span>
+<span class="fc" id="L594">            return getDefaultBeanFactory();</span>
         }
     }
 
@@ -613,8 +613,8 @@ public final class BeanHelper
             final BeanDeclaration data, Class&lt;?&gt; defaultClass,
             final Object param, BeanFactory factory)
     {
-<span class="nc" id="L616">        final Class&lt;?&gt; beanClass = fetchBeanClass(data, defaultClass, factory);</span>
-<span class="nc" id="L617">        return new BeanCreationContextImpl(this, beanClass, data, param);</span>
+<span class="fc" id="L616">        final Class&lt;?&gt; beanClass = fetchBeanClass(data, defaultClass, factory);</span>
+<span class="fc" id="L617">        return new BeanCreationContextImpl(this, beanClass, data, param);</span>
     }
 
     /**
@@ -627,9 +627,9 @@ public final class BeanHelper
      */
     private static BeanUtilsBean initBeanUtilsBean()
     {
-<span class="nc" id="L630">        PropertyUtilsBean propUtilsBean = new PropertyUtilsBean();</span>
-<span class="nc" id="L631">        propUtilsBean.addBeanIntrospector(new FluentPropertyBeanIntrospector());</span>
-<span class="nc" id="L632">        return new BeanUtilsBean(new ConvertUtilsBean(), propUtilsBean);</span>
+<span class="fc" id="L630">        PropertyUtilsBean propUtilsBean = new PropertyUtilsBean();</span>
+<span class="fc" id="L631">        propUtilsBean.addBeanIntrospector(new FluentPropertyBeanIntrospector());</span>
+<span class="fc" id="L632">        return new BeanUtilsBean(new ConvertUtilsBean(), propUtilsBean);</span>
     }
 
     /**
@@ -656,35 +656,35 @@ public final class BeanHelper
 
         private BeanCreationContextImpl(BeanHelper helper, Class&lt;?&gt; beanClass,
                 BeanDeclaration data, Object param)
-<span class="nc" id="L659">        {</span>
-<span class="nc" id="L660">            beanHelper = helper;</span>
-<span class="nc" id="L661">            this.beanClass = beanClass;</span>
-<span class="nc" id="L662">            this.param = param;</span>
-<span class="nc" id="L663">            this.data = data;</span>
-<span class="nc" id="L664">        }</span>
+<span class="fc" id="L659">        {</span>
+<span class="fc" id="L660">            beanHelper = helper;</span>
+<span class="fc" id="L661">            this.beanClass = beanClass;</span>
+<span class="fc" id="L662">            this.param = param;</span>
+<span class="fc" id="L663">            this.data = data;</span>
+<span class="fc" id="L664">        }</span>
 
         @Override
         public void initBean(Object bean, BeanDeclaration data)
         {
-<span class="nc" id="L669">            beanHelper.initBean(bean, data);</span>
-<span class="nc" id="L670">        }</span>
+<span class="fc" id="L669">            beanHelper.initBean(bean, data);</span>
+<span class="fc" id="L670">        }</span>
 
         @Override
         public Object getParameter()
         {
-<span class="nc" id="L675">            return param;</span>
+<span class="fc" id="L675">            return param;</span>
         }
 
         @Override
         public BeanDeclaration getBeanDeclaration()
         {
-<span class="nc" id="L681">            return data;</span>
+<span class="fc" id="L681">            return data;</span>
         }
 
         @Override
         public Class&lt;?&gt; getBeanClass()
         {
-<span class="nc" id="L687">            return beanClass;</span>
+<span class="fc" id="L687">            return beanClass;</span>
         }
 
         @Override

@@ -64,22 +64,22 @@ public class CombinedLocationStrategy implements FileLocationStrategy
      */
     public CombinedLocationStrategy(
             Collection&lt;? extends FileLocationStrategy&gt; subs)
-<span class="nc" id="L67">    {</span>
-<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (subs == null)</span>
+<span class="fc" id="L67">    {</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (subs == null)</span>
         {
-<span class="nc" id="L70">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L70">            throw new IllegalArgumentException(</span>
                     &quot;Collection with sub strategies must not be null!&quot;);
         }
-<span class="nc" id="L73">        subStrategies =</span>
+<span class="fc" id="L73">        subStrategies =</span>
                 Collections
-<span class="nc" id="L75">                        .unmodifiableCollection(new ArrayList&lt;&gt;(</span>
+<span class="fc" id="L75">                        .unmodifiableCollection(new ArrayList&lt;&gt;(</span>
                                 subs));
-<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (subStrategies.contains(null))</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (subStrategies.contains(null))</span>
         {
-<span class="nc" id="L79">            throw new IllegalArgumentException(</span>
+<span class="fc" id="L79">            throw new IllegalArgumentException(</span>
                     &quot;Collection with sub strategies contains null entry!&quot;);
         }
-<span class="nc" id="L82">    }</span>
+<span class="fc" id="L82">    }</span>
 
     /**
      * Returns a (unmodifiable) collection with the sub strategies managed by
@@ -89,7 +89,7 @@ public class CombinedLocationStrategy implements FileLocationStrategy
      */
     public Collection&lt;FileLocationStrategy&gt; getSubStrategies()
     {
-<span class="nc" id="L92">        return subStrategies;</span>
+<span class="fc" id="L92">        return subStrategies;</span>
     }
 
     /**
@@ -99,16 +99,16 @@ public class CombinedLocationStrategy implements FileLocationStrategy
     @Override
     public URL locate(FileSystem fileSystem, FileLocator locator)
     {
-<span class="nc bnc" id="L102" title="All 2 branches missed.">        for (FileLocationStrategy sub : getSubStrategies())</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        for (FileLocationStrategy sub : getSubStrategies())</span>
         {
-<span class="nc" id="L104">            URL url = sub.locate(fileSystem, locator);</span>
-<span class="nc bnc" id="L105" title="All 2 branches missed.">            if (url != null)</span>
+<span class="fc" id="L104">            URL url = sub.locate(fileSystem, locator);</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">            if (url != null)</span>
             {
-<span class="nc" id="L107">                return url;</span>
+<span class="fc" id="L107">                return url;</span>
             }
-<span class="nc" id="L109">        }</span>
+<span class="fc" id="L109">        }</span>
 
-<span class="nc" id="L111">        return null;</span>
+<span class="fc" id="L111">        return null;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

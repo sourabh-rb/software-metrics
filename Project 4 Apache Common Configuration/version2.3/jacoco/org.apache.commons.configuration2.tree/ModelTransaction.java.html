@@ -136,19 +136,19 @@ class ModelTransaction
      */
     public ModelTransaction(TreeData treeData, NodeSelector selector,
             NodeKeyResolver&lt;ImmutableNode&gt; resolver)
-<span class="nc" id="L139">    {</span>
-<span class="nc" id="L140">        currentData = treeData;</span>
-<span class="nc" id="L141">        this.resolver = resolver;</span>
-<span class="nc" id="L142">        replacementMapping = getCurrentData().copyReplacementMapping();</span>
-<span class="nc" id="L143">        replacedNodes = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L144">        parentMapping = getCurrentData().copyParentMapping();</span>
-<span class="nc" id="L145">        operations = new TreeMap&lt;&gt;();</span>
-<span class="nc" id="L146">        addedNodes = new LinkedList&lt;&gt;();</span>
-<span class="nc" id="L147">        removedNodes = new LinkedList&lt;&gt;();</span>
-<span class="nc" id="L148">        allRemovedNodes = new LinkedList&lt;&gt;();</span>
-<span class="nc" id="L149">        queryRoot = initQueryRoot(treeData, selector);</span>
-<span class="nc" id="L150">        rootNodeSelector = selector;</span>
-<span class="nc" id="L151">    }</span>
+<span class="fc" id="L139">    {</span>
+<span class="fc" id="L140">        currentData = treeData;</span>
+<span class="fc" id="L141">        this.resolver = resolver;</span>
+<span class="fc" id="L142">        replacementMapping = getCurrentData().copyReplacementMapping();</span>
+<span class="fc" id="L143">        replacedNodes = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L144">        parentMapping = getCurrentData().copyParentMapping();</span>
+<span class="fc" id="L145">        operations = new TreeMap&lt;&gt;();</span>
+<span class="fc" id="L146">        addedNodes = new LinkedList&lt;&gt;();</span>
+<span class="fc" id="L147">        removedNodes = new LinkedList&lt;&gt;();</span>
+<span class="fc" id="L148">        allRemovedNodes = new LinkedList&lt;&gt;();</span>
+<span class="fc" id="L149">        queryRoot = initQueryRoot(treeData, selector);</span>
+<span class="fc" id="L150">        rootNodeSelector = selector;</span>
+<span class="fc" id="L151">    }</span>
 
     /**
      * Returns the {@code NodeKeyResolver} used by this transaction.
@@ -157,7 +157,7 @@ class ModelTransaction
      */
     public NodeKeyResolver&lt;ImmutableNode&gt; getResolver()
     {
-<span class="nc" id="L160">        return resolver;</span>
+<span class="fc" id="L160">        return resolver;</span>
     }
 
     /**
@@ -170,7 +170,7 @@ class ModelTransaction
      */
     public ImmutableNode getQueryRoot()
     {
-<span class="nc" id="L173">        return queryRoot;</span>
+<span class="fc" id="L173">        return queryRoot;</span>
     }
 
     /**
@@ -183,10 +183,10 @@ class ModelTransaction
     public void addAddNodesOperation(ImmutableNode parent,
             Collection&lt;? extends ImmutableNode&gt; newNodes)
     {
-<span class="nc" id="L186">        ChildrenUpdateOperation op = new ChildrenUpdateOperation();</span>
-<span class="nc" id="L187">        op.addNewNodes(newNodes);</span>
-<span class="nc" id="L188">        fetchOperations(parent, LEVEL_UNKNOWN).addChildrenOperation(op);</span>
-<span class="nc" id="L189">    }</span>
+<span class="fc" id="L186">        ChildrenUpdateOperation op = new ChildrenUpdateOperation();</span>
+<span class="fc" id="L187">        op.addNewNodes(newNodes);</span>
+<span class="fc" id="L188">        fetchOperations(parent, LEVEL_UNKNOWN).addChildrenOperation(op);</span>
+<span class="fc" id="L189">    }</span>
 
     /**
      * Adds an operation for adding a new child to a given parent node.
@@ -196,10 +196,10 @@ class ModelTransaction
      */
     public void addAddNodeOperation(ImmutableNode parent, ImmutableNode newChild)
     {
-<span class="nc" id="L199">        ChildrenUpdateOperation op = new ChildrenUpdateOperation();</span>
-<span class="nc" id="L200">        op.addNewNode(newChild);</span>
-<span class="nc" id="L201">        fetchOperations(parent, LEVEL_UNKNOWN).addChildrenOperation(op);</span>
-<span class="nc" id="L202">    }</span>
+<span class="fc" id="L199">        ChildrenUpdateOperation op = new ChildrenUpdateOperation();</span>
+<span class="fc" id="L200">        op.addNewNode(newChild);</span>
+<span class="fc" id="L201">        fetchOperations(parent, LEVEL_UNKNOWN).addChildrenOperation(op);</span>
+<span class="fc" id="L202">    }</span>
 
     /**
      * Adds an operation for adding an attribute to a target node.
@@ -211,9 +211,9 @@ class ModelTransaction
     public void addAttributeOperation(ImmutableNode target, String name,
             Object value)
     {
-<span class="nc" id="L214">        fetchOperations(target, LEVEL_UNKNOWN).addOperation(</span>
+<span class="fc" id="L214">        fetchOperations(target, LEVEL_UNKNOWN).addOperation(</span>
                 new AddAttributeOperation(name, value));
-<span class="nc" id="L216">    }</span>
+<span class="fc" id="L216">    }</span>
 
     /**
      * Adds an operation for adding multiple attributes to a target node.
@@ -224,9 +224,9 @@ class ModelTransaction
     public void addAttributesOperation(ImmutableNode target,
             Map&lt;String, Object&gt; attributes)
     {
-<span class="nc" id="L227">        fetchOperations(target, LEVEL_UNKNOWN).addOperation(</span>
+<span class="fc" id="L227">        fetchOperations(target, LEVEL_UNKNOWN).addOperation(</span>
                 new AddAttributesOperation(attributes));
-<span class="nc" id="L229">    }</span>
+<span class="fc" id="L229">    }</span>
 
     /**
      * Adds an operation for removing a child node of a given node.
@@ -236,10 +236,10 @@ class ModelTransaction
      */
     public void addRemoveNodeOperation(ImmutableNode parent, ImmutableNode node)
     {
-<span class="nc" id="L239">        ChildrenUpdateOperation op = new ChildrenUpdateOperation();</span>
-<span class="nc" id="L240">        op.addNodeToRemove(node);</span>
-<span class="nc" id="L241">        fetchOperations(parent, LEVEL_UNKNOWN).addChildrenOperation(op);</span>
-<span class="nc" id="L242">    }</span>
+<span class="fc" id="L239">        ChildrenUpdateOperation op = new ChildrenUpdateOperation();</span>
+<span class="fc" id="L240">        op.addNodeToRemove(node);</span>
+<span class="fc" id="L241">        fetchOperations(parent, LEVEL_UNKNOWN).addChildrenOperation(op);</span>
+<span class="fc" id="L242">    }</span>
 
     /**
      * Adds an operation for removing an attribute from a target node.
@@ -249,9 +249,9 @@ class ModelTransaction
      */
     public void addRemoveAttributeOperation(ImmutableNode target, String name)
     {
-<span class="nc" id="L252">        fetchOperations(target, LEVEL_UNKNOWN).addOperation(</span>
+<span class="fc" id="L252">        fetchOperations(target, LEVEL_UNKNOWN).addOperation(</span>
                 new RemoveAttributeOperation(name));
-<span class="nc" id="L254">    }</span>
+<span class="fc" id="L254">    }</span>
 
     /**
      * Adds an operation for clearing the value of a target node.
@@ -260,8 +260,8 @@ class ModelTransaction
      */
     public void addClearNodeValueOperation(ImmutableNode target)
     {
-<span class="nc" id="L263">        addChangeNodeValueOperation(target, null);</span>
-<span class="nc" id="L264">    }</span>
+<span class="fc" id="L263">        addChangeNodeValueOperation(target, null);</span>
+<span class="fc" id="L264">    }</span>
 
     /**
      * Adds an operation for changing the value of a target node.
@@ -272,9 +272,9 @@ class ModelTransaction
     public void addChangeNodeValueOperation(ImmutableNode target,
             Object newValue)
     {
-<span class="nc" id="L275">        fetchOperations(target, LEVEL_UNKNOWN).addOperation(</span>
+<span class="fc" id="L275">        fetchOperations(target, LEVEL_UNKNOWN).addOperation(</span>
                 new ChangeNodeValueOperation(newValue));
-<span class="nc" id="L277">    }</span>
+<span class="fc" id="L277">    }</span>
 
     /**
      * Adds an operation for changing the name of a target node.
@@ -284,9 +284,9 @@ class ModelTransaction
      */
     public void addChangeNodeNameOperation(ImmutableNode target, String newName)
     {
-<span class="nc" id="L287">        fetchOperations(target, LEVEL_UNKNOWN).addOperation(</span>
+<span class="fc" id="L287">        fetchOperations(target, LEVEL_UNKNOWN).addOperation(</span>
                 new ChangeNodeNameOperation(newName));
-<span class="nc" id="L289">    }</span>
+<span class="fc" id="L289">    }</span>
 
     /**
      * Adds a map with new reference objects. The entries in this map are passed
@@ -296,8 +296,8 @@ class ModelTransaction
      */
     public void addNewReferences(Map&lt;ImmutableNode, ?&gt; refs)
     {
-<span class="nc" id="L299">        fetchReferenceMap().putAll(refs);</span>
-<span class="nc" id="L300">    }</span>
+<span class="fc" id="L299">        fetchReferenceMap().putAll(refs);</span>
+<span class="fc" id="L300">    }</span>
 
     /**
      * Adds a new reference object for the given node.
@@ -307,8 +307,8 @@ class ModelTransaction
      */
     public void addNewReference(ImmutableNode node, Object ref)
     {
-<span class="nc" id="L310">        fetchReferenceMap().put(node, ref);</span>
-<span class="nc" id="L311">    }</span>
+<span class="fc" id="L310">        fetchReferenceMap().put(node, ref);</span>
+<span class="fc" id="L311">    }</span>
 
     /**
      * Executes this transaction resulting in a new {@code TreeData} object. The
@@ -319,11 +319,11 @@ class ModelTransaction
      */
     public TreeData execute()
     {
-<span class="nc" id="L322">        executeOperations();</span>
-<span class="nc" id="L323">        updateParentMapping();</span>
-<span class="nc" id="L324">        return new TreeData(newRoot, parentMapping, replacementMapping,</span>
-<span class="nc" id="L325">                currentData.getNodeTracker().update(newRoot, rootNodeSelector,</span>
-<span class="nc" id="L326">                        getResolver(), getCurrentData()), updateReferenceTracker()</span>
+<span class="fc" id="L322">        executeOperations();</span>
+<span class="fc" id="L323">        updateParentMapping();</span>
+<span class="fc" id="L324">        return new TreeData(newRoot, parentMapping, replacementMapping,</span>
+<span class="fc" id="L325">                currentData.getNodeTracker().update(newRoot, rootNodeSelector,</span>
+<span class="fc" id="L326">                        getResolver(), getCurrentData()), updateReferenceTracker()</span>
         );
     }
 
@@ -333,7 +333,7 @@ class ModelTransaction
      */
     public TreeData getCurrentData()
     {
-<span class="nc" id="L336">        return currentData;</span>
+<span class="fc" id="L336">        return currentData;</span>
     }
 
     /**
@@ -344,7 +344,7 @@ class ModelTransaction
      */
     ImmutableNode getParent(ImmutableNode node)
     {
-<span class="nc" id="L347">        return getCurrentData().getParent(node);</span>
+<span class="fc" id="L347">        return getCurrentData().getParent(node);</span>
     }
 
     /**
@@ -359,22 +359,22 @@ class ModelTransaction
     Operations fetchOperations(ImmutableNode target, int level)
     {
         Integer nodeLevel =
-<span class="nc bnc" id="L362" title="All 2 branches missed.">                Integer.valueOf((level == LEVEL_UNKNOWN) ? level(target)</span>
-<span class="nc" id="L363">                        : level);</span>
-<span class="nc" id="L364">        Map&lt;ImmutableNode, Operations&gt; levelOperations =</span>
-<span class="nc" id="L365">                operations.get(nodeLevel);</span>
-<span class="nc bnc" id="L366" title="All 2 branches missed.">        if (levelOperations == null)</span>
+<span class="fc bfc" id="L362" title="All 2 branches covered.">                Integer.valueOf((level == LEVEL_UNKNOWN) ? level(target)</span>
+<span class="fc" id="L363">                        : level);</span>
+<span class="fc" id="L364">        Map&lt;ImmutableNode, Operations&gt; levelOperations =</span>
+<span class="fc" id="L365">                operations.get(nodeLevel);</span>
+<span class="fc bfc" id="L366" title="All 2 branches covered.">        if (levelOperations == null)</span>
         {
-<span class="nc" id="L368">            levelOperations = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L369">            operations.put(nodeLevel, levelOperations);</span>
+<span class="fc" id="L368">            levelOperations = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L369">            operations.put(nodeLevel, levelOperations);</span>
         }
-<span class="nc" id="L371">        Operations ops = levelOperations.get(target);</span>
-<span class="nc bnc" id="L372" title="All 2 branches missed.">        if (ops == null)</span>
+<span class="fc" id="L371">        Operations ops = levelOperations.get(target);</span>
+<span class="fc bfc" id="L372" title="All 2 branches covered.">        if (ops == null)</span>
         {
-<span class="nc" id="L374">            ops = new Operations();</span>
-<span class="nc" id="L375">            levelOperations.put(target, ops);</span>
+<span class="fc" id="L374">            ops = new Operations();</span>
+<span class="fc" id="L375">            levelOperations.put(target, ops);</span>
         }
-<span class="nc" id="L377">        return ops;</span>
+<span class="fc" id="L377">        return ops;</span>
     }
 
     /**
@@ -388,8 +388,8 @@ class ModelTransaction
      */
     private ImmutableNode initQueryRoot(TreeData treeData, NodeSelector selector)
     {
-<span class="nc bnc" id="L391" title="All 2 branches missed.">        return (selector == null) ? treeData.getRootNode() : treeData</span>
-<span class="nc" id="L392">                .getNodeTracker().getTrackedNode(selector);</span>
+<span class="fc bfc" id="L391" title="All 2 branches covered.">        return (selector == null) ? treeData.getRootNode() : treeData</span>
+<span class="fc" id="L392">                .getNodeTracker().getTrackedNode(selector);</span>
     }
 
     /**
@@ -402,14 +402,14 @@ class ModelTransaction
      */
     private int level(ImmutableNode node)
     {
-<span class="nc" id="L405">        ImmutableNode current = getCurrentData().getParent(node);</span>
-<span class="nc" id="L406">        int level = 0;</span>
-<span class="nc bnc" id="L407" title="All 2 branches missed.">        while (current != null)</span>
+<span class="fc" id="L405">        ImmutableNode current = getCurrentData().getParent(node);</span>
+<span class="fc" id="L406">        int level = 0;</span>
+<span class="fc bfc" id="L407" title="All 2 branches covered.">        while (current != null)</span>
         {
-<span class="nc" id="L409">            level++;</span>
-<span class="nc" id="L410">            current = getCurrentData().getParent(current);</span>
+<span class="fc" id="L409">            level++;</span>
+<span class="fc" id="L410">            current = getCurrentData().getParent(current);</span>
         }
-<span class="nc" id="L412">        return level;</span>
+<span class="fc" id="L412">        return level;</span>
     }
 
     /**
@@ -417,16 +417,16 @@ class ModelTransaction
      */
     private void executeOperations()
     {
-<span class="nc bnc" id="L420" title="All 2 branches missed.">        while (!operations.isEmpty())</span>
+<span class="fc bfc" id="L420" title="All 2 branches covered.">        while (!operations.isEmpty())</span>
         {
-<span class="nc" id="L422">            Integer level = operations.lastKey(); // start down in hierarchy</span>
-<span class="nc" id="L423">            Map&lt;ImmutableNode, Operations&gt; levelOps = operations.remove(level);</span>
-<span class="nc bnc" id="L424" title="All 2 branches missed.">            for (Map.Entry&lt;ImmutableNode, Operations&gt; e : levelOps.entrySet())</span>
+<span class="fc" id="L422">            Integer level = operations.lastKey(); // start down in hierarchy</span>
+<span class="fc" id="L423">            Map&lt;ImmutableNode, Operations&gt; levelOps = operations.remove(level);</span>
+<span class="fc bfc" id="L424" title="All 2 branches covered.">            for (Map.Entry&lt;ImmutableNode, Operations&gt; e : levelOps.entrySet())</span>
             {
-<span class="nc" id="L426">                e.getValue().apply(e.getKey(), level);</span>
-<span class="nc" id="L427">            }</span>
-<span class="nc" id="L428">        }</span>
-<span class="nc" id="L429">    }</span>
+<span class="fc" id="L426">                e.getValue().apply(e.getKey(), level);</span>
+<span class="fc" id="L427">            }</span>
+<span class="fc" id="L428">        }</span>
+<span class="fc" id="L429">    }</span>
 
     /**
      * Updates the parent mapping for the resulting {@code TreeData} instance.
@@ -436,17 +436,17 @@ class ModelTransaction
      */
     private void updateParentMapping()
     {
-<span class="nc" id="L439">        replacementMapping.putAll(replacedNodes);</span>
-<span class="nc bnc" id="L440" title="All 2 branches missed.">        if (replacementMapping.size() &gt; MAX_REPLACEMENTS)</span>
+<span class="fc" id="L439">        replacementMapping.putAll(replacedNodes);</span>
+<span class="fc bfc" id="L440" title="All 2 branches covered.">        if (replacementMapping.size() &gt; MAX_REPLACEMENTS)</span>
         {
-<span class="nc" id="L442">            rebuildParentMapping();</span>
+<span class="fc" id="L442">            rebuildParentMapping();</span>
         }
         else
         {
-<span class="nc" id="L446">            updateParentMappingForAddedNodes();</span>
-<span class="nc" id="L447">            updateParentMappingForRemovedNodes();</span>
+<span class="fc" id="L446">            updateParentMappingForAddedNodes();</span>
+<span class="fc" id="L447">            updateParentMappingForRemovedNodes();</span>
         }
-<span class="nc" id="L449">    }</span>
+<span class="fc" id="L449">    }</span>
 
     /**
      * Rebuilds the parent mapping from scratch. This method is called if the
@@ -455,21 +455,21 @@ class ModelTransaction
      */
     private void rebuildParentMapping()
     {
-<span class="nc" id="L458">        replacementMapping.clear();</span>
-<span class="nc" id="L459">        parentMapping.clear();</span>
-<span class="nc" id="L460">        InMemoryNodeModel.updateParentMapping(parentMapping, newRoot);</span>
-<span class="nc" id="L461">    }</span>
+<span class="fc" id="L458">        replacementMapping.clear();</span>
+<span class="fc" id="L459">        parentMapping.clear();</span>
+<span class="fc" id="L460">        InMemoryNodeModel.updateParentMapping(parentMapping, newRoot);</span>
+<span class="fc" id="L461">    }</span>
 
     /**
      * Adds newly added nodes and their children to the parent mapping.
      */
     private void updateParentMappingForAddedNodes()
     {
-<span class="nc bnc" id="L468" title="All 2 branches missed.">        for (ImmutableNode node : addedNodes)</span>
+<span class="fc bfc" id="L468" title="All 2 branches covered.">        for (ImmutableNode node : addedNodes)</span>
         {
-<span class="nc" id="L470">            InMemoryNodeModel.updateParentMapping(parentMapping, node);</span>
-<span class="nc" id="L471">        }</span>
-<span class="nc" id="L472">    }</span>
+<span class="fc" id="L470">            InMemoryNodeModel.updateParentMapping(parentMapping, node);</span>
+<span class="fc" id="L471">        }</span>
+<span class="fc" id="L472">    }</span>
 
     /**
      * Removes nodes that have been removed during this transaction from the
@@ -477,11 +477,11 @@ class ModelTransaction
      */
     private void updateParentMappingForRemovedNodes()
     {
-<span class="nc bnc" id="L480" title="All 2 branches missed.">        for (ImmutableNode node : removedNodes)</span>
+<span class="fc bfc" id="L480" title="All 2 branches covered.">        for (ImmutableNode node : removedNodes)</span>
         {
-<span class="nc" id="L482">            removeNodesFromParentAndReplacementMapping(node);</span>
-<span class="nc" id="L483">        }</span>
-<span class="nc" id="L484">    }</span>
+<span class="fc" id="L482">            removeNodesFromParentAndReplacementMapping(node);</span>
+<span class="fc" id="L483">        }</span>
+<span class="fc" id="L484">    }</span>
 
     /**
      * Removes a node and its children (recursively) from the parent and the
@@ -491,19 +491,19 @@ class ModelTransaction
      */
     private void removeNodesFromParentAndReplacementMapping(ImmutableNode root)
     {
-<span class="nc" id="L494">        NodeTreeWalker.INSTANCE.walkBFS(root,</span>
+<span class="fc" id="L494">        NodeTreeWalker.INSTANCE.walkBFS(root,</span>
                 new ConfigurationNodeVisitorAdapter&lt;ImmutableNode&gt;()
-<span class="nc" id="L496">                {</span>
+<span class="fc" id="L496">                {</span>
                     @Override
                     public void visitBeforeChildren(ImmutableNode node,
                             NodeHandler&lt;ImmutableNode&gt; handler)
                     {
-<span class="nc" id="L501">                        allRemovedNodes.add(node);</span>
-<span class="nc" id="L502">                        parentMapping.remove(node);</span>
-<span class="nc" id="L503">                        removeNodeFromReplacementMapping(node);</span>
-<span class="nc" id="L504">                    }</span>
-<span class="nc" id="L505">                }, getCurrentData());</span>
-<span class="nc" id="L506">    }</span>
+<span class="fc" id="L501">                        allRemovedNodes.add(node);</span>
+<span class="fc" id="L502">                        parentMapping.remove(node);</span>
+<span class="fc" id="L503">                        removeNodeFromReplacementMapping(node);</span>
+<span class="fc" id="L504">                    }</span>
+<span class="fc" id="L505">                }, getCurrentData());</span>
+<span class="fc" id="L506">    }</span>
 
     /**
      * Removes the specified node completely from the replacement mapping. This
@@ -513,12 +513,12 @@ class ModelTransaction
      */
     private void removeNodeFromReplacementMapping(ImmutableNode node)
     {
-<span class="nc" id="L516">        ImmutableNode replacement = node;</span>
+<span class="fc" id="L516">        ImmutableNode replacement = node;</span>
         do
         {
-<span class="nc" id="L519">            replacement = replacementMapping.remove(replacement);</span>
-<span class="nc bnc" id="L520" title="All 2 branches missed.">        } while (replacement != null);</span>
-<span class="nc" id="L521">    }</span>
+<span class="fc" id="L519">            replacement = replacementMapping.remove(replacement);</span>
+<span class="pc bpc" id="L520" title="1 of 2 branches missed.">        } while (replacement != null);</span>
+<span class="fc" id="L521">    }</span>
 
     /**
      * Returns an updated {@code ReferenceTracker} instance. The changes
@@ -528,12 +528,12 @@ class ModelTransaction
      */
     private ReferenceTracker updateReferenceTracker()
     {
-<span class="nc" id="L531">        ReferenceTracker tracker = currentData.getReferenceTracker();</span>
-<span class="nc bnc" id="L532" title="All 2 branches missed.">        if (newReferences != null)</span>
+<span class="fc" id="L531">        ReferenceTracker tracker = currentData.getReferenceTracker();</span>
+<span class="fc bfc" id="L532" title="All 2 branches covered.">        if (newReferences != null)</span>
         {
-<span class="nc" id="L534">            tracker = tracker.addReferences(newReferences);</span>
+<span class="fc" id="L534">            tracker = tracker.addReferences(newReferences);</span>
         }
-<span class="nc" id="L536">        return tracker.updateReferences(replacedNodes, allRemovedNodes);</span>
+<span class="fc" id="L536">        return tracker.updateReferences(replacedNodes, allRemovedNodes);</span>
     }
 
     /**
@@ -543,11 +543,11 @@ class ModelTransaction
      */
     private Map&lt;ImmutableNode, Object&gt; fetchReferenceMap()
     {
-<span class="nc bnc" id="L546" title="All 2 branches missed.">        if (newReferences == null)</span>
+<span class="fc bfc" id="L546" title="All 2 branches covered.">        if (newReferences == null)</span>
         {
-<span class="nc" id="L548">            newReferences = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L548">            newReferences = new HashMap&lt;&gt;();</span>
         }
-<span class="nc" id="L550">        return newReferences;</span>
+<span class="fc" id="L550">        return newReferences;</span>
     }
 
     /**
@@ -561,15 +561,15 @@ class ModelTransaction
     private static &lt;E&gt; Collection&lt;E&gt; concatenate(Collection&lt;E&gt; col1,
             Collection&lt;? extends E&gt; col2)
     {
-<span class="nc bnc" id="L564" title="All 2 branches missed.">        if (col2 == null)</span>
+<span class="fc bfc" id="L564" title="All 2 branches covered.">        if (col2 == null)</span>
         {
-<span class="nc" id="L566">            return col1;</span>
+<span class="fc" id="L566">            return col1;</span>
         }
 
         Collection&lt;E&gt; result =
-<span class="nc bnc" id="L570" title="All 2 branches missed.">                (col1 != null) ? col1 : new ArrayList&lt;E&gt;(col2.size());</span>
-<span class="nc" id="L571">        result.addAll(col2);</span>
-<span class="nc" id="L572">        return result;</span>
+<span class="fc bfc" id="L570" title="All 2 branches covered.">                (col1 != null) ? col1 : new ArrayList&lt;E&gt;(col2.size());</span>
+<span class="fc" id="L571">        result.addAll(col2);</span>
+<span class="fc" id="L572">        return result;</span>
     }
 
     /**
@@ -582,14 +582,14 @@ class ModelTransaction
      */
     private static &lt;E&gt; Set&lt;E&gt; concatenate(Set&lt;E&gt; set1, Set&lt;? extends E&gt; set2)
     {
-<span class="nc bnc" id="L585" title="All 2 branches missed.">        if (set2 == null)</span>
+<span class="fc bfc" id="L585" title="All 2 branches covered.">        if (set2 == null)</span>
         {
-<span class="nc" id="L587">            return set1;</span>
+<span class="fc" id="L587">            return set1;</span>
         }
 
-<span class="nc bnc" id="L590" title="All 2 branches missed.">        Set&lt;E&gt; result = (set1 != null) ? set1 : new HashSet&lt;E&gt;();</span>
-<span class="nc" id="L591">        result.addAll(set2);</span>
-<span class="nc" id="L592">        return result;</span>
+<span class="fc bfc" id="L590" title="All 2 branches covered.">        Set&lt;E&gt; result = (set1 != null) ? set1 : new HashSet&lt;E&gt;();</span>
+<span class="fc" id="L591">        result.addAll(set2);</span>
+<span class="fc" id="L592">        return result;</span>
     }
 
     /**
@@ -604,14 +604,14 @@ class ModelTransaction
     private static &lt;K, V&gt; Map&lt;K, V&gt; concatenate(Map&lt;K, V&gt; map1,
             Map&lt;? extends K, ? extends V&gt; map2)
     {
-<span class="nc bnc" id="L607" title="All 2 branches missed.">        if (map2 == null)</span>
+<span class="fc bfc" id="L607" title="All 2 branches covered.">        if (map2 == null)</span>
         {
-<span class="nc" id="L609">            return map1;</span>
+<span class="fc" id="L609">            return map1;</span>
         }
 
-<span class="nc bnc" id="L612" title="All 2 branches missed.">        Map&lt;K, V&gt; result = (map1 != null) ? map1 : new HashMap&lt;K, V&gt;();</span>
-<span class="nc" id="L613">        result.putAll(map2);</span>
-<span class="nc" id="L614">        return result;</span>
+<span class="fc bfc" id="L612" title="All 2 branches covered.">        Map&lt;K, V&gt; result = (map1 != null) ? map1 : new HashMap&lt;K, V&gt;();</span>
+<span class="fc" id="L613">        result.putAll(map2);</span>
+<span class="fc" id="L614">        return result;</span>
     }
 
     /**
@@ -625,9 +625,9 @@ class ModelTransaction
      */
     private static &lt;E&gt; Collection&lt;E&gt; append(Collection&lt;E&gt; col, E node)
     {
-<span class="nc bnc" id="L628" title="All 2 branches missed.">        Collection&lt;E&gt; result = (col != null) ? col : new LinkedList&lt;E&gt;();</span>
-<span class="nc" id="L629">        result.add(node);</span>
-<span class="nc" id="L630">        return result;</span>
+<span class="fc bfc" id="L628" title="All 2 branches covered.">        Collection&lt;E&gt; result = (col != null) ? col : new LinkedList&lt;E&gt;();</span>
+<span class="fc" id="L629">        result.add(node);</span>
+<span class="fc" id="L630">        return result;</span>
     }
 
     /**
@@ -641,9 +641,9 @@ class ModelTransaction
      */
     private static &lt;E&gt; Set&lt;E&gt; append(Set&lt;E&gt; col, E elem)
     {
-<span class="nc bnc" id="L644" title="All 2 branches missed.">        Set&lt;E&gt; result = (col != null) ? col : new HashSet&lt;E&gt;();</span>
-<span class="nc" id="L645">        result.add(elem);</span>
-<span class="nc" id="L646">        return result;</span>
+<span class="pc bpc" id="L644" title="1 of 2 branches missed.">        Set&lt;E&gt; result = (col != null) ? col : new HashSet&lt;E&gt;();</span>
+<span class="fc" id="L645">        result.add(elem);</span>
+<span class="fc" id="L646">        return result;</span>
     }
 
     /**
@@ -659,16 +659,16 @@ class ModelTransaction
      */
     private static &lt;K, V&gt; Map&lt;K, V&gt; append(Map&lt;K, V&gt; map, K key, V value)
     {
-<span class="nc bnc" id="L662" title="All 2 branches missed.">        Map&lt;K, V&gt; result = (map != null) ? map : new HashMap&lt;K, V&gt;();</span>
-<span class="nc" id="L663">        result.put(key, value);</span>
-<span class="nc" id="L664">        return result;</span>
+<span class="pc bpc" id="L662" title="1 of 2 branches missed.">        Map&lt;K, V&gt; result = (map != null) ? map : new HashMap&lt;K, V&gt;();</span>
+<span class="fc" id="L663">        result.put(key, value);</span>
+<span class="fc" id="L664">        return result;</span>
     }
 
     /**
      * An abstract base class representing an operation to be performed on a
      * node. Concrete subclasses implement specific update operations.
      */
-<span class="nc" id="L671">    private abstract class Operation</span>
+<span class="fc" id="L671">    private abstract class Operation</span>
     {
         /**
          * Executes this operation on the provided target node returning the
@@ -691,7 +691,7 @@ class ModelTransaction
      * Therefore, it is treated in a special way and allows adding further sub
      * operations dynamically.
      */
-<span class="nc" id="L694">    private class ChildrenUpdateOperation extends Operation</span>
+<span class="fc" id="L694">    private class ChildrenUpdateOperation extends Operation</span>
     {
         /** A collection with new nodes to be added. */
         private Collection&lt;ImmutableNode&gt; newNodes;
@@ -712,10 +712,10 @@ class ModelTransaction
          */
         public void combine(ChildrenUpdateOperation op)
         {
-<span class="nc" id="L715">            newNodes = concatenate(newNodes, op.newNodes);</span>
-<span class="nc" id="L716">            nodesToReplace = concatenate(nodesToReplace, op.nodesToReplace);</span>
-<span class="nc" id="L717">            nodesToRemove = concatenate(nodesToRemove, op.nodesToRemove);</span>
-<span class="nc" id="L718">        }</span>
+<span class="fc" id="L715">            newNodes = concatenate(newNodes, op.newNodes);</span>
+<span class="fc" id="L716">            nodesToReplace = concatenate(nodesToReplace, op.nodesToReplace);</span>
+<span class="fc" id="L717">            nodesToRemove = concatenate(nodesToRemove, op.nodesToRemove);</span>
+<span class="fc" id="L718">        }</span>
 
         /**
          * Adds a node to be added to the target of the operation.
@@ -724,8 +724,8 @@ class ModelTransaction
          */
         public void addNewNode(ImmutableNode node)
         {
-<span class="nc" id="L727">            newNodes = append(newNodes, node);</span>
-<span class="nc" id="L728">        }</span>
+<span class="fc" id="L727">            newNodes = append(newNodes, node);</span>
+<span class="fc" id="L728">        }</span>
 
         /**
          * Adds a collection of nodes to be added to the target of the
@@ -735,8 +735,8 @@ class ModelTransaction
          */
         public void addNewNodes(Collection&lt;? extends ImmutableNode&gt; nodes)
         {
-<span class="nc" id="L738">            newNodes = concatenate(newNodes, nodes);</span>
-<span class="nc" id="L739">        }</span>
+<span class="fc" id="L738">            newNodes = concatenate(newNodes, nodes);</span>
+<span class="fc" id="L739">        }</span>
 
         /**
          * Adds a node for a replacement operation. The original node is going
@@ -748,8 +748,8 @@ class ModelTransaction
         public void addNodeToReplace(ImmutableNode org,
                 ImmutableNode replacement)
         {
-<span class="nc" id="L751">            nodesToReplace = append(nodesToReplace, org, replacement);</span>
-<span class="nc" id="L752">        }</span>
+<span class="fc" id="L751">            nodesToReplace = append(nodesToReplace, org, replacement);</span>
+<span class="fc" id="L752">        }</span>
 
         /**
          * Adds a node for a remove operation. This child node is going to be
@@ -759,8 +759,8 @@ class ModelTransaction
          */
         public void addNodeToRemove(ImmutableNode node)
         {
-<span class="nc" id="L762">            nodesToRemove = append(nodesToRemove, node);</span>
-<span class="nc" id="L763">        }</span>
+<span class="fc" id="L762">            nodesToRemove = append(nodesToRemove, node);</span>
+<span class="fc" id="L763">        }</span>
 
         /**
          * {@inheritDoc} This implementation applies changes on the children of
@@ -772,35 +772,35 @@ class ModelTransaction
         protected ImmutableNode apply(ImmutableNode target,
                 Operations operations)
         {
-<span class="nc" id="L775">            Map&lt;ImmutableNode, ImmutableNode&gt; replacements =</span>
-<span class="nc" id="L776">                    fetchReplacementMap();</span>
-<span class="nc" id="L777">            Set&lt;ImmutableNode&gt; removals = fetchRemovalSet();</span>
-<span class="nc" id="L778">            List&lt;ImmutableNode&gt; resultNodes = new LinkedList&lt;&gt;();</span>
+<span class="fc" id="L775">            Map&lt;ImmutableNode, ImmutableNode&gt; replacements =</span>
+<span class="fc" id="L776">                    fetchReplacementMap();</span>
+<span class="fc" id="L777">            Set&lt;ImmutableNode&gt; removals = fetchRemovalSet();</span>
+<span class="fc" id="L778">            List&lt;ImmutableNode&gt; resultNodes = new LinkedList&lt;&gt;();</span>
 
-<span class="nc bnc" id="L780" title="All 2 branches missed.">            for (ImmutableNode nd : target.getChildren())</span>
+<span class="fc bfc" id="L780" title="All 2 branches covered.">            for (ImmutableNode nd : target.getChildren())</span>
             {
-<span class="nc" id="L782">                ImmutableNode repl = replacements.get(nd);</span>
-<span class="nc bnc" id="L783" title="All 2 branches missed.">                if (repl != null)</span>
+<span class="fc" id="L782">                ImmutableNode repl = replacements.get(nd);</span>
+<span class="fc bfc" id="L783" title="All 2 branches covered.">                if (repl != null)</span>
                 {
-<span class="nc" id="L785">                    resultNodes.add(repl);</span>
-<span class="nc" id="L786">                    replacedNodes.put(nd, repl);</span>
+<span class="fc" id="L785">                    resultNodes.add(repl);</span>
+<span class="fc" id="L786">                    replacedNodes.put(nd, repl);</span>
                 }
                 else
                 {
-<span class="nc bnc" id="L790" title="All 2 branches missed.">                    if (removals.contains(nd))</span>
+<span class="fc bfc" id="L790" title="All 2 branches covered.">                    if (removals.contains(nd))</span>
                     {
-<span class="nc" id="L792">                        removedNodes.add(nd);</span>
+<span class="fc" id="L792">                        removedNodes.add(nd);</span>
                     }
                     else
                     {
-<span class="nc" id="L796">                        resultNodes.add(nd);</span>
+<span class="fc" id="L796">                        resultNodes.add(nd);</span>
                     }
                 }
-<span class="nc" id="L799">            }</span>
+<span class="fc" id="L799">            }</span>
 
-<span class="nc" id="L801">            concatenate(resultNodes, newNodes);</span>
-<span class="nc" id="L802">            operations.newNodesAdded(newNodes);</span>
-<span class="nc" id="L803">            return target.replaceChildren(resultNodes);</span>
+<span class="fc" id="L801">            concatenate(resultNodes, newNodes);</span>
+<span class="fc" id="L802">            operations.newNodesAdded(newNodes);</span>
+<span class="fc" id="L803">            return target.replaceChildren(resultNodes);</span>
         }
 
         /**
@@ -811,8 +811,8 @@ class ModelTransaction
          */
         private Map&lt;ImmutableNode, ImmutableNode&gt; fetchReplacementMap()
         {
-<span class="nc bnc" id="L814" title="All 2 branches missed.">            return (nodesToReplace != null) ? nodesToReplace : Collections</span>
-<span class="nc" id="L815">                    .&lt;ImmutableNode, ImmutableNode&gt; emptyMap();</span>
+<span class="fc bfc" id="L814" title="All 2 branches covered.">            return (nodesToReplace != null) ? nodesToReplace : Collections</span>
+<span class="fc" id="L815">                    .&lt;ImmutableNode, ImmutableNode&gt; emptyMap();</span>
         }
 
         /**
@@ -823,8 +823,8 @@ class ModelTransaction
          */
         private Set&lt;ImmutableNode&gt; fetchRemovalSet()
         {
-<span class="nc bnc" id="L826" title="All 2 branches missed.">            return (nodesToRemove != null) ? nodesToRemove : Collections</span>
-<span class="nc" id="L827">                    .&lt;ImmutableNode&gt; emptySet();</span>
+<span class="fc bfc" id="L826" title="All 2 branches covered.">            return (nodesToRemove != null) ? nodesToRemove : Collections</span>
+<span class="fc" id="L827">                    .&lt;ImmutableNode&gt; emptySet();</span>
         }
     }
 
@@ -846,16 +846,16 @@ class ModelTransaction
          * @param value the value of the attribute
          */
         public AddAttributeOperation(String name, Object value)
-<span class="nc" id="L849">        {</span>
-<span class="nc" id="L850">            attributeName = name;</span>
-<span class="nc" id="L851">            attributeValue = value;</span>
-<span class="nc" id="L852">        }</span>
+<span class="fc" id="L849">        {</span>
+<span class="fc" id="L850">            attributeName = name;</span>
+<span class="fc" id="L851">            attributeValue = value;</span>
+<span class="fc" id="L852">        }</span>
 
         @Override
         protected ImmutableNode apply(ImmutableNode target,
                 Operations operations)
         {
-<span class="nc" id="L858">            return target.setAttribute(attributeName, attributeValue);</span>
+<span class="fc" id="L858">            return target.setAttribute(attributeName, attributeValue);</span>
         }
     }
 
@@ -874,15 +874,15 @@ class ModelTransaction
          * @param attrs the map with attributes
          */
         public AddAttributesOperation(Map&lt;String, Object&gt; attrs)
-<span class="nc" id="L877">        {</span>
-<span class="nc" id="L878">            attributes = attrs;</span>
-<span class="nc" id="L879">        }</span>
+<span class="fc" id="L877">        {</span>
+<span class="fc" id="L878">            attributes = attrs;</span>
+<span class="fc" id="L879">        }</span>
 
         @Override
         protected ImmutableNode apply(ImmutableNode target,
                 Operations operations)
         {
-<span class="nc" id="L885">            return target.setAttributes(attributes);</span>
+<span class="fc" id="L885">            return target.setAttributes(attributes);</span>
         }
     }
 
@@ -901,15 +901,15 @@ class ModelTransaction
          * @param name the name of the attribute
          */
         public RemoveAttributeOperation(String name)
-<span class="nc" id="L904">        {</span>
-<span class="nc" id="L905">            attributeName = name;</span>
-<span class="nc" id="L906">        }</span>
+<span class="fc" id="L904">        {</span>
+<span class="fc" id="L905">            attributeName = name;</span>
+<span class="fc" id="L906">        }</span>
 
         @Override
         protected ImmutableNode apply(ImmutableNode target,
                 Operations operations)
         {
-<span class="nc" id="L912">            return target.removeAttribute(attributeName);</span>
+<span class="fc" id="L912">            return target.removeAttribute(attributeName);</span>
         }
     }
 
@@ -928,15 +928,15 @@ class ModelTransaction
          * @param value the new node value
          */
         public ChangeNodeValueOperation(Object value)
-<span class="nc" id="L931">        {</span>
-<span class="nc" id="L932">            newValue = value;</span>
-<span class="nc" id="L933">        }</span>
+<span class="fc" id="L931">        {</span>
+<span class="fc" id="L932">            newValue = value;</span>
+<span class="fc" id="L933">        }</span>
 
         @Override
         protected ImmutableNode apply(ImmutableNode target,
                 Operations operations)
         {
-<span class="nc" id="L939">            return target.setValue(newValue);</span>
+<span class="fc" id="L939">            return target.setValue(newValue);</span>
         }
     }
 
@@ -955,15 +955,15 @@ class ModelTransaction
          * @param name the new node name
          */
         public ChangeNodeNameOperation(String name)
-<span class="nc" id="L958">        {</span>
-<span class="nc" id="L959">            newName = name;</span>
-<span class="nc" id="L960">        }</span>
+<span class="fc" id="L958">        {</span>
+<span class="fc" id="L959">            newName = name;</span>
+<span class="fc" id="L960">        }</span>
 
         @Override
         protected ImmutableNode apply(ImmutableNode target,
                 Operations operations)
         {
-<span class="nc" id="L966">            return target.setName(newName);</span>
+<span class="fc" id="L966">            return target.setName(newName);</span>
         }
     }
 
@@ -971,7 +971,7 @@ class ModelTransaction
      * A helper class which collects multiple update operations to be executed
      * on a single node.
      */
-<span class="nc" id="L974">    private class Operations</span>
+<span class="fc" id="L974">    private class Operations</span>
     {
         /** An operation for manipulating child nodes. */
         private ChildrenUpdateOperation childrenOperation;
@@ -992,15 +992,15 @@ class ModelTransaction
          */
         public void addChildrenOperation(ChildrenUpdateOperation co)
         {
-<span class="nc bnc" id="L995" title="All 2 branches missed.">            if (childrenOperation == null)</span>
+<span class="fc bfc" id="L995" title="All 2 branches covered.">            if (childrenOperation == null)</span>
             {
-<span class="nc" id="L997">                childrenOperation = co;</span>
+<span class="fc" id="L997">                childrenOperation = co;</span>
             }
             else
             {
-<span class="nc" id="L1001">                childrenOperation.combine(co);</span>
+<span class="fc" id="L1001">                childrenOperation.combine(co);</span>
             }
-<span class="nc" id="L1003">        }</span>
+<span class="fc" id="L1003">        }</span>
 
         /**
          * Adds an operation.
@@ -1009,8 +1009,8 @@ class ModelTransaction
          */
         public void addOperation(Operation op)
         {
-<span class="nc" id="L1012">            operations = append(operations, op);</span>
-<span class="nc" id="L1013">        }</span>
+<span class="fc" id="L1012">            operations = append(operations, op);</span>
+<span class="fc" id="L1013">        }</span>
 
         /**
          * Notifies this object that new nodes have been added by a sub
@@ -1021,9 +1021,9 @@ class ModelTransaction
          */
         public void newNodesAdded(Collection&lt;ImmutableNode&gt; newNodes)
         {
-<span class="nc" id="L1024">            addedNodesInOperation =</span>
-<span class="nc" id="L1025">                    concatenate(addedNodesInOperation, newNodes);</span>
-<span class="nc" id="L1026">        }</span>
+<span class="fc" id="L1024">            addedNodesInOperation =</span>
+<span class="fc" id="L1025">                    concatenate(addedNodesInOperation, newNodes);</span>
+<span class="fc" id="L1026">        }</span>
 
         /**
          * Executes all operations stored in this object on the given target
@@ -1037,33 +1037,33 @@ class ModelTransaction
          */
         public void apply(ImmutableNode target, int level)
         {
-<span class="nc" id="L1040">            ImmutableNode node = target;</span>
-<span class="nc bnc" id="L1041" title="All 2 branches missed.">            if (childrenOperation != null)</span>
+<span class="fc" id="L1040">            ImmutableNode node = target;</span>
+<span class="fc bfc" id="L1041" title="All 2 branches covered.">            if (childrenOperation != null)</span>
             {
-<span class="nc" id="L1043">                node = childrenOperation.apply(node, this);</span>
+<span class="fc" id="L1043">                node = childrenOperation.apply(node, this);</span>
             }
 
-<span class="nc bnc" id="L1046" title="All 2 branches missed.">            if (operations != null)</span>
+<span class="fc bfc" id="L1046" title="All 2 branches covered.">            if (operations != null)</span>
             {
-<span class="nc bnc" id="L1048" title="All 2 branches missed.">                for (Operation op : operations)</span>
+<span class="fc bfc" id="L1048" title="All 2 branches covered.">                for (Operation op : operations)</span>
                 {
-<span class="nc" id="L1050">                    node = op.apply(node, this);</span>
-<span class="nc" id="L1051">                }</span>
+<span class="fc" id="L1050">                    node = op.apply(node, this);</span>
+<span class="fc" id="L1051">                }</span>
             }
 
-<span class="nc" id="L1054">            handleAddedNodes(node);</span>
-<span class="nc bnc" id="L1055" title="All 2 branches missed.">            if (level == 0)</span>
+<span class="fc" id="L1054">            handleAddedNodes(node);</span>
+<span class="fc bfc" id="L1055" title="All 2 branches covered.">            if (level == 0)</span>
             {
                 // reached the root node
-<span class="nc" id="L1058">                newRoot = node;</span>
-<span class="nc" id="L1059">                replacedNodes.put(target, node);</span>
+<span class="fc" id="L1058">                newRoot = node;</span>
+<span class="fc" id="L1059">                replacedNodes.put(target, node);</span>
             }
             else
             {
                 // propagate change
-<span class="nc" id="L1064">                propagateChange(target, node, level);</span>
+<span class="fc" id="L1064">                propagateChange(target, node, level);</span>
             }
-<span class="nc" id="L1066">        }</span>
+<span class="fc" id="L1066">        }</span>
 
         /**
          * Propagates the changes on the target node to the next level above of
@@ -1077,18 +1077,18 @@ class ModelTransaction
         private void propagateChange(ImmutableNode target, ImmutableNode node,
                 int level)
         {
-<span class="nc" id="L1080">            ImmutableNode parent = getParent(target);</span>
-<span class="nc" id="L1081">            ChildrenUpdateOperation co = new ChildrenUpdateOperation();</span>
-<span class="nc bnc" id="L1082" title="All 2 branches missed.">            if (InMemoryNodeModel.checkIfNodeDefined(node))</span>
+<span class="fc" id="L1080">            ImmutableNode parent = getParent(target);</span>
+<span class="fc" id="L1081">            ChildrenUpdateOperation co = new ChildrenUpdateOperation();</span>
+<span class="fc bfc" id="L1082" title="All 2 branches covered.">            if (InMemoryNodeModel.checkIfNodeDefined(node))</span>
             {
-<span class="nc" id="L1084">                co.addNodeToReplace(target, node);</span>
+<span class="fc" id="L1084">                co.addNodeToReplace(target, node);</span>
             }
             else
             {
-<span class="nc" id="L1088">                co.addNodeToRemove(target);</span>
+<span class="fc" id="L1088">                co.addNodeToRemove(target);</span>
             }
-<span class="nc" id="L1090">            fetchOperations(parent, level - 1).addChildrenOperation(co);</span>
-<span class="nc" id="L1091">        }</span>
+<span class="fc" id="L1090">            fetchOperations(parent, level - 1).addChildrenOperation(co);</span>
+<span class="fc" id="L1091">        }</span>
 
         /**
          * Checks whether new nodes have been added during operation execution.
@@ -1098,15 +1098,15 @@ class ModelTransaction
          */
         private void handleAddedNodes(ImmutableNode node)
         {
-<span class="nc bnc" id="L1101" title="All 2 branches missed.">            if (addedNodesInOperation != null)</span>
+<span class="fc bfc" id="L1101" title="All 2 branches covered.">            if (addedNodesInOperation != null)</span>
             {
-<span class="nc bnc" id="L1103" title="All 2 branches missed.">                for (ImmutableNode child : addedNodesInOperation)</span>
+<span class="fc bfc" id="L1103" title="All 2 branches covered.">                for (ImmutableNode child : addedNodesInOperation)</span>
                 {
-<span class="nc" id="L1105">                    parentMapping.put(child, node);</span>
-<span class="nc" id="L1106">                    addedNodes.add(child);</span>
-<span class="nc" id="L1107">                }</span>
+<span class="fc" id="L1105">                    parentMapping.put(child, node);</span>
+<span class="fc" id="L1106">                    addedNodes.add(child);</span>
+<span class="fc" id="L1107">                }</span>
             }
-<span class="nc" id="L1109">        }</span>
+<span class="fc" id="L1109">        }</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>
