@@ -27,7 +27,7 @@ The aim of this project is to calculate several software metrices and to define 
 
 1. **Apache Common Collections** - [*project details*](https://commons.apache.org/proper/commons-collections/) , [*source-code*](https://github.com/apache/commons-collections) 
 2. **JFreechart** - [*project details*](http://www.jfree.org/jfreechart/) , [*source-code*](https://github.com/jfree/jfreechart) 
-3. **Apache Maven** - [*project details*](https://maven.apache.org/ref/3.6.3/) , [*source-code*](https://github.com/apache/maven)
+3. **Apache Commons Lang** - [*project details*](http://commons.apache.org/proper/commons-lang/) , [*source-code*](https://github.com/apache/commons-lang)
 4.  **Apache Commons Configuration** - [*project details*](https://commons.apache.org/proper/commons-configuration/) , [*source-code*](https://github.com/apache/commons-configuration)
 
 ## Directory Structure
