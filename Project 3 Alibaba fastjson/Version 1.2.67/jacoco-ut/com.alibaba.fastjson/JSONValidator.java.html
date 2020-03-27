@@ -1,0 +1,515 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JSONValidator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson</a> &gt; <span class="el_source">JSONValidator.java</span></div><h1>JSONValidator.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+
+<span class="nc" id="L7">public abstract class JSONValidator implements Cloneable {</span>
+<span class="nc" id="L8">    public enum Type {</span>
+<span class="nc" id="L9">        Object, Array, Value</span>
+    }
+
+    protected boolean eof;
+<span class="nc" id="L13">    protected int pos = -1;</span>
+    protected char ch;
+    protected Type type;
+
+<span class="nc" id="L17">    protected int count = 0;</span>
+<span class="nc" id="L18">    protected boolean supportMultiValue = true;</span>
+
+    public static JSONValidator fromUtf8(byte[] jsonBytes) {
+<span class="nc" id="L21">        return new UTF8Validator(jsonBytes);</span>
+    }
+
+    public static JSONValidator fromUtf8(InputStream is) {
+<span class="nc" id="L25">        return new UTF8InputStreamValidator(is);</span>
+    }
+
+    public static JSONValidator from(String jsonStr) {
+<span class="nc" id="L29">        return new UTF16Validator(jsonStr);</span>
+    }
+
+    public static JSONValidator from(Reader r) {
+<span class="nc" id="L33">        return new ReaderValidator(r);</span>
+    }
+
+    public Type getType() {
+<span class="nc" id="L37">        return type;</span>
+    }
+
+    abstract void next();
+
+    public boolean validate() {
+
+        for (;;) {
+<span class="nc" id="L45">            any();</span>
+<span class="nc" id="L46">            count++;</span>
+
+<span class="nc bnc" id="L48" title="All 4 branches missed.">            if (supportMultiValue &amp;&amp; !eof) {</span>
+<span class="nc" id="L49">                skipWhiteSpace();</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                if (eof) {</span>
+                    break;
+                }
+                continue;
+            } else {
+                break;
+            }
+        }
+
+<span class="nc" id="L59">        return true;</span>
+    }
+
+    public void close() throws IOException {
+
+<span class="nc" id="L64">    }</span>
+
+    void any() {
+<span class="nc bnc" id="L67" title="All 8 branches missed.">        switch (ch) {</span>
+            case '{':
+<span class="nc" id="L69">                next();</span>
+<span class="nc" id="L70">                skipWhiteSpace();</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">                if (ch == '}') {</span>
+<span class="nc" id="L72">                    next();</span>
+<span class="nc" id="L73">                    type = Type.Object;</span>
+<span class="nc" id="L74">                    return;</span>
+                }
+
+                for (;;) {
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                    if (ch == '&quot;') {</span>
+<span class="nc" id="L79">                        fieldName();</span>
+<span class="nc" id="L80">                    }</span>
+                    else {
+<span class="nc" id="L82">                        error();</span>
+                    }
+
+<span class="nc" id="L85">                    skipWhiteSpace();</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                    if (ch == ':') {</span>
+<span class="nc" id="L87">                        next();</span>
+<span class="nc" id="L88">                    }</span>
+                    else {
+<span class="nc" id="L90">                        error();</span>
+                    }
+<span class="nc" id="L92">                    skipWhiteSpace();</span>
+<span class="nc" id="L93">                    any();</span>
+
+<span class="nc" id="L95">                    skipWhiteSpace();</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                    if (ch == ',') {</span>
+<span class="nc" id="L97">                        next();</span>
+<span class="nc" id="L98">                        skipWhiteSpace();</span>
+<span class="nc" id="L99">                        continue;</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                    } else if (ch == '}') {</span>
+<span class="nc" id="L101">                        next();</span>
+<span class="nc" id="L102">                        type = Type.Object;</span>
+<span class="nc" id="L103">                        return;</span>
+                    }
+                }
+            case '[':
+<span class="nc" id="L107">                next();</span>
+<span class="nc" id="L108">                skipWhiteSpace();</span>
+
+<span class="nc bnc" id="L110" title="All 2 branches missed.">                if (ch == ']') {</span>
+<span class="nc" id="L111">                    next();</span>
+<span class="nc" id="L112">                    type = Type.Array;</span>
+<span class="nc" id="L113">                    return;</span>
+                }
+
+<span class="nc" id="L116">                for (; ; ) {</span>
+<span class="nc" id="L117">                    any();</span>
+
+<span class="nc" id="L119">                    skipWhiteSpace();</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">                    if (ch == ',') {</span>
+<span class="nc" id="L121">                        next();</span>
+<span class="nc" id="L122">                        skipWhiteSpace();</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">                    } else if (ch == ']') {</span>
+<span class="nc" id="L124">                        next();</span>
+<span class="nc" id="L125">                        type = Type.Array;</span>
+<span class="nc" id="L126">                        return;</span>
+                    }
+                    else {
+<span class="nc" id="L129">                        error();</span>
+                    }
+                }
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case '+':
+            case '-':
+<span class="nc bnc" id="L144" title="All 4 branches missed.">                if (ch == '-' || ch == '+') {</span>
+<span class="nc" id="L145">                    next();</span>
+<span class="nc" id="L146">                    skipWhiteSpace();</span>
+<span class="nc bnc" id="L147" title="All 4 branches missed.">                    if (ch &lt; '0' || ch &gt; '9') {</span>
+<span class="nc" id="L148">                        error();</span>
+                    }
+                }
+
+<span class="nc bnc" id="L152" title="All 2 branches missed.">                do {</span>
+<span class="nc" id="L153">                    next();</span>
+                }
+<span class="nc bnc" id="L155" title="All 2 branches missed.">                while (ch &gt;= '0' &amp;&amp; ch &lt;= '9');</span>
+
+<span class="nc bnc" id="L157" title="All 2 branches missed.">                if (ch == '.') {</span>
+<span class="nc" id="L158">                    next();</span>
+                    // bug fix: 0.e7 should not pass the test
+<span class="nc bnc" id="L160" title="All 4 branches missed.">                    if (ch &lt; '0' || ch &gt; '9') {</span>
+<span class="nc" id="L161">                        error();</span>
+                    }
+<span class="nc bnc" id="L163" title="All 4 branches missed.">                    while (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="nc" id="L164">                        next();</span>
+                    }
+                }
+
+<span class="nc bnc" id="L168" title="All 4 branches missed.">                if (ch == 'e' || ch == 'E') {</span>
+<span class="nc" id="L169">                    next();</span>
+<span class="nc bnc" id="L170" title="All 4 branches missed.">                    if (ch == '-' || ch == '+') {</span>
+<span class="nc" id="L171">                        next();</span>
+                    }
+
+<span class="nc bnc" id="L174" title="All 4 branches missed.">                    if (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="nc" id="L175">                        next();</span>
+<span class="nc" id="L176">                    }</span>
+                    else {
+<span class="nc" id="L178">                        error();</span>
+                    }
+
+<span class="nc bnc" id="L181" title="All 4 branches missed.">                    while (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="nc" id="L182">                        next();</span>
+                    }
+                }
+
+<span class="nc" id="L186">                type = Type.Value;</span>
+<span class="nc" id="L187">                break;</span>
+            case '&quot;':
+<span class="nc" id="L189">                next();</span>
+<span class="nc" id="L190">                for (;;) {</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">                    if (ch == '\\') {</span>
+<span class="nc" id="L192">                        next();</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                        if (ch == 'u') {</span>
+<span class="nc" id="L194">                            next();</span>
+
+<span class="nc" id="L196">                            next();</span>
+<span class="nc" id="L197">                            next();</span>
+<span class="nc" id="L198">                            next();</span>
+<span class="nc" id="L199">                            next();</span>
+<span class="nc" id="L200">                        } else {</span>
+<span class="nc" id="L201">                            next();</span>
+                        }
+<span class="nc bnc" id="L203" title="All 2 branches missed.">                    } else if (ch == '&quot;') {</span>
+<span class="nc" id="L204">                        next();</span>
+<span class="nc" id="L205">                        type = Type.Value;</span>
+<span class="nc" id="L206">                        return;</span>
+                    } else {
+<span class="nc" id="L208">                        next();</span>
+                    }
+                }
+            case 't':
+<span class="nc" id="L212">                next();</span>
+
+<span class="nc bnc" id="L214" title="All 2 branches missed.">                if (ch != 'r') {</span>
+<span class="nc" id="L215">                    error();</span>
+                }
+<span class="nc" id="L217">                next();</span>
+
+<span class="nc bnc" id="L219" title="All 2 branches missed.">                if (ch != 'u') {</span>
+<span class="nc" id="L220">                    error();</span>
+                }
+<span class="nc" id="L222">                next();</span>
+
+<span class="nc bnc" id="L224" title="All 2 branches missed.">                if (ch != 'e') {</span>
+<span class="nc" id="L225">                    error();</span>
+                }
+<span class="nc" id="L227">                next();</span>
+
+<span class="nc bnc" id="L229" title="All 10 branches missed.">                if (isWhiteSpace(ch) || ch == ',' || ch == ']' || ch == '}' || ch == '\0') {</span>
+<span class="nc" id="L230">                    type = Type.Value;</span>
+<span class="nc" id="L231">                    return;</span>
+                }
+<span class="nc" id="L233">                error();</span>
+            case 'f':
+<span class="nc" id="L235">                next();</span>
+
+<span class="nc bnc" id="L237" title="All 2 branches missed.">                if (ch != 'a') {</span>
+<span class="nc" id="L238">                    error();</span>
+                }
+<span class="nc" id="L240">                next();</span>
+
+<span class="nc bnc" id="L242" title="All 2 branches missed.">                if (ch != 'l') {</span>
+<span class="nc" id="L243">                    error();</span>
+                }
+<span class="nc" id="L245">                next();</span>
+
+<span class="nc bnc" id="L247" title="All 2 branches missed.">                if (ch != 's') {</span>
+<span class="nc" id="L248">                    error();</span>
+                }
+<span class="nc" id="L250">                next();</span>
+
+<span class="nc bnc" id="L252" title="All 2 branches missed.">                if (ch != 'e') {</span>
+<span class="nc" id="L253">                    error();</span>
+                }
+<span class="nc" id="L255">                next();</span>
+
+<span class="nc bnc" id="L257" title="All 10 branches missed.">                if (isWhiteSpace(ch) || ch == ',' || ch == ']' || ch == '}' || ch == '\0') {</span>
+<span class="nc" id="L258">                    type = Type.Value;</span>
+<span class="nc" id="L259">                    return;</span>
+                }
+<span class="nc" id="L261">                error();</span>
+            case 'n':
+<span class="nc" id="L263">                next();</span>
+
+<span class="nc bnc" id="L265" title="All 2 branches missed.">                if (ch != 'u') {</span>
+<span class="nc" id="L266">                    error();</span>
+                }
+<span class="nc" id="L268">                next();</span>
+
+<span class="nc bnc" id="L270" title="All 2 branches missed.">                if (ch != 'l') {</span>
+<span class="nc" id="L271">                    error();</span>
+                }
+<span class="nc" id="L273">                next();</span>
+
+<span class="nc bnc" id="L275" title="All 2 branches missed.">                if (ch != 'l') {</span>
+<span class="nc" id="L276">                    error();</span>
+                }
+<span class="nc" id="L278">                next();</span>
+
+<span class="nc bnc" id="L280" title="All 10 branches missed.">                if (isWhiteSpace(ch) || ch == ',' || ch == ']' || ch == '}' || ch == '\0') {</span>
+<span class="nc" id="L281">                    type = Type.Value;</span>
+<span class="nc" id="L282">                    return;</span>
+                }
+<span class="nc" id="L284">                error();</span>
+            default:
+<span class="nc" id="L286">                error();</span>
+        }
+<span class="nc" id="L288">    }</span>
+
+    protected void fieldName()
+    {
+<span class="nc" id="L292">        next();</span>
+<span class="nc" id="L293">        for (; ; ) {</span>
+<span class="nc bnc" id="L294" title="All 2 branches missed.">            if (ch == '\\') {</span>
+<span class="nc" id="L295">                next();</span>
+
+<span class="nc bnc" id="L297" title="All 2 branches missed.">                if (ch == 'u') {</span>
+<span class="nc" id="L298">                    next();</span>
+
+<span class="nc" id="L300">                    next();</span>
+<span class="nc" id="L301">                    next();</span>
+<span class="nc" id="L302">                    next();</span>
+<span class="nc" id="L303">                    next();</span>
+<span class="nc" id="L304">                } else {</span>
+<span class="nc" id="L305">                    next();</span>
+                }
+<span class="nc" id="L307">            }</span>
+<span class="nc bnc" id="L308" title="All 2 branches missed.">            else if (ch == '&quot;') {</span>
+<span class="nc" id="L309">                next();</span>
+<span class="nc" id="L310">                break;</span>
+            }
+            else {
+<span class="nc" id="L313">                next();</span>
+            }
+        }
+<span class="nc" id="L316">    }</span>
+
+    void error() {
+<span class="nc" id="L319">        throw new JSONException(&quot;error : &quot; + pos);</span>
+    }
+
+    void skipWhiteSpace() {
+<span class="nc bnc" id="L323" title="All 2 branches missed.">        while (isWhiteSpace(ch)) {</span>
+<span class="nc" id="L324">            next();</span>
+        }
+<span class="nc" id="L326">    }</span>
+
+    static final boolean isWhiteSpace(char ch) {
+<span class="nc bnc" id="L329" title="All 2 branches missed.">        return ch == ' '</span>
+<span class="nc bnc" id="L330" title="All 2 branches missed.">                || ch == '\t'</span>
+<span class="nc bnc" id="L331" title="All 2 branches missed.">                || ch == '\r'</span>
+<span class="nc bnc" id="L332" title="All 2 branches missed.">                || ch == '\n'</span>
+<span class="nc bnc" id="L333" title="All 2 branches missed.">                || ch == '\f'</span>
+<span class="nc bnc" id="L334" title="All 2 branches missed.">                || ch == '\b'</span>
+                ;
+    }
+
+    static class UTF8Validator extends JSONValidator {
+        private final byte[] bytes;
+
+<span class="nc" id="L341">        public UTF8Validator(byte[] bytes) {</span>
+<span class="nc" id="L342">            this.bytes = bytes;</span>
+<span class="nc" id="L343">            next();</span>
+<span class="nc" id="L344">            skipWhiteSpace();</span>
+<span class="nc" id="L345">        }</span>
+
+        void next() {
+<span class="nc" id="L348">            ++pos;</span>
+
+<span class="nc bnc" id="L350" title="All 2 branches missed.">            if (pos &gt;= bytes.length) {</span>
+<span class="nc" id="L351">                ch = '\0';</span>
+<span class="nc" id="L352">                eof = true;</span>
+<span class="nc" id="L353">            } else {</span>
+<span class="nc" id="L354">                ch = (char) bytes[pos];</span>
+            }
+<span class="nc" id="L356">        }</span>
+    }
+
+    static class UTF8InputStreamValidator extends JSONValidator {
+<span class="nc" id="L360">        private final static ThreadLocal&lt;byte[]&gt; bufLocal = new ThreadLocal&lt;byte[]&gt;();</span>
+
+        private final InputStream is;
+        private byte[] buf;
+<span class="nc" id="L364">        private int end = -1;</span>
+<span class="nc" id="L365">        private int readCount = 0;</span>
+
+<span class="nc" id="L367">        public UTF8InputStreamValidator(InputStream is) {</span>
+<span class="nc" id="L368">            this.is = is;</span>
+<span class="nc" id="L369">            buf = bufLocal.get();</span>
+<span class="nc bnc" id="L370" title="All 2 branches missed.">            if (buf != null) {</span>
+<span class="nc" id="L371">                bufLocal.set(null);</span>
+<span class="nc" id="L372">            } else {</span>
+<span class="nc" id="L373">                buf = new byte[1024 * 8];</span>
+            }
+
+<span class="nc" id="L376">            next();</span>
+<span class="nc" id="L377">            skipWhiteSpace();</span>
+<span class="nc" id="L378">        }</span>
+
+        void next() {
+<span class="nc bnc" id="L381" title="All 2 branches missed.">            if (pos &lt; end) {</span>
+<span class="nc" id="L382">                ch = (char) buf[++pos];</span>
+<span class="nc" id="L383">            } else {</span>
+<span class="nc bnc" id="L384" title="All 2 branches missed.">                if (!eof) {</span>
+                    int len;
+                    try {
+<span class="nc" id="L387">                        len = is.read(buf, 0, buf.length);</span>
+<span class="nc" id="L388">                        readCount++;</span>
+<span class="nc" id="L389">                    } catch (IOException ex) {</span>
+<span class="nc" id="L390">                        throw new JSONException(&quot;read error&quot;);</span>
+                    }
+
+<span class="nc bnc" id="L393" title="All 2 branches missed.">                    if (len &gt; 0) {</span>
+<span class="nc" id="L394">                        ch = (char) buf[0];</span>
+<span class="nc" id="L395">                        pos = 0;</span>
+<span class="nc" id="L396">                        end = len - 1;</span>
+<span class="nc" id="L397">                    }</span>
+<span class="nc bnc" id="L398" title="All 2 branches missed.">                    else if (len == -1) {</span>
+<span class="nc" id="L399">                        pos = 0;</span>
+<span class="nc" id="L400">                        end = 0;</span>
+<span class="nc" id="L401">                        buf = null;</span>
+<span class="nc" id="L402">                        ch = '\0';</span>
+<span class="nc" id="L403">                        eof = true;</span>
+<span class="nc" id="L404">                    } else {</span>
+<span class="nc" id="L405">                        pos = 0;</span>
+<span class="nc" id="L406">                        end = 0;</span>
+<span class="nc" id="L407">                        buf = null;</span>
+<span class="nc" id="L408">                        ch = '\0';</span>
+<span class="nc" id="L409">                        eof = true;</span>
+<span class="nc" id="L410">                        throw new JSONException(&quot;read error&quot;);</span>
+                    }
+                }
+            }
+<span class="nc" id="L414">        }</span>
+
+        void error() {
+<span class="nc" id="L417">            throw new JSONException(&quot;error, readCount &quot; + readCount + &quot;, valueCount : &quot; + count + &quot;, pos &quot; + pos);</span>
+        }
+
+        public void close() throws IOException {
+<span class="nc" id="L421">            bufLocal.set(buf);</span>
+<span class="nc" id="L422">            is.close();</span>
+<span class="nc" id="L423">        }</span>
+    }
+
+    static class UTF16Validator extends JSONValidator {
+        private final String str;
+
+<span class="nc" id="L429">        public UTF16Validator(String str) {</span>
+<span class="nc" id="L430">            this.str = str;</span>
+<span class="nc" id="L431">            next();</span>
+<span class="nc" id="L432">            skipWhiteSpace();</span>
+<span class="nc" id="L433">        }</span>
+
+        void next() {
+<span class="nc" id="L436">            ++pos;</span>
+
+<span class="nc bnc" id="L438" title="All 2 branches missed.">            if (pos &gt;= str.length()) {</span>
+<span class="nc" id="L439">                ch = '\0';</span>
+<span class="nc" id="L440">                eof = true;</span>
+<span class="nc" id="L441">            } else {</span>
+<span class="nc" id="L442">                ch = str.charAt(pos);</span>
+            }
+<span class="nc" id="L444">        }</span>
+    }
+
+    static class ReaderValidator extends JSONValidator {
+<span class="nc" id="L448">        private final static ThreadLocal&lt;char[]&gt; bufLocal = new ThreadLocal&lt;char[]&gt;();</span>
+
+        final Reader r;
+
+        private char[] buf;
+<span class="nc" id="L453">        private int end = -1;</span>
+<span class="nc" id="L454">        private int readCount = 0;</span>
+
+<span class="nc" id="L456">        ReaderValidator(Reader r) {</span>
+<span class="nc" id="L457">            this.r = r;</span>
+<span class="nc" id="L458">            buf = bufLocal.get();</span>
+<span class="nc bnc" id="L459" title="All 2 branches missed.">            if (buf != null) {</span>
+<span class="nc" id="L460">                bufLocal.set(null);</span>
+<span class="nc" id="L461">            } else {</span>
+<span class="nc" id="L462">                buf = new char[1024 * 8];</span>
+            }
+
+<span class="nc" id="L465">            next();</span>
+<span class="nc" id="L466">            skipWhiteSpace();</span>
+<span class="nc" id="L467">        }</span>
+
+        void next() {
+<span class="nc bnc" id="L470" title="All 2 branches missed.">            if (pos &lt; end) {</span>
+<span class="nc" id="L471">                ch = buf[++pos];</span>
+<span class="nc" id="L472">            } else {</span>
+<span class="nc bnc" id="L473" title="All 2 branches missed.">                if (!eof) {</span>
+                    int len;
+                    try {
+<span class="nc" id="L476">                        len = r.read(buf, 0, buf.length);</span>
+<span class="nc" id="L477">                        readCount++;</span>
+<span class="nc" id="L478">                    } catch (IOException ex) {</span>
+<span class="nc" id="L479">                        throw new JSONException(&quot;read error&quot;);</span>
+                    }
+
+<span class="nc bnc" id="L482" title="All 2 branches missed.">                    if (len &gt; 0) {</span>
+<span class="nc" id="L483">                        ch = buf[0];</span>
+<span class="nc" id="L484">                        pos = 0;</span>
+<span class="nc" id="L485">                        end = len - 1;</span>
+<span class="nc" id="L486">                    }</span>
+<span class="nc bnc" id="L487" title="All 2 branches missed.">                    else if (len == -1) {</span>
+<span class="nc" id="L488">                        pos = 0;</span>
+<span class="nc" id="L489">                        end = 0;</span>
+<span class="nc" id="L490">                        buf = null;</span>
+<span class="nc" id="L491">                        ch = '\0';</span>
+<span class="nc" id="L492">                        eof = true;</span>
+<span class="nc" id="L493">                    } else {</span>
+<span class="nc" id="L494">                        pos = 0;</span>
+<span class="nc" id="L495">                        end = 0;</span>
+<span class="nc" id="L496">                        buf = null;</span>
+<span class="nc" id="L497">                        ch = '\0';</span>
+<span class="nc" id="L498">                        eof = true;</span>
+<span class="nc" id="L499">                        throw new JSONException(&quot;read error&quot;);</span>
+                    }
+                }
+            }
+<span class="nc" id="L503">        }</span>
+
+        void error() {
+<span class="nc" id="L506">            throw new JSONException(&quot;error, readCount &quot; + readCount + &quot;, valueCount : &quot; + count + &quot;, pos &quot; + pos);</span>
+        }
+
+        public void close() throws IOException {
+<span class="nc" id="L510">            bufLocal.set(buf);</span>
+<span class="nc" id="L511">            r.close();;</span>
+<span class="nc" id="L512">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>
