@@ -401,19 +401,19 @@ public abstract class AbstractReferenceMap&lt;K, V&gt; extends AbstractHashedMap
 <span class="fc" id="L401">        HashEntry&lt;K, V&gt; entry = data[index];</span>
 <span class="pc bpc" id="L402" title="1 of 2 branches missed.">        while (entry != null) {</span>
 <span class="fc" id="L403">            ReferenceEntry&lt;K, V&gt; refEntry = (ReferenceEntry&lt;K, V&gt;) entry;</span>
-<span class="pc bpc" id="L404" title="1 of 2 branches missed.">            if (refEntry.purge(ref)) {</span>
-<span class="pc bpc" id="L405" title="1 of 2 branches missed.">                if (previous == null) {</span>
+<span class="fc bfc" id="L404" title="All 2 branches covered.">            if (refEntry.purge(ref)) {</span>
+<span class="fc bfc" id="L405" title="All 2 branches covered.">                if (previous == null) {</span>
 <span class="fc" id="L406">                    data[index] = entry.next;</span>
                 } else {
-<span class="nc" id="L408">                    previous.next = entry.next;</span>
+<span class="fc" id="L408">                    previous.next = entry.next;</span>
                 }
 <span class="fc" id="L410">                this.size--;</span>
 <span class="fc" id="L411">                refEntry.onPurge();</span>
 <span class="fc" id="L412">                return;</span>
             }
-<span class="nc" id="L414">            previous = entry;</span>
-<span class="nc" id="L415">            entry = entry.next;</span>
-<span class="nc" id="L416">        }</span>
+<span class="fc" id="L414">            previous = entry;</span>
+<span class="fc" id="L415">            entry = entry.next;</span>
+<span class="fc" id="L416">        }</span>
 
 <span class="nc" id="L418">    }</span>
 
@@ -735,9 +735,9 @@ public abstract class AbstractReferenceMap&lt;K, V&gt; extends AbstractHashedMap
          * @return true or false
          */
         protected boolean purge(final Reference&lt;?&gt; ref) {
-<span class="pc bpc" id="L738" title="2 of 4 branches missed.">            boolean r = parent.keyType != ReferenceStrength.HARD &amp;&amp; key == ref;</span>
-<span class="pc bpc" id="L739" title="5 of 6 branches missed.">            r = r || parent.valueType != ReferenceStrength.HARD &amp;&amp; value == ref;</span>
-<span class="pc bpc" id="L740" title="1 of 2 branches missed.">            if (r) {</span>
+<span class="pc bpc" id="L738" title="1 of 4 branches missed.">            boolean r = parent.keyType != ReferenceStrength.HARD &amp;&amp; key == ref;</span>
+<span class="pc bpc" id="L739" title="3 of 6 branches missed.">            r = r || parent.valueType != ReferenceStrength.HARD &amp;&amp; value == ref;</span>
+<span class="fc bfc" id="L740" title="All 2 branches covered.">            if (r) {</span>
 <span class="pc bpc" id="L741" title="1 of 2 branches missed.">                if (parent.keyType != ReferenceStrength.HARD) {</span>
 <span class="fc" id="L742">                    ((Reference&lt;?&gt;) key).clear();</span>
                 }

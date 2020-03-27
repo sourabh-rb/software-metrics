@@ -1,0 +1,873 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MethodUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.reflect</a> &gt; <span class="el_source">MethodUtils.java</span></div><h1>MethodUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.lang3.reflect;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.ClassUtils.Interfaces;
+import org.apache.commons.lang3.Validate;
+
+/**
+ * &lt;p&gt;Utility reflection methods focused on {@link Method}s, originally from Commons BeanUtils.
+ * Differences from the BeanUtils version may be noted, especially where similar functionality
+ * already existed within Lang.
+ * &lt;/p&gt;
+ *
+ * &lt;h3&gt;Known Limitations&lt;/h3&gt;
+ * &lt;h4&gt;Accessing Public Methods In A Default Access Superclass&lt;/h4&gt;
+ * &lt;p&gt;There is an issue when invoking {@code public} methods contained in a default access superclass on JREs prior to 1.4.
+ * Reflection locates these methods fine and correctly assigns them as {@code public}.
+ * However, an {@link IllegalAccessException} is thrown if the method is invoked.&lt;/p&gt;
+ *
+ * &lt;p&gt;{@link MethodUtils} contains a workaround for this situation. 
+ * It will attempt to call {@link java.lang.reflect.AccessibleObject#setAccessible(boolean)} on this method.
+ * If this call succeeds, then the method can be invoked as normal.
+ * This call will only succeed when the application has sufficient security privileges. 
+ * If this call fails then the method may fail.&lt;/p&gt;
+ *
+ * @since 2.5
+ */
+public class MethodUtils {
+
+    /**
+     * &lt;p&gt;{@link MethodUtils} instances should NOT be constructed in standard programming.
+     * Instead, the class should be used as
+     * {@code MethodUtils.getAccessibleMethod(method)}.&lt;/p&gt;
+     *
+     * &lt;p&gt;This constructor is {@code public} to permit tools that require a JavaBean
+     * instance to operate.&lt;/p&gt;
+     */
+    public MethodUtils() {
+<span class="fc" id="L70">        super();</span>
+<span class="fc" id="L71">    }</span>
+
+    /**
+     * &lt;p&gt;Invokes a named method without parameters.&lt;/p&gt;
+     *
+     * &lt;p&gt;This method delegates the method search to {@link #getMatchingAccessibleMethod(Class, String, Class[])}.&lt;/p&gt;
+     *
+     * &lt;p&gt;This is a convenient wrapper for
+     * {@link #invokeMethod(Object object,String methodName, Object[] args, Class[] parameterTypes)}.
+     * &lt;/p&gt;
+     *
+     * @param object invoke method on this object
+     * @param methodName get method with this name
+     * @return The value returned by the invoked method
+     *
+     * @throws NoSuchMethodException if there is no such accessible method
+     * @throws InvocationTargetException wraps an exception thrown by the method invoked
+     * @throws IllegalAccessException if the requested method is not accessible via reflection
+     *  
+     *  @since 3.4
+     */
+    public static Object invokeMethod(final Object object, final String methodName) throws NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L94">        return invokeMethod(object, methodName, ArrayUtils.EMPTY_OBJECT_ARRAY, null);</span>
+    }
+    
+    /**
+     * &lt;p&gt;Invokes a named method without parameters.&lt;/p&gt;
+     *
+     * &lt;p&gt;This is a convenient wrapper for
+     * {@link #invokeMethod(Object object,boolean forceAccess,String methodName, Object[] args, Class[] parameterTypes)}.
+     * &lt;/p&gt;
+     *
+     * @param object invoke method on this object
+     * @param forceAccess force access to invoke method even if it's not accessible
+     * @param methodName get method with this name
+     * @return The value returned by the invoked method
+     *
+     * @throws NoSuchMethodException if there is no such accessible method
+     * @throws InvocationTargetException wraps an exception thrown by the method invoked
+     * @throws IllegalAccessException if the requested method is not accessible via reflection
+     *
+     * @since 3.5
+     */
+    public static Object invokeMethod(final Object object, final boolean forceAccess, final String methodName)
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L117">        return invokeMethod(object, forceAccess, methodName, ArrayUtils.EMPTY_OBJECT_ARRAY, null);</span>
+    }
+
+    /**
+     * &lt;p&gt;Invokes a named method whose parameter type matches the object type.&lt;/p&gt;
+     *
+     * &lt;p&gt;This method delegates the method search to {@link #getMatchingAccessibleMethod(Class, String, Class[])}.&lt;/p&gt;
+     *
+     * &lt;p&gt;This method supports calls to methods taking primitive parameters 
+     * via passing in wrapping classes. So, for example, a {@code Boolean} object
+     * would match a {@code boolean} primitive.&lt;/p&gt;
+     *
+     * &lt;p&gt;This is a convenient wrapper for
+     * {@link #invokeMethod(Object object,String methodName, Object[] args, Class[] parameterTypes)}.
+     * &lt;/p&gt;
+     *
+     * @param object invoke method on this object
+     * @param methodName get method with this name
+     * @param args use these arguments - treat null as empty array
+     * @return The value returned by the invoked method
+     *
+     * @throws NoSuchMethodException if there is no such accessible method
+     * @throws InvocationTargetException wraps an exception thrown by the method invoked
+     * @throws IllegalAccessException if the requested method is not accessible via reflection
+     */
+    public static Object invokeMethod(final Object object, final String methodName,
+            Object... args) throws NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L145">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="fc" id="L146">        final Class&lt;?&gt;[] parameterTypes = ClassUtils.toClass(args);</span>
+<span class="fc" id="L147">        return invokeMethod(object, methodName, args, parameterTypes);</span>
+    }
+    
+    /**
+     * &lt;p&gt;Invokes a named method whose parameter type matches the object type.&lt;/p&gt;
+     *
+     * &lt;p&gt;This method supports calls to methods taking primitive parameters 
+     * via passing in wrapping classes. So, for example, a {@code Boolean} object
+     * would match a {@code boolean} primitive.&lt;/p&gt;
+     *
+     * &lt;p&gt;This is a convenient wrapper for
+     * {@link #invokeMethod(Object object,boolean forceAccess,String methodName, Object[] args, Class[] parameterTypes)}.
+     * &lt;/p&gt;
+     *
+     * @param object invoke method on this object
+     * @param forceAccess force access to invoke method even if it's not accessible
+     * @param methodName get method with this name
+     * @param args use these arguments - treat null as empty array
+     * @return The value returned by the invoked method
+     *
+     * @throws NoSuchMethodException if there is no such accessible method
+     * @throws InvocationTargetException wraps an exception thrown by the method invoked
+     * @throws IllegalAccessException if the requested method is not accessible via reflection
+     *
+     * @since 3.5
+     */
+    public static Object invokeMethod(final Object object, final boolean forceAccess, final String methodName,
+            Object... args) throws NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L176">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="fc" id="L177">        final Class&lt;?&gt;[] parameterTypes = ClassUtils.toClass(args);</span>
+<span class="fc" id="L178">        return invokeMethod(object, forceAccess, methodName, args, parameterTypes);</span>
+    }
+
+    /**
+     * &lt;p&gt;Invokes a named method whose parameter type matches the object type.&lt;/p&gt;
+     *
+     * &lt;p&gt;This method supports calls to methods taking primitive parameters 
+     * via passing in wrapping classes. So, for example, a {@code Boolean} object
+     * would match a {@code boolean} primitive.&lt;/p&gt;
+     *
+     * @param object invoke method on this object
+     * @param forceAccess force access to invoke method even if it's not accessible
+     * @param methodName get method with this name
+     * @param args use these arguments - treat null as empty array
+     * @param parameterTypes match these parameters - treat null as empty array
+     * @return The value returned by the invoked method
+     *
+     * @throws NoSuchMethodException if there is no such accessible method
+     * @throws InvocationTargetException wraps an exception thrown by the method invoked
+     * @throws IllegalAccessException if the requested method is not accessible via reflection
+     * @since 3.5
+     */
+    public static Object invokeMethod(final Object object, final boolean forceAccess, final String methodName,
+            Object[] args, Class&lt;?&gt;[] parameterTypes)
+            throws NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException {
+<span class="fc" id="L204">        parameterTypes = ArrayUtils.nullToEmpty(parameterTypes);</span>
+<span class="fc" id="L205">        args = ArrayUtils.nullToEmpty(args);</span>
+
+        final String messagePrefix;
+<span class="fc" id="L208">        Method method = null;</span>
+<span class="fc" id="L209">        boolean isOriginallyAccessible = false;</span>
+<span class="fc" id="L210">        Object result = null;</span>
+
+        try {
+<span class="fc bfc" id="L213" title="All 2 branches covered.">            if (forceAccess) {</span>
+<span class="fc" id="L214">                messagePrefix = &quot;No such method: &quot;;</span>
+<span class="fc" id="L215">                method = getMatchingMethod(object.getClass(),</span>
+                        methodName, parameterTypes);
+<span class="pc bpc" id="L217" title="1 of 2 branches missed.">                if (method != null) {</span>
+<span class="fc" id="L218">                    isOriginallyAccessible = method.isAccessible();</span>
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">                    if (!isOriginallyAccessible) {</span>
+<span class="fc" id="L220">                        method.setAccessible(true);</span>
+                    }
+                }
+            } else {
+<span class="fc" id="L224">                messagePrefix = &quot;No such accessible method: &quot;;</span>
+<span class="fc" id="L225">                method = getMatchingAccessibleMethod(object.getClass(),</span>
+                        methodName, parameterTypes);
+            }
+
+<span class="fc bfc" id="L229" title="All 2 branches covered.">            if (method == null) {</span>
+<span class="fc" id="L230">                throw new NoSuchMethodException(messagePrefix</span>
+                        + methodName + &quot;() on object: &quot;
+<span class="fc" id="L232">                        + object.getClass().getName());</span>
+            }
+<span class="fc" id="L234">            args = toVarArgs(method, args);</span>
+
+<span class="fc" id="L236">            result = method.invoke(object, args);</span>
+        }
+        finally {
+<span class="pc bpc" id="L239" title="1 of 6 branches missed.">            if (method != null &amp;&amp; forceAccess &amp;&amp; method.isAccessible() != isOriginallyAccessible) {</span>
+<span class="fc" id="L240">                method.setAccessible(isOriginallyAccessible);</span>
+            }
+        }
+
+<span class="fc" id="L244">        return result;</span>
+    }
+
+    /**
+     * &lt;p&gt;Invokes a named method whose parameter type matches the object type.&lt;/p&gt;
+     *
+     * &lt;p&gt;This method delegates the method search to {@link #getMatchingAccessibleMethod(Class, String, Class[])}.&lt;/p&gt;
+     *
+     * &lt;p&gt;This method supports calls to methods taking primitive parameters 
+     * via passing in wrapping classes. So, for example, a {@code Boolean} object
+     * would match a {@code boolean} primitive.&lt;/p&gt;
+     *
+     * @param object invoke method on this object
+     * @param methodName get method with this name
+     * @param args use these arguments - treat null as empty array
+     * @param parameterTypes match these parameters - treat null as empty array
+     * @return The value returned by the invoked method
+     *
+     * @throws NoSuchMethodException if there is no such accessible method
+     * @throws InvocationTargetException wraps an exception thrown by the method invoked
+     * @throws IllegalAccessException if the requested method is not accessible via reflection
+     */
+    public static Object invokeMethod(final Object object, final String methodName, 
+            Object[] args, Class&lt;?&gt;[] parameterTypes)
+            throws NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException {
+<span class="fc" id="L270">        return invokeMethod(object, false, methodName, args, parameterTypes);</span>
+    }
+
+    /**
+     * &lt;p&gt;Invokes a method whose parameter types match exactly the object
+     * types.&lt;/p&gt;
+     *
+     * &lt;p&gt;This uses reflection to invoke the method obtained from a call to
+     * {@link #getAccessibleMethod}(Class,String,Class[])}.&lt;/p&gt;
+     *
+     * @param object invoke method on this object
+     * @param methodName get method with this name
+     * @return The value returned by the invoked method
+     *
+     * @throws NoSuchMethodException if there is no such accessible method
+     * @throws InvocationTargetException wraps an exception thrown by the
+     *  method invoked
+     * @throws IllegalAccessException if the requested method is not accessible
+     *  via reflection
+     *
+     * @since 3.4
+     */
+    public static Object invokeExactMethod(final Object object, final String methodName) throws NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L294">        return invokeExactMethod(object, methodName, ArrayUtils.EMPTY_OBJECT_ARRAY, null);</span>
+    }
+
+    /**
+     * &lt;p&gt;Invokes a method with no parameters.&lt;/p&gt;
+     *
+     * &lt;p&gt;This uses reflection to invoke the method obtained from a call to
+     * {@link #getAccessibleMethod}(Class,String,Class[])}.&lt;/p&gt;
+     *
+     * @param object invoke method on this object
+     * @param methodName get method with this name
+     * @param args use these arguments - treat null as empty array
+     * @return The value returned by the invoked method
+     *
+     * @throws NoSuchMethodException if there is no such accessible method
+     * @throws InvocationTargetException wraps an exception thrown by the
+     *  method invoked
+     * @throws IllegalAccessException if the requested method is not accessible
+     *  via reflection
+     */
+    public static Object invokeExactMethod(final Object object, final String methodName,
+            Object... args) throws NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L317">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="fc" id="L318">        final Class&lt;?&gt;[] parameterTypes = ClassUtils.toClass(args);</span>
+<span class="fc" id="L319">        return invokeExactMethod(object, methodName, args, parameterTypes);</span>
+    }
+
+    /**
+     * &lt;p&gt;Invokes a method whose parameter types match exactly the parameter
+     * types given.&lt;/p&gt;
+     *
+     * &lt;p&gt;This uses reflection to invoke the method obtained from a call to
+     * {@link #getAccessibleMethod(Class,String,Class[])}.&lt;/p&gt;
+     *
+     * @param object invoke method on this object
+     * @param methodName get method with this name
+     * @param args use these arguments - treat null as empty array
+     * @param parameterTypes match these parameters - treat {@code null} as empty array
+     * @return The value returned by the invoked method
+     *
+     * @throws NoSuchMethodException if there is no such accessible method
+     * @throws InvocationTargetException wraps an exception thrown by the
+     *  method invoked
+     * @throws IllegalAccessException if the requested method is not accessible
+     *  via reflection
+     */
+    public static Object invokeExactMethod(final Object object, final String methodName,
+            Object[] args, Class&lt;?&gt;[] parameterTypes)
+            throws NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException {
+<span class="fc" id="L345">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="fc" id="L346">        parameterTypes = ArrayUtils.nullToEmpty(parameterTypes);</span>
+<span class="fc" id="L347">        final Method method = getAccessibleMethod(object.getClass(), methodName,</span>
+                parameterTypes);
+<span class="fc bfc" id="L349" title="All 2 branches covered.">        if (method == null) {</span>
+<span class="fc" id="L350">            throw new NoSuchMethodException(&quot;No such accessible method: &quot;</span>
+                    + methodName + &quot;() on object: &quot;
+<span class="fc" id="L352">                    + object.getClass().getName());</span>
+        }
+<span class="fc" id="L354">        return method.invoke(object, args);</span>
+    }
+
+    /**
+     * &lt;p&gt;Invokes a {@code static} method whose parameter types match exactly the parameter
+     * types given.&lt;/p&gt;
+     *
+     * &lt;p&gt;This uses reflection to invoke the method obtained from a call to
+     * {@link #getAccessibleMethod(Class, String, Class[])}.&lt;/p&gt;
+     *
+     * @param cls invoke static method on this class
+     * @param methodName get method with this name
+     * @param args use these arguments - treat {@code null} as empty array
+     * @param parameterTypes match these parameters - treat {@code null} as empty array
+     * @return The value returned by the invoked method
+     *
+     * @throws NoSuchMethodException if there is no such accessible method
+     * @throws InvocationTargetException wraps an exception thrown by the
+     *  method invoked
+     * @throws IllegalAccessException if the requested method is not accessible
+     *  via reflection
+     */
+    public static Object invokeExactStaticMethod(final Class&lt;?&gt; cls, final String methodName,
+            Object[] args, Class&lt;?&gt;[] parameterTypes)
+            throws NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException {
+<span class="fc" id="L380">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="fc" id="L381">        parameterTypes = ArrayUtils.nullToEmpty(parameterTypes);</span>
+<span class="fc" id="L382">        final Method method = getAccessibleMethod(cls, methodName, parameterTypes);</span>
+<span class="fc bfc" id="L383" title="All 2 branches covered.">        if (method == null) {</span>
+<span class="fc" id="L384">            throw new NoSuchMethodException(&quot;No such accessible method: &quot;</span>
+<span class="fc" id="L385">                    + methodName + &quot;() on class: &quot; + cls.getName());</span>
+        }
+<span class="fc" id="L387">        return method.invoke(null, args);</span>
+    }
+
+    /**
+     * &lt;p&gt;Invokes a named {@code static} method whose parameter type matches the object type.&lt;/p&gt;
+     *
+     * &lt;p&gt;This method delegates the method search to {@link #getMatchingAccessibleMethod(Class, String, Class[])}.&lt;/p&gt;
+     *
+     * &lt;p&gt;This method supports calls to methods taking primitive parameters 
+     * via passing in wrapping classes. So, for example, a {@code Boolean} class
+     * would match a {@code boolean} primitive.&lt;/p&gt;
+     *
+     * &lt;p&gt;This is a convenient wrapper for
+     * {@link #invokeStaticMethod(Class, String, Object[], Class[])}.
+     * &lt;/p&gt;
+     *
+     * @param cls invoke static method on this class
+     * @param methodName get method with this name
+     * @param args use these arguments - treat {@code null} as empty array
+     * @return The value returned by the invoked method
+     *
+     * @throws NoSuchMethodException if there is no such accessible method
+     * @throws InvocationTargetException wraps an exception thrown by the
+     *  method invoked
+     * @throws IllegalAccessException if the requested method is not accessible
+     *  via reflection
+     */
+    public static Object invokeStaticMethod(final Class&lt;?&gt; cls, final String methodName,
+            Object... args) throws NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L417">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="fc" id="L418">        final Class&lt;?&gt;[] parameterTypes = ClassUtils.toClass(args);</span>
+<span class="fc" id="L419">        return invokeStaticMethod(cls, methodName, args, parameterTypes);</span>
+    }
+
+    /**
+     * &lt;p&gt;Invokes a named {@code static} method whose parameter type matches the object type.&lt;/p&gt;
+     *
+     * &lt;p&gt;This method delegates the method search to {@link #getMatchingAccessibleMethod(Class, String, Class[])}.&lt;/p&gt;
+     *
+     * &lt;p&gt;This method supports calls to methods taking primitive parameters 
+     * via passing in wrapping classes. So, for example, a {@code Boolean} class
+     * would match a {@code boolean} primitive.&lt;/p&gt;
+     *
+     *
+     * @param cls invoke static method on this class
+     * @param methodName get method with this name
+     * @param args use these arguments - treat {@code null} as empty array
+     * @param parameterTypes match these parameters - treat {@code null} as empty array
+     * @return The value returned by the invoked method
+     *
+     * @throws NoSuchMethodException if there is no such accessible method
+     * @throws InvocationTargetException wraps an exception thrown by the
+     *  method invoked
+     * @throws IllegalAccessException if the requested method is not accessible
+     *  via reflection
+     */
+    public static Object invokeStaticMethod(final Class&lt;?&gt; cls, final String methodName,
+            Object[] args, Class&lt;?&gt;[] parameterTypes)
+            throws NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException {
+<span class="fc" id="L448">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="fc" id="L449">        parameterTypes = ArrayUtils.nullToEmpty(parameterTypes);</span>
+<span class="fc" id="L450">        final Method method = getMatchingAccessibleMethod(cls, methodName,</span>
+                parameterTypes);
+<span class="fc bfc" id="L452" title="All 2 branches covered.">        if (method == null) {</span>
+<span class="fc" id="L453">            throw new NoSuchMethodException(&quot;No such accessible method: &quot;</span>
+<span class="fc" id="L454">                    + methodName + &quot;() on class: &quot; + cls.getName());</span>
+        }
+<span class="fc" id="L456">        args = toVarArgs(method, args);</span>
+<span class="fc" id="L457">        return method.invoke(null, args);</span>
+    }
+
+    private static Object[] toVarArgs(Method method, Object[] args) {
+<span class="fc bfc" id="L461" title="All 2 branches covered.">        if (method.isVarArgs()) {</span>
+<span class="fc" id="L462">            Class&lt;?&gt;[] methodParameterTypes = method.getParameterTypes();</span>
+<span class="fc" id="L463">            args = getVarArgs(args, methodParameterTypes);</span>
+        }
+<span class="fc" id="L465">        return args;</span>
+    }
+
+    /**
+     * &lt;p&gt;Given an arguments array passed to a varargs method, return an array of arguments in the canonical form,
+     * i.e. an array with the declared number of parameters, and whose last parameter is an array of the varargs type.
+     * &lt;/p&gt;
+     *
+     * @param args the array of arguments passed to the varags method
+     * @param methodParameterTypes the declared array of method parameter types
+     * @return an array of the variadic arguments passed to the method
+     * @since 3.5
+     */
+    static Object[] getVarArgs(Object[] args, Class&lt;?&gt;[] methodParameterTypes) {
+<span class="pc bpc" id="L479" title="1 of 2 branches missed.">        if (args.length == methodParameterTypes.length</span>
+<span class="nc bnc" id="L480" title="All 2 branches missed.">                &amp;&amp; args[args.length - 1].getClass().equals(methodParameterTypes[methodParameterTypes.length - 1])) {</span>
+            // The args array is already in the canonical form for the method.
+<span class="nc" id="L482">            return args;</span>
+        }
+
+        // Construct a new array matching the method's declared parameter types.
+<span class="fc" id="L486">        Object[] newArgs = new Object[methodParameterTypes.length];</span>
+
+        // Copy the normal (non-varargs) parameters
+<span class="fc" id="L489">        System.arraycopy(args, 0, newArgs, 0, methodParameterTypes.length - 1);</span>
+
+        // Construct a new array for the variadic parameters
+<span class="fc" id="L492">        Class&lt;?&gt; varArgComponentType = methodParameterTypes[methodParameterTypes.length - 1].getComponentType();</span>
+<span class="fc" id="L493">        int varArgLength = args.length - methodParameterTypes.length + 1;</span>
+
+<span class="fc" id="L495">        Object varArgsArray = Array.newInstance(ClassUtils.primitiveToWrapper(varArgComponentType), varArgLength);</span>
+        // Copy the variadic arguments into the varargs array.
+<span class="fc" id="L497">        System.arraycopy(args, methodParameterTypes.length - 1, varArgsArray, 0, varArgLength);</span>
+
+<span class="fc bfc" id="L499" title="All 2 branches covered.">        if(varArgComponentType.isPrimitive()) {</span>
+            // unbox from wrapper type to primitive type
+<span class="fc" id="L501">            varArgsArray = ArrayUtils.toPrimitive(varArgsArray);</span>
+        }
+
+        // Store the varargs array in the last position of the array to return
+<span class="fc" id="L505">        newArgs[methodParameterTypes.length - 1] = varArgsArray;</span>
+
+        // Return the canonical varargs array.
+<span class="fc" id="L508">        return newArgs;</span>
+    }
+
+    /**
+     * &lt;p&gt;Invokes a {@code static} method whose parameter types match exactly the object
+     * types.&lt;/p&gt;
+     *
+     * &lt;p&gt;This uses reflection to invoke the method obtained from a call to
+     * {@link #getAccessibleMethod(Class, String, Class[])}.&lt;/p&gt;
+     *
+     * @param cls invoke static method on this class
+     * @param methodName get method with this name
+     * @param args use these arguments - treat {@code null} as empty array
+     * @return The value returned by the invoked method
+     *
+     * @throws NoSuchMethodException if there is no such accessible method
+     * @throws InvocationTargetException wraps an exception thrown by the
+     *  method invoked
+     * @throws IllegalAccessException if the requested method is not accessible
+     *  via reflection
+     */
+    public static Object invokeExactStaticMethod(final Class&lt;?&gt; cls, final String methodName,
+            Object... args) throws NoSuchMethodException,
+            IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L532">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="fc" id="L533">        final Class&lt;?&gt;[] parameterTypes = ClassUtils.toClass(args);</span>
+<span class="fc" id="L534">        return invokeExactStaticMethod(cls, methodName, args, parameterTypes);</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns an accessible method (that is, one that can be invoked via
+     * reflection) with given name and parameters. If no such method
+     * can be found, return {@code null}.
+     * This is just a convenience wrapper for
+     * {@link #getAccessibleMethod(Method)}.&lt;/p&gt;
+     *
+     * @param cls get method from this class
+     * @param methodName get method with this name
+     * @param parameterTypes with these parameters types
+     * @return The accessible method
+     */
+    public static Method getAccessibleMethod(final Class&lt;?&gt; cls, final String methodName,
+            final Class&lt;?&gt;... parameterTypes) {
+        try {
+<span class="fc" id="L552">            return getAccessibleMethod(cls.getMethod(methodName,</span>
+                    parameterTypes));
+<span class="fc" id="L554">        } catch (final NoSuchMethodException e) {</span>
+<span class="fc" id="L555">            return null;</span>
+        }
+    }
+
+    /**
+     * &lt;p&gt;Returns an accessible method (that is, one that can be invoked via
+     * reflection) that implements the specified Method. If no such method
+     * can be found, return {@code null}.&lt;/p&gt;
+     *
+     * @param method The method that we wish to call
+     * @return The accessible method
+     */
+    public static Method getAccessibleMethod(Method method) {
+<span class="fc bfc" id="L568" title="All 2 branches covered.">        if (!MemberUtils.isAccessible(method)) {</span>
+<span class="fc" id="L569">            return null;</span>
+        }
+        // If the declaring class is public, we are done
+<span class="fc" id="L572">        final Class&lt;?&gt; cls = method.getDeclaringClass();</span>
+<span class="fc bfc" id="L573" title="All 2 branches covered.">        if (Modifier.isPublic(cls.getModifiers())) {</span>
+<span class="fc" id="L574">            return method;</span>
+        }
+<span class="fc" id="L576">        final String methodName = method.getName();</span>
+<span class="fc" id="L577">        final Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();</span>
+
+        // Check the implemented interfaces and subinterfaces
+<span class="fc" id="L580">        method = getAccessibleMethodFromInterfaceNest(cls, methodName,</span>
+                parameterTypes);
+
+        // Check the superclass chain
+<span class="fc bfc" id="L584" title="All 2 branches covered.">        if (method == null) {</span>
+<span class="fc" id="L585">            method = getAccessibleMethodFromSuperclass(cls, methodName,</span>
+                    parameterTypes);
+        }
+<span class="fc" id="L588">        return method;</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns an accessible method (that is, one that can be invoked via
+     * reflection) by scanning through the superclasses. If no such method
+     * can be found, return {@code null}.&lt;/p&gt;
+     *
+     * @param cls Class to be checked
+     * @param methodName Method name of the method we wish to call
+     * @param parameterTypes The parameter type signatures
+     * @return the accessible method or {@code null} if not found
+     */
+    private static Method getAccessibleMethodFromSuperclass(final Class&lt;?&gt; cls,
+            final String methodName, final Class&lt;?&gt;... parameterTypes) {
+<span class="fc" id="L603">        Class&lt;?&gt; parentClass = cls.getSuperclass();</span>
+<span class="pc bpc" id="L604" title="1 of 2 branches missed.">        while (parentClass != null) {</span>
+<span class="pc bpc" id="L605" title="1 of 2 branches missed.">            if (Modifier.isPublic(parentClass.getModifiers())) {</span>
+                try {
+<span class="nc" id="L607">                    return parentClass.getMethod(methodName, parameterTypes);</span>
+<span class="fc" id="L608">                } catch (final NoSuchMethodException e) {</span>
+<span class="fc" id="L609">                    return null;</span>
+                }
+            }
+<span class="nc" id="L612">            parentClass = parentClass.getSuperclass();</span>
+        }
+<span class="nc" id="L614">        return null;</span>
+    }
+
+    /**
+     * &lt;p&gt;Returns an accessible method (that is, one that can be invoked via
+     * reflection) that implements the specified method, by scanning through
+     * all implemented interfaces and subinterfaces. If no such method
+     * can be found, return {@code null}.&lt;/p&gt;
+     *
+     * &lt;p&gt;There isn't any good reason why this method must be {@code private}.
+     * It is because there doesn't seem any reason why other classes should
+     * call this rather than the higher level methods.&lt;/p&gt;
+     *
+     * @param cls Parent class for the interfaces to be checked
+     * @param methodName Method name of the method we wish to call
+     * @param parameterTypes The parameter type signatures
+     * @return the accessible method or {@code null} if not found
+     */
+    private static Method getAccessibleMethodFromInterfaceNest(Class&lt;?&gt; cls,
+            final String methodName, final Class&lt;?&gt;... parameterTypes) {
+        // Search up the superclass chain
+<span class="fc bfc" id="L635" title="All 2 branches covered.">        for (; cls != null; cls = cls.getSuperclass()) {</span>
+
+            // Check the implemented interfaces of the parent class
+<span class="fc" id="L638">            final Class&lt;?&gt;[] interfaces = cls.getInterfaces();</span>
+<span class="fc bfc" id="L639" title="All 2 branches covered.">            for (int i = 0; i &lt; interfaces.length; i++) {</span>
+                // Is this interface public?
+<span class="fc bfc" id="L641" title="All 2 branches covered.">                if (!Modifier.isPublic(interfaces[i].getModifiers())) {</span>
+<span class="fc" id="L642">                    continue;</span>
+                }
+                // Does the method exist on this interface?
+                try {
+<span class="fc" id="L646">                    return interfaces[i].getDeclaredMethod(methodName,</span>
+                            parameterTypes);
+<span class="nc" id="L648">                } catch (final NoSuchMethodException e) { // NOPMD</span>
+                    /*
+                     * Swallow, if no method is found after the loop then this
+                     * method returns null.
+                     */
+                }
+                // Recursively check our parent interfaces
+<span class="nc" id="L655">                final Method method = getAccessibleMethodFromInterfaceNest(interfaces[i],</span>
+                        methodName, parameterTypes);
+<span class="nc bnc" id="L657" title="All 2 branches missed.">                if (method != null) {</span>
+<span class="nc" id="L658">                    return method;</span>
+                }
+            }
+        }
+<span class="fc" id="L662">        return null;</span>
+    }
+
+    /**
+     * &lt;p&gt;Finds an accessible method that matches the given name and has compatible parameters.
+     * Compatible parameters mean that every method parameter is assignable from 
+     * the given parameters.
+     * In other words, it finds a method with the given name 
+     * that will take the parameters given.&lt;/p&gt;
+     *
+     * &lt;p&gt;This method is used by 
+     * {@link 
+     * #invokeMethod(Object object, String methodName, Object[] args, Class[] parameterTypes)}.
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;This method can match primitive parameter by passing in wrapper classes.
+     * For example, a {@code Boolean} will match a primitive {@code boolean}
+     * parameter.
+     * &lt;/p&gt;
+     *
+     * @param cls find method in this class
+     * @param methodName find method with this name
+     * @param parameterTypes find method with most compatible parameters 
+     * @return The accessible method
+     */
+    public static Method getMatchingAccessibleMethod(final Class&lt;?&gt; cls,
+            final String methodName, final Class&lt;?&gt;... parameterTypes) {
+        try {
+<span class="fc" id="L690">            final Method method = cls.getMethod(methodName, parameterTypes);</span>
+<span class="fc" id="L691">            MemberUtils.setAccessibleWorkaround(method);</span>
+<span class="fc" id="L692">            return method;</span>
+<span class="fc" id="L693">        } catch (final NoSuchMethodException e) { // NOPMD - Swallow the exception</span>
+        }
+        // search through all methods
+<span class="fc" id="L696">        Method bestMatch = null;</span>
+<span class="fc" id="L697">        final Method[] methods = cls.getMethods();</span>
+<span class="fc bfc" id="L698" title="All 2 branches covered.">        for (final Method method : methods) {</span>
+            // compare name and parameters
+<span class="fc bfc" id="L700" title="All 2 branches covered.">            if (method.getName().equals(methodName) &amp;&amp;</span>
+<span class="fc bfc" id="L701" title="All 2 branches covered.">                    MemberUtils.isMatchingMethod(method, parameterTypes)) {</span>
+                // get accessible version of method
+<span class="fc" id="L703">                final Method accessibleMethod = getAccessibleMethod(method);</span>
+<span class="pc bpc" id="L704" title="1 of 6 branches missed.">                if (accessibleMethod != null &amp;&amp; (bestMatch == null || MemberUtils.compareMethodFit(</span>
+                            accessibleMethod,
+                            bestMatch,
+                            parameterTypes) &lt; 0)) {
+<span class="fc" id="L708">                    bestMatch = accessibleMethod;</span>
+                }
+            }
+        }
+<span class="fc bfc" id="L712" title="All 2 branches covered.">        if (bestMatch != null) {</span>
+<span class="fc" id="L713">            MemberUtils.setAccessibleWorkaround(bestMatch);</span>
+        }
+<span class="fc" id="L715">        return bestMatch;</span>
+    }
+    
+    /**
+     * &lt;p&gt;Retrieves a method whether or not it's accessible. If no such method
+     * can be found, return {@code null}.&lt;/p&gt;
+     * @param cls The class that will be subjected to the method search
+     * @param methodName The method that we wish to call
+     * @param parameterTypes Argument class types
+     * @return The method
+     * 
+     * @since 3.5
+     */
+    public static Method getMatchingMethod(final Class&lt;?&gt; cls, final String methodName,
+            final Class&lt;?&gt;... parameterTypes) {
+<span class="fc" id="L730">        Validate.notNull(cls, &quot;Null class not allowed.&quot;);</span>
+<span class="fc" id="L731">        Validate.notEmpty(methodName, &quot;Null or blank methodName not allowed.&quot;);</span>
+
+        // Address methods in superclasses
+<span class="fc" id="L734">        Method[] methodArray = cls.getDeclaredMethods();</span>
+<span class="fc" id="L735">        List&lt;Class&lt;?&gt;&gt; superclassList = ClassUtils.getAllSuperclasses(cls);</span>
+<span class="fc bfc" id="L736" title="All 2 branches covered.">        for (Class&lt;?&gt; klass : superclassList) {</span>
+<span class="fc" id="L737">            methodArray = ArrayUtils.addAll(methodArray, klass.getDeclaredMethods());</span>
+<span class="fc" id="L738">        }</span>
+
+<span class="fc" id="L740">        Method inexactMatch = null;</span>
+<span class="fc bfc" id="L741" title="All 2 branches covered.">        for (Method method : methodArray) {</span>
+<span class="fc bfc" id="L742" title="All 2 branches covered.">            if (methodName.equals(method.getName()) &amp;&amp;</span>
+<span class="fc bfc" id="L743" title="All 2 branches covered.">                    ArrayUtils.isEquals(parameterTypes, method.getParameterTypes())) {</span>
+<span class="fc" id="L744">                return method;</span>
+<span class="fc bfc" id="L745" title="All 2 branches covered.">            } else if (methodName.equals(method.getName()) &amp;&amp;</span>
+<span class="fc bfc" id="L746" title="All 2 branches covered.">                    ClassUtils.isAssignable(parameterTypes, method.getParameterTypes(), true)) {</span>
+<span class="fc bfc" id="L747" title="All 2 branches covered.">                if (inexactMatch == null) {</span>
+<span class="fc" id="L748">                    inexactMatch = method;</span>
+<span class="fc" id="L749">                } else if (distance(parameterTypes, method.getParameterTypes())</span>
+<span class="pc bpc" id="L750" title="1 of 2 branches missed.">                        &lt; distance(parameterTypes, inexactMatch.getParameterTypes())) {</span>
+<span class="nc" id="L751">                    inexactMatch = method;</span>
+                }
+            }
+
+        }
+<span class="fc" id="L756">        return inexactMatch;</span>
+    }
+    
+    /**
+     * &lt;p&gt;Returns the aggregate number of inheritance hops between assignable argument class types.  Returns -1
+     * if the arguments aren't assignable.  Fills a specific purpose for getMatchingMethod and is not generalized.&lt;/p&gt;
+     * @param classArray
+     * @param toClassArray
+     * @return the aggregate number of inheritance hops between assignable argument class types.
+     */
+    private static int distance(Class&lt;?&gt;[] classArray, Class&lt;?&gt;[] toClassArray) {
+<span class="fc" id="L767">        int answer = 0;</span>
+
+<span class="fc bfc" id="L769" title="All 2 branches covered.">        if (!ClassUtils.isAssignable(classArray, toClassArray, true)) {</span>
+<span class="fc" id="L770">            return -1;</span>
+        }
+<span class="fc bfc" id="L772" title="All 2 branches covered.">        for (int offset = 0; offset &lt; classArray.length; offset++) {</span>
+            // Note InheritanceUtils.distance() uses different scoring system.
+<span class="fc bfc" id="L774" title="All 2 branches covered.">            if (classArray[offset].equals(toClassArray[offset])) {</span>
+<span class="fc" id="L775">                continue;</span>
+<span class="pc bpc" id="L776" title="1 of 2 branches missed.">            } else if (ClassUtils.isAssignable(classArray[offset], toClassArray[offset], true)</span>
+<span class="fc bfc" id="L777" title="All 2 branches covered.">                    &amp;&amp; !ClassUtils.isAssignable(classArray[offset], toClassArray[offset], false)) {</span>
+<span class="fc" id="L778">                answer++;</span>
+            } else {
+<span class="fc" id="L780">                answer = answer + 2;</span>
+            }
+        }
+
+<span class="fc" id="L784">        return answer;</span>
+    }
+
+    /**
+     * Get the hierarchy of overridden methods down to {@code result} respecting generics.
+     * @param method lowest to consider
+     * @param interfacesBehavior whether to search interfaces, {@code null} {@code implies} false
+     * @return Set&amp;lt;Method&amp;gt; in ascending order from sub- to superclass
+     * @throws NullPointerException if the specified method is {@code null}
+     * @since 3.2
+     */
+    public static Set&lt;Method&gt; getOverrideHierarchy(final Method method, final Interfaces interfacesBehavior) {
+<span class="fc" id="L796">        Validate.notNull(method);</span>
+<span class="fc" id="L797">        final Set&lt;Method&gt; result = new LinkedHashSet&lt;Method&gt;();</span>
+<span class="fc" id="L798">        result.add(method);</span>
+
+<span class="fc" id="L800">        final Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();</span>
+
+<span class="fc" id="L802">        final Class&lt;?&gt; declaringClass = method.getDeclaringClass();</span>
+
+<span class="fc" id="L804">        final Iterator&lt;Class&lt;?&gt;&gt; hierarchy = ClassUtils.hierarchy(declaringClass, interfacesBehavior).iterator();</span>
+        //skip the declaring class :P
+<span class="fc" id="L806">        hierarchy.next();</span>
+<span class="fc bfc" id="L807" title="All 2 branches covered.">        hierarchyTraversal: while (hierarchy.hasNext()) {</span>
+<span class="fc" id="L808">            final Class&lt;?&gt; c = hierarchy.next();</span>
+<span class="fc" id="L809">            final Method m = getMatchingAccessibleMethod(c, method.getName(), parameterTypes);</span>
+<span class="fc bfc" id="L810" title="All 2 branches covered.">            if (m == null) {</span>
+<span class="fc" id="L811">                continue;</span>
+            }
+<span class="pc bpc" id="L813" title="1 of 2 branches missed.">            if (Arrays.equals(m.getParameterTypes(), parameterTypes)) {</span>
+                // matches without generics
+<span class="nc" id="L815">                result.add(m);</span>
+<span class="nc" id="L816">                continue;</span>
+            }
+            // necessary to get arguments every time in the case that we are including interfaces
+<span class="fc" id="L819">            final Map&lt;TypeVariable&lt;?&gt;, Type&gt; typeArguments = TypeUtils.getTypeArguments(declaringClass, m.getDeclaringClass());</span>
+<span class="fc bfc" id="L820" title="All 2 branches covered.">            for (int i = 0; i &lt; parameterTypes.length; i++) {</span>
+<span class="fc" id="L821">                final Type childType = TypeUtils.unrollVariables(typeArguments, method.getGenericParameterTypes()[i]);</span>
+<span class="fc" id="L822">                final Type parentType = TypeUtils.unrollVariables(typeArguments, m.getGenericParameterTypes()[i]);</span>
+<span class="pc bpc" id="L823" title="1 of 2 branches missed.">                if (!TypeUtils.equals(childType, parentType)) {</span>
+<span class="nc" id="L824">                    continue hierarchyTraversal;</span>
+                }
+            }
+<span class="fc" id="L827">            result.add(m);</span>
+<span class="fc" id="L828">        }</span>
+<span class="fc" id="L829">        return result;</span>
+    }
+
+    /**
+     * Gets all methods of the given class that are annotated with the given annotation.
+     * @param cls
+     *            the {@link Class} to query
+     * @param annotationCls
+     *            the {@link java.lang.annotation.Annotation} that must be present on a method to be matched
+     * @return an array of Methods (possibly empty).
+     * @throws IllegalArgumentException
+     *            if the class or annotation are {@code null}
+     * @since 3.4
+     */
+    public static Method[] getMethodsWithAnnotation(final Class&lt;?&gt; cls, final Class&lt;? extends Annotation&gt; annotationCls) {
+<span class="fc" id="L844">        final List&lt;Method&gt; annotatedMethodsList = getMethodsListWithAnnotation(cls, annotationCls);</span>
+<span class="fc" id="L845">        return annotatedMethodsList.toArray(new Method[annotatedMethodsList.size()]);</span>
+    }
+
+    /**
+     * Gets all methods of the given class that are annotated with the given annotation.
+     * @param cls
+     *            the {@link Class} to query
+     * @param annotationCls
+     *            the {@link Annotation} that must be present on a method to be matched
+     * @return a list of Methods (possibly empty).
+     * @throws IllegalArgumentException
+     *            if the class or annotation are {@code null}
+     * @since 3.4
+     */
+    public static List&lt;Method&gt; getMethodsListWithAnnotation(final Class&lt;?&gt; cls, final Class&lt;? extends Annotation&gt; annotationCls) {
+<span class="fc bfc" id="L860" title="All 2 branches covered.">        Validate.isTrue(cls != null, &quot;The class must not be null&quot;);</span>
+<span class="fc bfc" id="L861" title="All 2 branches covered.">        Validate.isTrue(annotationCls != null, &quot;The annotation class must not be null&quot;);</span>
+<span class="fc" id="L862">        final Method[] allMethods = cls.getMethods();</span>
+<span class="fc" id="L863">        final List&lt;Method&gt; annotatedMethods = new ArrayList&lt;Method&gt;();</span>
+<span class="fc bfc" id="L864" title="All 2 branches covered.">        for (final Method method : allMethods) {</span>
+<span class="fc bfc" id="L865" title="All 2 branches covered.">            if (method.getAnnotation(annotationCls) != null) {</span>
+<span class="fc" id="L866">                annotatedMethods.add(method);</span>
+            }
+        }
+<span class="fc" id="L869">        return annotatedMethods;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>
