@@ -457,7 +457,7 @@ public abstract class AbstractMultiValuedMap&lt;K, V&gt; implements MultiValuedM
         @Override
         public int size() {
 <span class="fc" id="L459">            final Collection&lt;V&gt; coll = getMapping();</span>
-<span class="fc bfc" id="L460" title="All 2 branches covered.">            return coll == null ? 0 : coll.size();</span>
+<span class="pc bpc" id="L460" title="1 of 2 branches missed.">            return coll == null ? 0 : coll.size();</span>
         }
 
         @Override

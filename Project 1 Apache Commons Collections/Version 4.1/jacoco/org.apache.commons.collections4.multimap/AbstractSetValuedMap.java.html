@@ -114,8 +114,8 @@ public abstract class AbstractSetValuedMap&lt;K, V&gt; extends AbstractMultiValu
         @Override
         public boolean equals(Object other) {
 <span class="fc" id="L116">            final Set&lt;V&gt; set = (Set&lt;V&gt;) getMapping();</span>
-<span class="fc bfc" id="L117" title="All 2 branches covered.">            if (set == null) {</span>
-<span class="fc" id="L118">                return Collections.emptySet().equals(other);</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">            if (set == null) {</span>
+<span class="nc" id="L118">                return Collections.emptySet().equals(other);</span>
             }
 <span class="fc bfc" id="L120" title="All 2 branches covered.">            if (!(other instanceof Set)) {</span>
 <span class="fc" id="L121">                return false;</span>
