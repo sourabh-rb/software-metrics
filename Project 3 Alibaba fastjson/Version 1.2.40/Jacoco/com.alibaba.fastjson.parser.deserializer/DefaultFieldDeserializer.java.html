@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultFieldDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">DefaultFieldDeserializer.java</span></div><h1>DefaultFieldDeserializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
+
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.DefaultJSONParser.ResolveTask;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.parser.ParseContext;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.util.FieldInfo;
+
+public class DefaultFieldDeserializer extends FieldDeserializer {
+
+    protected ObjectDeserializer fieldValueDeserilizer;
+
+    public DefaultFieldDeserializer(ParserConfig mapping, Class&lt;?&gt; clazz, FieldInfo fieldInfo){
+<span class="fc" id="L26">        super(clazz, fieldInfo);</span>
+<span class="fc" id="L27">    }</span>
+
+    public ObjectDeserializer getFieldValueDeserilizer(ParserConfig config) {
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        if (fieldValueDeserilizer == null) {</span>
+<span class="fc" id="L31">            JSONField annotation = fieldInfo.getAnnotation();</span>
+<span class="fc bfc" id="L32" title="All 4 branches covered.">            if (annotation != null &amp;&amp; annotation.deserializeUsing() != Void.class) {</span>
+<span class="fc" id="L33">                Class&lt;?&gt; deserializeUsing = annotation.deserializeUsing();</span>
+                try {
+<span class="fc" id="L35">                    fieldValueDeserilizer = (ObjectDeserializer) deserializeUsing.newInstance();</span>
+<span class="nc" id="L36">                } catch (Exception ex) {</span>
+<span class="nc" id="L37">                    throw new JSONException(&quot;create deserializeUsing ObjectDeserializer error&quot;, ex);</span>
+<span class="fc" id="L38">                }</span>
+<span class="fc" id="L39">            } else {</span>
+<span class="fc" id="L40">                fieldValueDeserilizer = config.getDeserializer(fieldInfo.fieldClass, fieldInfo.fieldType);</span>
+            }
+        }
+
+<span class="fc" id="L44">        return fieldValueDeserilizer;</span>
+    }
+
+    @Override
+    public void parseField(DefaultJSONParser parser, Object object, Type objectType, Map&lt;String, Object&gt; fieldValues) {
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (this.fieldValueDeserilizer == null) {</span>
+<span class="fc" id="L50">            getFieldValueDeserilizer(parser.getConfig());</span>
+        }
+
+<span class="fc" id="L53">        ObjectDeserializer fieldValueDeserilizer = this.fieldValueDeserilizer;</span>
+<span class="fc" id="L54">        Type fieldType = fieldInfo.fieldType;</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (objectType instanceof ParameterizedType) {</span>
+<span class="fc" id="L56">            ParseContext objContext = parser.getContext();</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">            if (objContext != null) {</span>
+<span class="fc" id="L58">                objContext.type = objectType;</span>
+            }
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">            if (fieldType != objectType) {</span>
+<span class="fc" id="L61">                fieldType = FieldInfo.getFieldType(this.clazz, objectType, fieldType);</span>
+<span class="fc" id="L62">                fieldValueDeserilizer = parser.getConfig().getDeserializer(fieldType);</span>
+            }
+        }
+
+        // ContextObjectDeserializer
+        Object value;
+<span class="fc bfc" id="L68" title="All 4 branches covered.">        if (fieldValueDeserilizer instanceof JavaBeanDeserializer &amp;&amp; fieldInfo.parserFeatures != 0) {</span>
+<span class="fc" id="L69">            JavaBeanDeserializer javaBeanDeser = (JavaBeanDeserializer) fieldValueDeserilizer;</span>
+<span class="fc" id="L70">            value = javaBeanDeser.deserialze(parser, fieldType, fieldInfo.name, fieldInfo.parserFeatures);</span>
+<span class="fc" id="L71">        } else {</span>
+<span class="fc bfc" id="L72" title="All 4 branches covered.">            if (this.fieldInfo.format != null &amp;&amp; fieldValueDeserilizer instanceof ContextObjectDeserializer) {</span>
+<span class="fc" id="L73">                value = ((ContextObjectDeserializer) fieldValueDeserilizer) //</span>
+<span class="fc" id="L74">                                        .deserialze(parser,</span>
+                                                    fieldType,
+                                                    fieldInfo.name,
+                                                    fieldInfo.format,
+                                                    fieldInfo.parserFeatures);
+            } else {
+<span class="fc" id="L80">                value = fieldValueDeserilizer.deserialze(parser, fieldType, fieldInfo.name);</span>
+            }
+        }
+
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (value instanceof byte[]</span>
+<span class="fc bfc" id="L85" title="All 4 branches covered.">                &amp;&amp; (&quot;gzip&quot;.equals(fieldInfo.format) || &quot;gzip,base64&quot;.equals(fieldInfo.format))) {</span>
+<span class="fc" id="L86">            byte[] bytes = (byte[]) value;</span>
+<span class="fc" id="L87">            GZIPInputStream gzipIn = null;</span>
+            try {
+<span class="fc" id="L89">                gzipIn = new GZIPInputStream(new ByteArrayInputStream(bytes));</span>
+
+<span class="fc" id="L91">                ByteArrayOutputStream byteOut = new ByteArrayOutputStream();</span>
+                for (;;) {
+<span class="fc" id="L93">                    byte[] buf = new byte[1024];</span>
+<span class="fc" id="L94">                    int len = gzipIn.read(buf);</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">                    if (len == -1) {</span>
+<span class="fc" id="L96">                        break;</span>
+                    }
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">                    if (len &gt; 0) {</span>
+<span class="fc" id="L99">                        byteOut.write(buf, 0, len);</span>
+                    }
+<span class="fc" id="L101">                }</span>
+<span class="fc" id="L102">                value = byteOut.toByteArray();</span>
+
+<span class="nc" id="L104">            } catch (IOException ex) {</span>
+<span class="nc" id="L105">                throw new JSONException(&quot;unzip bytes error.&quot;, ex);</span>
+<span class="fc" id="L106">            }</span>
+        }
+
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (parser.getResolveStatus() == DefaultJSONParser.NeedToResolve) {</span>
+<span class="fc" id="L110">            ResolveTask task = parser.getLastResolveTask();</span>
+<span class="fc" id="L111">            task.fieldDeserializer = this;</span>
+<span class="fc" id="L112">            task.ownerContext = parser.getContext();</span>
+<span class="fc" id="L113">            parser.setResolveStatus(DefaultJSONParser.NONE);</span>
+<span class="fc" id="L114">        } else {</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">            if (object == null) {</span>
+<span class="fc" id="L116">                fieldValues.put(fieldInfo.name, value);</span>
+            } else {
+<span class="fc" id="L118">                setValue(object, value);</span>
+            }
+        }
+<span class="fc" id="L121">    }</span>
+
+    public int getFastMatchToken() {
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if (fieldValueDeserilizer != null) {</span>
+<span class="fc" id="L125">            return fieldValueDeserilizer.getFastMatchToken();</span>
+        }
+
+<span class="fc" id="L128">        return JSONToken.LITERAL_INT;</span>
+    }
+
+    public void parseFieldUnwrapped(DefaultJSONParser parser, Object object, Type objectType, Map&lt;String, Object&gt; fieldValues) {
+<span class="nc" id="L132">        throw new JSONException(&quot;TODO&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>
