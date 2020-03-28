@@ -1,0 +1,2972 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JSONScanner.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser</a> &gt; <span class="el_source">JSONScanner.java</span></div><h1>JSONScanner.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2017 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.parser;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.util.ASMUtils;
+import com.alibaba.fastjson.util.IOUtils;
+
+import java.math.BigDecimal;
+import java.util.*;
+
+//这个类，为了性能优化做了很多特别处理，一切都是为了性能！！！
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+public final class JSONScanner extends JSONLexerBase {
+
+    private final String text;
+    private final int    len;
+
+    public JSONScanner(String input){
+<span class="fc" id="L37">        this(input, JSON.DEFAULT_PARSER_FEATURE);</span>
+<span class="fc" id="L38">    }</span>
+
+    public JSONScanner(String input, int features){
+<span class="fc" id="L41">        super(features);</span>
+
+<span class="fc" id="L43">        text = input;</span>
+<span class="fc" id="L44">        len = text.length();</span>
+<span class="fc" id="L45">        bp = -1;</span>
+
+<span class="fc" id="L47">        next();</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (ch == 65279) { // utf-8 bom</span>
+<span class="fc" id="L49">            next();</span>
+        }
+<span class="fc" id="L51">    }</span>
+
+    public final char charAt(int index) {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (index &gt;= len) {</span>
+<span class="fc" id="L55">            return EOI;</span>
+        }
+
+<span class="fc" id="L58">        return text.charAt(index);</span>
+    }
+
+    public final char next() {
+<span class="fc" id="L62">        int index = ++bp;</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        return ch = (index &gt;= this.len ? //</span>
+                EOI //
+<span class="fc" id="L65">                : text.charAt(index));</span>
+    }
+
+    public JSONScanner(char[] input, int inputLength){
+<span class="fc" id="L69">        this(input, inputLength, JSON.DEFAULT_PARSER_FEATURE);</span>
+<span class="fc" id="L70">    }</span>
+
+    public JSONScanner(char[] input, int inputLength, int features){
+<span class="fc" id="L73">        this(new String(input, 0, inputLength), features);</span>
+<span class="fc" id="L74">    }</span>
+
+    protected final void copyTo(int offset, int count, char[] dest) {
+<span class="fc" id="L77">        text.getChars(offset, offset + count, dest, 0);</span>
+<span class="fc" id="L78">    }</span>
+
+    static boolean charArrayCompare(String src, int offset, char[] dest) {
+<span class="fc" id="L81">        final int destLen = dest.length;</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        if (destLen + offset &gt; src.length()) {</span>
+<span class="fc" id="L83">            return false;</span>
+        }
+
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        for (int i = 0; i &lt; destLen; ++i) {</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            if (dest[i] != src.charAt(offset + i)) {</span>
+<span class="fc" id="L88">                return false;</span>
+            }
+        }
+
+<span class="fc" id="L92">        return true;</span>
+    }
+
+    public final boolean charArrayCompare(char[] chars) {
+<span class="fc" id="L96">        return charArrayCompare(text, bp, chars);</span>
+    }
+
+    public final int indexOf(char ch, int startIndex) {
+<span class="fc" id="L100">        return text.indexOf(ch, startIndex);</span>
+    }
+
+    public final String addSymbol(int offset, int len, int hash, final SymbolTable symbolTable) {
+<span class="fc" id="L104">        return symbolTable.addSymbol(text, offset, len, hash);</span>
+    }
+
+    public byte[] bytesValue() {
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        if (token == JSONToken.HEX) {</span>
+<span class="fc" id="L109">            int start = np + 1, len = sp;</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">            if (len % 2 != 0) {</span>
+<span class="nc" id="L111">                throw new JSONException(&quot;illegal state. &quot; + len);</span>
+            }
+
+<span class="fc" id="L114">            byte[] bytes = new byte[len / 2];</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">            for (int i = 0; i &lt; bytes.length; ++i) {</span>
+<span class="fc" id="L116">                char c0 = text.charAt(start + i * 2);</span>
+<span class="fc" id="L117">                char c1 = text.charAt(start + i * 2 + 1);</span>
+
+<span class="fc bfc" id="L119" title="All 2 branches covered.">                int b0 = c0 - (c0 &lt;= 57 ? 48 : 55);</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">                int b1 = c1 - (c1 &lt;= 57 ? 48 : 55);</span>
+<span class="fc" id="L121">                bytes[i] = (byte) ((b0 &lt;&lt; 4) | b1);</span>
+            }
+
+<span class="fc" id="L124">            return bytes;</span>
+        }
+
+<span class="fc" id="L127">        return IOUtils.decodeBase64(text, np + 1, sp);</span>
+    }
+
+    /**
+     * The value of a literal token, recorded as a string. For integers, leading 0x and 'l' suffixes are suppressed.
+     */
+    public final String stringVal() {
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if (!hasSpecial) {</span>
+<span class="fc" id="L135">            return this.subString(np + 1, sp);</span>
+        } else {
+<span class="fc" id="L137">            return new String(sbuf, 0, sp);</span>
+        }
+    }
+
+    public final String subString(int offset, int count) {
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        if (ASMUtils.IS_ANDROID) {</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">            if (count &lt; sbuf.length) {</span>
+<span class="nc" id="L144">                text.getChars(offset, offset + count, sbuf, 0);</span>
+<span class="nc" id="L145">                return new String(sbuf, 0, count);</span>
+            } else {
+<span class="nc" id="L147">                char[] chars = new char[count];</span>
+<span class="nc" id="L148">                text.getChars(offset, offset + count, chars, 0);</span>
+<span class="nc" id="L149">                return new String(chars);</span>
+            }
+        } else {
+<span class="fc" id="L152">            return text.substring(offset, offset + count);</span>
+        }
+    }
+
+    public final char[] sub_chars(int offset, int count) {
+<span class="pc bpc" id="L157" title="3 of 4 branches missed.">        if (ASMUtils.IS_ANDROID &amp;&amp; count &lt; sbuf.length) {</span>
+<span class="nc" id="L158">            text.getChars(offset, offset + count, sbuf, 0);</span>
+<span class="nc" id="L159">            return sbuf;</span>
+        } else {
+<span class="fc" id="L161">            char[] chars = new char[count];</span>
+<span class="fc" id="L162">            text.getChars(offset, offset + count, chars, 0);</span>
+<span class="fc" id="L163">            return chars;</span>
+        }
+    }
+
+    public final String numberString() {
+<span class="fc" id="L168">        char chLocal = charAt(np + sp - 1);</span>
+
+<span class="fc" id="L170">        int sp = this.sp;</span>
+<span class="fc bfc" id="L171" title="All 10 branches covered.">        if (chLocal == 'L' || chLocal == 'S' || chLocal == 'B' || chLocal == 'F' || chLocal == 'D') {</span>
+<span class="fc" id="L172">            sp--;</span>
+        }
+
+<span class="fc" id="L175">        return this.subString(np, sp);</span>
+    }
+
+    public final BigDecimal decimalValue() {
+<span class="fc" id="L179">        char chLocal = charAt(np + sp - 1);</span>
+
+<span class="fc" id="L181">        int sp = this.sp;</span>
+<span class="fc bfc" id="L182" title="All 10 branches covered.">        if (chLocal == 'L' || chLocal == 'S' || chLocal == 'B' || chLocal == 'F' || chLocal == 'D') {</span>
+<span class="fc" id="L183">            sp--;</span>
+        }
+
+<span class="fc" id="L186">        int offset = np, count = sp;</span>
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">        if (count &lt; sbuf.length) {</span>
+<span class="fc" id="L188">            text.getChars(offset, offset + count, sbuf, 0);</span>
+<span class="fc" id="L189">            return new BigDecimal(sbuf, 0, count);</span>
+        } else {
+<span class="nc" id="L191">            char[] chars = new char[count];</span>
+<span class="nc" id="L192">            text.getChars(offset, offset + count, chars, 0);</span>
+<span class="nc" id="L193">            return new BigDecimal(chars);</span>
+        }
+    }
+
+    public boolean scanISO8601DateIfMatch() {
+<span class="fc" id="L198">        return scanISO8601DateIfMatch(true);</span>
+    }
+
+    public boolean scanISO8601DateIfMatch(boolean strict) {
+<span class="fc" id="L202">        int rest = len - bp;</span>
+<span class="fc" id="L203">        return scanISO8601DateIfMatch(strict, rest);</span>
+    }
+
+    private boolean scanISO8601DateIfMatch(boolean strict, int rest) {
+<span class="fc bfc" id="L207" title="All 2 branches covered.">        if (rest &lt; 8) {</span>
+<span class="fc" id="L208">            return false;</span>
+        }
+
+<span class="fc" id="L211">        char c0 = charAt(bp);</span>
+<span class="fc" id="L212">        char c1 = charAt(bp + 1);</span>
+<span class="fc" id="L213">        char c2 = charAt(bp + 2);</span>
+<span class="fc" id="L214">        char c3 = charAt(bp + 3);</span>
+<span class="fc" id="L215">        char c4 = charAt(bp + 4);</span>
+<span class="fc" id="L216">        char c5 = charAt(bp + 5);</span>
+<span class="fc" id="L217">        char c6 = charAt(bp + 6);</span>
+<span class="fc" id="L218">        char c7 = charAt(bp + 7);</span>
+
+<span class="fc bfc" id="L220" title="All 4 branches covered.">        if ((!strict) &amp;&amp; rest &gt; 13) {</span>
+<span class="fc" id="L221">            char c_r0 = charAt(bp + rest - 1);</span>
+<span class="fc" id="L222">            char c_r1 = charAt(bp + rest - 2);</span>
+<span class="pc bpc" id="L223" title="7 of 16 branches missed.">            if (c0 == '/' &amp;&amp; c1 == 'D' &amp;&amp; c2 == 'a' &amp;&amp; c3 == 't' &amp;&amp; c4 == 'e' &amp;&amp; c5 == '(' &amp;&amp; c_r0 == '/'</span>
+                    &amp;&amp; c_r1 == ')') {
+<span class="fc" id="L225">                int plusIndex = -1;</span>
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">                for (int i = 6; i &lt; rest; ++i) {</span>
+<span class="fc" id="L227">                    char c = charAt(bp + i);</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">                    if (c == '+') {</span>
+<span class="fc" id="L229">                        plusIndex = i;</span>
+<span class="fc bfc" id="L230" title="All 4 branches covered.">                    } else if (c &lt; '0' || c &gt; '9') {</span>
+<span class="fc" id="L231">                        break;</span>
+                    }
+                }
+<span class="fc bfc" id="L234" title="All 2 branches covered.">                if (plusIndex == -1) {</span>
+<span class="fc" id="L235">                    return false;</span>
+                }
+<span class="fc" id="L237">                int offset = bp + 6;</span>
+<span class="fc" id="L238">                String numberText = this.subString(offset, bp + plusIndex - offset);</span>
+<span class="fc" id="L239">                long millis = Long.parseLong(numberText);</span>
+
+<span class="fc" id="L241">                calendar = Calendar.getInstance(timeZone, locale);</span>
+<span class="fc" id="L242">                calendar.setTimeInMillis(millis);</span>
+
+<span class="fc" id="L244">                token = JSONToken.LITERAL_ISO8601_DATE;</span>
+<span class="fc" id="L245">                return true;</span>
+            }
+        }
+
+        char c10;
+<span class="fc bfc" id="L250" title="All 6 branches covered.">        if (rest == 8</span>
+                || rest == 14
+<span class="fc bfc" id="L252" title="All 6 branches covered.">                || (rest == 16 &amp;&amp; ((c10 = charAt(bp + 10)) == 'T' || c10 == ' '))</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">                || (rest == 17 &amp;&amp; charAt(bp + 6) != '-')) {</span>
+<span class="fc bfc" id="L254" title="All 2 branches covered.">            if (strict) {</span>
+<span class="fc" id="L255">                return false;</span>
+            }
+
+            char y0, y1, y2, y3, M0, M1, d0, d1;
+
+
+
+<span class="fc" id="L262">            char c8 = charAt(bp + 8);</span>
+
+<span class="fc bfc" id="L264" title="All 4 branches covered.">            final boolean c_47 = c4 == '-' &amp;&amp; c7 == '-';</span>
+<span class="fc bfc" id="L265" title="All 4 branches covered.">            final boolean sperate16 = c_47 &amp;&amp; rest == 16;</span>
+<span class="fc bfc" id="L266" title="All 4 branches covered.">            final boolean sperate17 = c_47 &amp;&amp; rest == 17;</span>
+<span class="fc bfc" id="L267" title="All 4 branches covered.">            if (sperate17 || sperate16) {</span>
+<span class="fc" id="L268">                y0 = c0;</span>
+<span class="fc" id="L269">                y1 = c1;</span>
+<span class="fc" id="L270">                y2 = c2;</span>
+<span class="fc" id="L271">                y3 = c3;</span>
+<span class="fc" id="L272">                M0 = c5;</span>
+<span class="fc" id="L273">                M1 = c6;</span>
+<span class="fc" id="L274">                d0 = c8;</span>
+<span class="fc" id="L275">                d1 = charAt(bp + 9);</span>
+<span class="pc bpc" id="L276" title="1 of 4 branches missed.">            } else if (c4 == '-' &amp;&amp; c6 == '-') {</span>
+<span class="fc" id="L277">                y0 = c0;</span>
+<span class="fc" id="L278">                y1 = c1;</span>
+<span class="fc" id="L279">                y2 = c2;</span>
+<span class="fc" id="L280">                y3 = c3;</span>
+<span class="fc" id="L281">                M0 = '0';</span>
+<span class="fc" id="L282">                M1 = c5;</span>
+<span class="fc" id="L283">                d0 = '0';</span>
+<span class="fc" id="L284">                d1 = c7;</span>
+            } else {
+<span class="fc" id="L286">                y0 = c0;</span>
+<span class="fc" id="L287">                y1 = c1;</span>
+<span class="fc" id="L288">                y2 = c2;</span>
+<span class="fc" id="L289">                y3 = c3;</span>
+<span class="fc" id="L290">                M0 = c4;</span>
+<span class="fc" id="L291">                M1 = c5;</span>
+<span class="fc" id="L292">                d0 = c6;</span>
+<span class="fc" id="L293">                d1 = c7;</span>
+            }
+
+
+<span class="fc bfc" id="L297" title="All 2 branches covered.">            if (!checkDate(y0, y1, y2, y3, M0, M1, d0, d1)) {</span>
+<span class="fc" id="L298">                return false;</span>
+            }
+
+<span class="fc" id="L301">            setCalendar(y0, y1, y2, y3, M0, M1, d0, d1);</span>
+
+            int hour, minute, seconds, millis;
+<span class="fc bfc" id="L304" title="All 2 branches covered.">            if (rest != 8) {</span>
+<span class="fc" id="L305">                char c9 = charAt(bp + 9);</span>
+<span class="fc" id="L306">                c10 = charAt(bp + 10);</span>
+<span class="fc" id="L307">                char c11 = charAt(bp + 11);</span>
+<span class="fc" id="L308">                char c12 = charAt(bp + 12);</span>
+<span class="fc" id="L309">                char c13 = charAt(bp + 13);</span>
+
+                char h0, h1, m0, m1, s0, s1;
+
+<span class="pc bpc" id="L313" title="5 of 16 branches missed.">                if ((sperate17 &amp;&amp; c10 == 'T' &amp;&amp; c13 == ':' &amp;&amp; charAt(bp + 16) == 'Z')</span>
+                        || (sperate16 &amp;&amp; (c10 == ' ' || c10 == 'T') &amp;&amp; c13 == ':')) {
+<span class="fc" id="L315">                    h0 = c11;</span>
+<span class="fc" id="L316">                    h1 = c12;</span>
+<span class="fc" id="L317">                    m0 = charAt(bp + 14);</span>
+<span class="fc" id="L318">                    m1 = charAt(bp + 15);</span>
+<span class="fc" id="L319">                    s0 = '0';</span>
+<span class="fc" id="L320">                    s1 = '0';</span>
+                } else {
+<span class="fc" id="L322">                    h0 = c8;</span>
+<span class="fc" id="L323">                    h1 = c9;</span>
+<span class="fc" id="L324">                    m0 = c10;</span>
+<span class="fc" id="L325">                    m1 = c11;</span>
+<span class="fc" id="L326">                    s0 = c12;</span>
+<span class="fc" id="L327">                    s1 = c13;</span>
+                }
+
+<span class="fc bfc" id="L330" title="All 2 branches covered.">                if (!checkTime(h0, h1, m0, m1, s0, s1)) {</span>
+<span class="fc" id="L331">                    return false;</span>
+                }
+
+<span class="fc bfc" id="L334" title="All 4 branches covered.">                if (rest == 17 &amp;&amp; !sperate17) {</span>
+<span class="fc" id="L335">                    char S0 = charAt(bp + 14);</span>
+<span class="fc" id="L336">                    char S1 = charAt(bp + 15);</span>
+<span class="fc" id="L337">                    char S2 = charAt(bp + 16);</span>
+<span class="fc bfc" id="L338" title="All 4 branches covered.">                    if (S0 &lt; '0' || S0 &gt; '9') {</span>
+<span class="fc" id="L339">                        return false;</span>
+                    }
+<span class="fc bfc" id="L341" title="All 4 branches covered.">                    if (S1 &lt; '0' || S1 &gt; '9') {</span>
+<span class="fc" id="L342">                        return false;</span>
+                    }
+<span class="fc bfc" id="L344" title="All 4 branches covered.">                    if (S2 &lt; '0' || S2 &gt; '9') {</span>
+<span class="fc" id="L345">                        return false;</span>
+                    }
+
+<span class="fc" id="L348">                    millis = (S0 - '0') * 100 + (S1 - '0') * 10 + (S2 - '0');</span>
+<span class="fc" id="L349">                } else {</span>
+<span class="fc" id="L350">                    millis = 0;</span>
+                }
+
+<span class="fc" id="L353">                hour = (h0 - '0') * 10 + (h1 - '0');</span>
+<span class="fc" id="L354">                minute = (m0 - '0') * 10 + (m1 - '0');</span>
+<span class="fc" id="L355">                seconds = (s0 - '0') * 10 + (s1 - '0');</span>
+<span class="fc" id="L356">            } else {</span>
+<span class="fc" id="L357">                hour = 0;</span>
+<span class="fc" id="L358">                minute = 0;</span>
+<span class="fc" id="L359">                seconds = 0;</span>
+<span class="fc" id="L360">                millis = 0;</span>
+            }
+
+<span class="fc" id="L363">            calendar.set(Calendar.HOUR_OF_DAY, hour);</span>
+<span class="fc" id="L364">            calendar.set(Calendar.MINUTE, minute);</span>
+<span class="fc" id="L365">            calendar.set(Calendar.SECOND, seconds);</span>
+<span class="fc" id="L366">            calendar.set(Calendar.MILLISECOND, millis);</span>
+
+<span class="fc" id="L368">            token = JSONToken.LITERAL_ISO8601_DATE;</span>
+<span class="fc" id="L369">            return true;</span>
+        }
+
+<span class="pc bpc" id="L372" title="1 of 2 branches missed.">        if (rest &lt; 9) {</span>
+<span class="nc" id="L373">            return false;</span>
+        }
+
+<span class="fc" id="L376">        char c8 = charAt(bp + 8);</span>
+<span class="fc" id="L377">        char c9 = charAt(bp + 9);</span>
+
+<span class="fc" id="L379">        int date_len = 10;</span>
+        char y0, y1, y2, y3, M0, M1, d0, d1;
+<span class="fc bfc" id="L381" title="All 8 branches covered.">        if ((c4 == '-' &amp;&amp; c7 == '-') // cn</span>
+                ||  (c4 == '/' &amp;&amp; c7 == '/') // tw yyyy/mm/dd
+        ) {
+<span class="fc" id="L384">            y0 = c0;</span>
+<span class="fc" id="L385">            y1 = c1;</span>
+<span class="fc" id="L386">            y2 = c2;</span>
+<span class="fc" id="L387">            y3 = c3;</span>
+<span class="fc" id="L388">            M0 = c5;</span>
+<span class="fc" id="L389">            M1 = c6;</span>
+<span class="fc" id="L390">            d0 = c8;</span>
+<span class="fc" id="L391">            d1 = c9;</span>
+<span class="fc bfc" id="L392" title="All 4 branches covered.">        } else if ((c4 == '-' &amp;&amp; c6 == '-') // cn yyyy-m-dd</span>
+        ) {
+<span class="fc" id="L394">            y0 = c0;</span>
+<span class="fc" id="L395">            y1 = c1;</span>
+<span class="fc" id="L396">            y2 = c2;</span>
+<span class="fc" id="L397">            y3 = c3;</span>
+<span class="fc" id="L398">            M0 = '0';</span>
+<span class="fc" id="L399">            M1 = c5;</span>
+
+<span class="fc bfc" id="L401" title="All 2 branches covered.">            if (c8 == ' ') {</span>
+<span class="fc" id="L402">                d0 = '0';</span>
+<span class="fc" id="L403">                d1 = c7;</span>
+<span class="fc" id="L404">                date_len = 8;</span>
+            } else {
+<span class="fc" id="L406">                d0 = c7;</span>
+<span class="fc" id="L407">                d1 = c8;</span>
+<span class="fc" id="L408">                date_len = 9;</span>
+            }
+<span class="pc bpc" id="L410" title="2 of 8 branches missed.">        } else if ((c2 == '.' &amp;&amp; c5 == '.') // de dd.mm.yyyy</span>
+                || (c2 == '-' &amp;&amp; c5 == '-') // in dd-mm-yyyy
+        ) {
+<span class="fc" id="L413">            d0 = c0;</span>
+<span class="fc" id="L414">            d1 = c1;</span>
+<span class="fc" id="L415">            M0 = c3;</span>
+<span class="fc" id="L416">            M1 = c4;</span>
+<span class="fc" id="L417">            y0 = c6;</span>
+<span class="fc" id="L418">            y1 = c7;</span>
+<span class="fc" id="L419">            y2 = c8;</span>
+<span class="fc" id="L420">            y3 = c9;</span>
+<span class="fc bfc" id="L421" title="All 2 branches covered.">        } else if (c8 == 'T') {</span>
+<span class="fc" id="L422">            y0 = c0;</span>
+<span class="fc" id="L423">            y1 = c1;</span>
+<span class="fc" id="L424">            y2 = c2;</span>
+<span class="fc" id="L425">            y3 = c3;</span>
+<span class="fc" id="L426">            M0 = c4;</span>
+<span class="fc" id="L427">            M1 = c5;</span>
+<span class="fc" id="L428">            d0 = c6;</span>
+<span class="fc" id="L429">            d1 = c7;</span>
+<span class="fc" id="L430">            date_len = 8;</span>
+        } else {
+<span class="fc bfc" id="L432" title="All 4 branches covered.">            if (c4 == '年' || c4 == '년') {</span>
+<span class="fc" id="L433">                y0 = c0;</span>
+<span class="fc" id="L434">                y1 = c1;</span>
+<span class="fc" id="L435">                y2 = c2;</span>
+<span class="fc" id="L436">                y3 = c3;</span>
+
+<span class="fc bfc" id="L438" title="All 4 branches covered.">                if (c7 == '月' || c7 == '월') {</span>
+<span class="fc" id="L439">                    M0 = c5;</span>
+<span class="fc" id="L440">                    M1 = c6;</span>
+<span class="fc bfc" id="L441" title="All 4 branches covered.">                    if (c9 == '日' || c9 == '일') {</span>
+<span class="fc" id="L442">                        d0 = '0';</span>
+<span class="fc" id="L443">                        d1 = c8;</span>
+<span class="pc bpc" id="L444" title="1 of 4 branches missed.">                    } else if (charAt(bp + 10) == '日' || charAt(bp + 10) == '일'){</span>
+<span class="fc" id="L445">                        d0 = c8;</span>
+<span class="fc" id="L446">                        d1 = c9;</span>
+<span class="fc" id="L447">                        date_len = 11;</span>
+                    } else {
+<span class="nc" id="L449">                        return false;</span>
+                    }
+<span class="pc bpc" id="L451" title="1 of 4 branches missed.">                } else if (c6 == '月' || c6 == '월') {</span>
+<span class="fc" id="L452">                    M0 = '0';</span>
+<span class="fc" id="L453">                    M1 = c5;</span>
+<span class="fc bfc" id="L454" title="All 4 branches covered.">                    if (c8 == '日' || c8 == '일') {</span>
+<span class="fc" id="L455">                        d0 = '0';</span>
+<span class="fc" id="L456">                        d1 = c7;</span>
+<span class="pc bpc" id="L457" title="1 of 4 branches missed.">                    } else if (c9 == '日' || c9 == '일'){</span>
+<span class="fc" id="L458">                        d0 = c7;</span>
+<span class="fc" id="L459">                        d1 = c8;</span>
+                    } else {
+<span class="nc" id="L461">                        return false;</span>
+                    }
+                } else {
+<span class="nc" id="L464">                    return false;</span>
+                }
+            } else {
+<span class="fc" id="L467">                return false;</span>
+            }
+        }
+
+<span class="fc bfc" id="L471" title="All 2 branches covered.">        if (!checkDate(y0, y1, y2, y3, M0, M1, d0, d1)) {</span>
+<span class="fc" id="L472">            return false;</span>
+        }
+
+<span class="fc" id="L475">        setCalendar(y0, y1, y2, y3, M0, M1, d0, d1);</span>
+
+<span class="fc" id="L477">        char t = charAt(bp + date_len);</span>
+<span class="pc bpc" id="L478" title="2 of 8 branches missed.">        if (t == 'T' &amp;&amp; rest == 16 &amp;&amp; date_len == 8 &amp;&amp; charAt(bp + 15) == 'Z') {</span>
+<span class="fc" id="L479">            char h0 = charAt(bp + date_len + 1);</span>
+<span class="fc" id="L480">            char h1 = charAt(bp + date_len + 2);</span>
+<span class="fc" id="L481">            char m0 = charAt(bp + date_len + 3);</span>
+<span class="fc" id="L482">            char m1 = charAt(bp + date_len + 4);</span>
+<span class="fc" id="L483">            char s0 = charAt(bp + date_len + 5);</span>
+<span class="fc" id="L484">            char s1 = charAt(bp + date_len + 6);</span>
+
+<span class="pc bpc" id="L486" title="1 of 2 branches missed.">            if (!checkTime(h0, h1, m0, m1, s0, s1)) {</span>
+<span class="nc" id="L487">                return false;</span>
+            }
+
+<span class="fc" id="L490">            setTime(h0, h1, m0, m1, s0, s1);</span>
+<span class="fc" id="L491">            calendar.set(Calendar.MILLISECOND, 0);</span>
+
+<span class="pc bpc" id="L493" title="1 of 2 branches missed.">            if (calendar.getTimeZone().getRawOffset() != 0) {</span>
+<span class="fc" id="L494">                String[] timeZoneIDs = TimeZone.getAvailableIDs(0);</span>
+<span class="pc bpc" id="L495" title="1 of 2 branches missed.">                if (timeZoneIDs.length &gt; 0) {</span>
+<span class="fc" id="L496">                    TimeZone timeZone = TimeZone.getTimeZone(timeZoneIDs[0]);</span>
+<span class="fc" id="L497">                    calendar.setTimeZone(timeZone);</span>
+                }
+            }
+
+<span class="fc" id="L501">            token = JSONToken.LITERAL_ISO8601_DATE;</span>
+<span class="fc" id="L502">            return true;</span>
+<span class="fc bfc" id="L503" title="All 6 branches covered.">        } else if (t == 'T' || (t == ' ' &amp;&amp; !strict)) {</span>
+<span class="fc bfc" id="L504" title="All 2 branches covered.">            if (rest &lt; date_len + 9) { // &quot;0000-00-00T00:00:00&quot;.length()</span>
+<span class="fc" id="L505">                return false;</span>
+            }
+<span class="pc bpc" id="L507" title="2 of 8 branches missed.">        } else if (t == '&quot;' || t == EOI || t == '日' || t == '일') {</span>
+<span class="fc" id="L508">            calendar.set(Calendar.HOUR_OF_DAY, 0);</span>
+<span class="fc" id="L509">            calendar.set(Calendar.MINUTE, 0);</span>
+<span class="fc" id="L510">            calendar.set(Calendar.SECOND, 0);</span>
+<span class="fc" id="L511">            calendar.set(Calendar.MILLISECOND, 0);</span>
+
+<span class="fc" id="L513">            ch = charAt(bp += date_len);</span>
+
+<span class="fc" id="L515">            token = JSONToken.LITERAL_ISO8601_DATE;</span>
+<span class="fc" id="L516">            return true;</span>
+<span class="pc bpc" id="L517" title="1 of 4 branches missed.">        } else if (t == '+' || t == '-') {</span>
+<span class="fc bfc" id="L518" title="All 2 branches covered.">            if (len == date_len + 6) {</span>
+<span class="pc bpc" id="L519" title="1 of 2 branches missed.">                if (charAt(bp + date_len + 3) != ':' //</span>
+<span class="pc bpc" id="L520" title="1 of 2 branches missed.">                        || charAt(bp + date_len + 4) != '0' //</span>
+<span class="pc bpc" id="L521" title="1 of 2 branches missed.">                        || charAt(bp + date_len + 5) != '0') {</span>
+<span class="nc" id="L522">                    return false;</span>
+                }
+
+<span class="fc" id="L525">                setTime('0', '0', '0', '0', '0', '0');</span>
+<span class="fc" id="L526">                calendar.set(Calendar.MILLISECOND, 0);</span>
+<span class="fc" id="L527">                setTimeZone(t, charAt(bp + date_len + 1), charAt(bp + date_len + 2));</span>
+<span class="fc" id="L528">                return true;</span>
+            }
+<span class="fc" id="L530">            return false;</span>
+        } else {
+<span class="fc" id="L532">            return false;</span>
+        }
+
+<span class="fc bfc" id="L535" title="All 2 branches covered.">        if (charAt(bp + date_len + 3) != ':') {</span>
+<span class="fc" id="L536">            return false;</span>
+        }
+<span class="fc bfc" id="L538" title="All 2 branches covered.">        if (charAt(bp + date_len + 6) != ':') {</span>
+<span class="fc" id="L539">            return false;</span>
+        }
+
+<span class="fc" id="L542">        char h0 = charAt(bp + date_len + 1);</span>
+<span class="fc" id="L543">        char h1 = charAt(bp + date_len + 2);</span>
+<span class="fc" id="L544">        char m0 = charAt(bp + date_len + 4);</span>
+<span class="fc" id="L545">        char m1 = charAt(bp + date_len + 5);</span>
+<span class="fc" id="L546">        char s0 = charAt(bp + date_len + 7);</span>
+<span class="fc" id="L547">        char s1 = charAt(bp + date_len + 8);</span>
+
+<span class="fc bfc" id="L549" title="All 2 branches covered.">        if (!checkTime(h0, h1, m0, m1, s0, s1)) {</span>
+<span class="fc" id="L550">            return false;</span>
+        }
+
+<span class="fc" id="L553">        setTime(h0, h1, m0, m1, s0, s1);</span>
+
+<span class="fc" id="L555">        char dot = charAt(bp + date_len + 9);</span>
+<span class="fc" id="L556">        int millisLen = -1; // 有可能没有毫秒区域，没有毫秒区域的时候下一个字符位置有可能是'Z'、'+'、'-'</span>
+<span class="fc" id="L557">        int millis = 0;</span>
+<span class="fc bfc" id="L558" title="All 2 branches covered.">        if (dot == '.') { // 0000-00-00T00:00:00.000</span>
+<span class="fc bfc" id="L559" title="All 2 branches covered.">            if (rest &lt; date_len + 11) {</span>
+<span class="fc" id="L560">                return false;</span>
+            }
+
+<span class="fc" id="L563">            char S0 = charAt(bp + date_len + 10);</span>
+<span class="fc bfc" id="L564" title="All 4 branches covered.">            if (S0 &lt; '0' || S0 &gt; '9') {</span>
+<span class="fc" id="L565">                return false;</span>
+            }
+<span class="fc" id="L567">            millis = S0 - '0';</span>
+<span class="fc" id="L568">            millisLen = 1;</span>
+
+<span class="fc bfc" id="L570" title="All 2 branches covered.">            if (rest &gt; date_len + 11) {</span>
+<span class="fc" id="L571">                char S1 = charAt(bp + date_len + 11);</span>
+<span class="fc bfc" id="L572" title="All 4 branches covered.">                if (S1 &gt;= '0' &amp;&amp; S1 &lt;= '9') {</span>
+<span class="fc" id="L573">                    millis = millis * 10 + (S1 - '0');</span>
+<span class="fc" id="L574">                    millisLen = 2;</span>
+                }
+            }
+
+<span class="fc bfc" id="L578" title="All 2 branches covered.">            if (millisLen == 2) {</span>
+<span class="fc" id="L579">                char S2 = charAt(bp + date_len + 12);</span>
+<span class="fc bfc" id="L580" title="All 4 branches covered.">                if (S2 &gt;= '0' &amp;&amp; S2 &lt;= '9') {</span>
+<span class="fc" id="L581">                    millis = millis * 10 + (S2 - '0');</span>
+<span class="fc" id="L582">                    millisLen = 3;</span>
+                }
+            }
+        }
+<span class="fc" id="L586">        calendar.set(Calendar.MILLISECOND, millis);</span>
+
+<span class="fc" id="L588">        int timzeZoneLength = 0;</span>
+<span class="fc" id="L589">        char timeZoneFlag = charAt(bp + date_len + 10 + millisLen);</span>
+
+<span class="fc bfc" id="L591" title="All 2 branches covered.">        if (timeZoneFlag == ' ') {</span>
+<span class="fc" id="L592">            millisLen++;</span>
+<span class="fc" id="L593">            timeZoneFlag = charAt(bp + date_len + 10 + millisLen);</span>
+        }
+
+<span class="fc bfc" id="L596" title="All 4 branches covered.">        if (timeZoneFlag == '+' || timeZoneFlag == '-') {</span>
+<span class="fc" id="L597">            char t0 = charAt(bp + date_len + 10 + millisLen + 1);</span>
+<span class="pc bpc" id="L598" title="2 of 4 branches missed.">            if (t0 &lt; '0' || t0 &gt; '1') {</span>
+<span class="nc" id="L599">                return false;</span>
+            }
+
+<span class="fc" id="L602">            char t1 = charAt(bp + date_len + 10 + millisLen + 2);</span>
+<span class="pc bpc" id="L603" title="2 of 4 branches missed.">            if (t1 &lt; '0' || t1 &gt; '9') {</span>
+<span class="nc" id="L604">                return false;</span>
+            }
+
+<span class="fc" id="L607">            char t2 = charAt(bp + date_len + 10 + millisLen + 3);</span>
+<span class="fc" id="L608">            char t3 = '0', t4 = '0';</span>
+<span class="fc bfc" id="L609" title="All 2 branches covered.">            if (t2 == ':') { // ThreeLetterISO8601TimeZone</span>
+<span class="fc" id="L610">                t3 = charAt(bp + date_len + 10 + millisLen + 4);</span>
+<span class="pc bpc" id="L611" title="1 of 4 branches missed.">                if (t3 != '0' &amp;&amp; t3 != '3') {</span>
+<span class="nc" id="L612">                    return false;</span>
+                }
+
+<span class="fc" id="L615">                t4 = charAt(bp + date_len + 10 + millisLen + 5);</span>
+<span class="pc bpc" id="L616" title="1 of 2 branches missed.">                if (t4 != '0') {</span>
+<span class="nc" id="L617">                    return false;</span>
+                }
+<span class="fc" id="L619">                timzeZoneLength = 6;</span>
+<span class="fc bfc" id="L620" title="All 2 branches covered.">            } else if (t2 == '0') { // TwoLetterISO8601TimeZone</span>
+<span class="fc" id="L621">                t3 = charAt(bp + date_len + 10 + millisLen + 4);</span>
+<span class="pc bpc" id="L622" title="3 of 4 branches missed.">                if (t3 != '0' &amp;&amp; t3 != '3') {</span>
+<span class="nc" id="L623">                    return false;</span>
+                }
+<span class="fc" id="L625">                timzeZoneLength = 5;</span>
+<span class="pc bpc" id="L626" title="1 of 4 branches missed.">            } else if (t2 == '3' &amp;&amp; charAt(bp + date_len + 10 + millisLen + 4) == '0') {</span>
+<span class="fc" id="L627">                t3 = '3';</span>
+<span class="fc" id="L628">                t4 = '0';</span>
+<span class="fc" id="L629">                timzeZoneLength = 5;</span>
+<span class="pc bpc" id="L630" title="1 of 4 branches missed.">            } else if (t2 == '4' &amp;&amp; charAt(bp + date_len + 10 + millisLen + 4) == '5') {</span>
+<span class="fc" id="L631">                t3 = '4';</span>
+<span class="fc" id="L632">                t4 = '5';</span>
+<span class="fc" id="L633">                timzeZoneLength = 5;</span>
+            } else {
+<span class="fc" id="L635">                timzeZoneLength = 3;</span>
+            }
+
+<span class="fc" id="L638">            setTimeZone(timeZoneFlag, t0, t1, t3, t4);</span>
+
+<span class="fc bfc" id="L640" title="All 2 branches covered.">        } else if (timeZoneFlag == 'Z') {// UTC</span>
+<span class="fc" id="L641">            timzeZoneLength = 1;</span>
+<span class="pc bpc" id="L642" title="1 of 2 branches missed.">            if (calendar.getTimeZone().getRawOffset() != 0) {</span>
+<span class="fc" id="L643">                String[] timeZoneIDs = TimeZone.getAvailableIDs(0);</span>
+<span class="pc bpc" id="L644" title="1 of 2 branches missed.">                if (timeZoneIDs.length &gt; 0) {</span>
+<span class="fc" id="L645">                    TimeZone timeZone = TimeZone.getTimeZone(timeZoneIDs[0]);</span>
+<span class="fc" id="L646">                    calendar.setTimeZone(timeZone);</span>
+                }
+            }
+        }
+
+<span class="fc" id="L651">        char end = charAt(bp + (date_len + 10 + millisLen + timzeZoneLength));</span>
+<span class="fc bfc" id="L652" title="All 4 branches covered.">        if (end != EOI &amp;&amp; end != '&quot;') {</span>
+<span class="fc" id="L653">            return false;</span>
+        }
+<span class="fc" id="L655">        ch = charAt(bp += (date_len + 10 + millisLen + timzeZoneLength));</span>
+
+<span class="fc" id="L657">        token = JSONToken.LITERAL_ISO8601_DATE;</span>
+<span class="fc" id="L658">        return true;</span>
+    }
+
+    protected void setTime(char h0, char h1, char m0, char m1, char s0, char s1) {
+<span class="fc" id="L662">        int hour = (h0 - '0') * 10 + (h1 - '0');</span>
+<span class="fc" id="L663">        int minute = (m0 - '0') * 10 + (m1 - '0');</span>
+<span class="fc" id="L664">        int seconds = (s0 - '0') * 10 + (s1 - '0');</span>
+<span class="fc" id="L665">        calendar.set(Calendar.HOUR_OF_DAY, hour);</span>
+<span class="fc" id="L666">        calendar.set(Calendar.MINUTE, minute);</span>
+<span class="fc" id="L667">        calendar.set(Calendar.SECOND, seconds);</span>
+<span class="fc" id="L668">    }</span>
+
+    protected void setTimeZone(char timeZoneFlag, char t0, char t1) {
+<span class="fc" id="L671">        setTimeZone(timeZoneFlag, t0, t1, '0', '0');</span>
+<span class="fc" id="L672">    }</span>
+
+    protected void setTimeZone(char timeZoneFlag, char t0, char t1, char t3, char t4) {
+<span class="fc" id="L675">        int timeZoneOffset = ((t0 - '0') * 10 + (t1 - '0')) * 3600 * 1000;</span>
+
+<span class="fc" id="L677">        timeZoneOffset += ((t3 - '0') * 10 + (t4 - '0')) * 60 * 1000;</span>
+
+<span class="fc bfc" id="L679" title="All 2 branches covered.">        if (timeZoneFlag == '-') {</span>
+<span class="fc" id="L680">            timeZoneOffset = -timeZoneOffset;</span>
+        }
+
+<span class="fc bfc" id="L683" title="All 2 branches covered.">        if (calendar.getTimeZone().getRawOffset() != timeZoneOffset) {</span>
+<span class="fc" id="L684">            String[] timeZoneIDs = TimeZone.getAvailableIDs(timeZoneOffset);</span>
+<span class="fc bfc" id="L685" title="All 2 branches covered.">            if (timeZoneIDs.length &gt; 0) {</span>
+<span class="fc" id="L686">                TimeZone timeZone = TimeZone.getTimeZone(timeZoneIDs[0]);</span>
+<span class="fc" id="L687">                calendar.setTimeZone(timeZone);</span>
+            }
+        }
+<span class="fc" id="L690">    }</span>
+
+    private boolean checkTime(char h0, char h1, char m0, char m1, char s0, char s1) {
+<span class="fc bfc" id="L693" title="All 2 branches covered.">        if (h0 == '0') {</span>
+<span class="fc bfc" id="L694" title="All 4 branches covered.">            if (h1 &lt; '0' || h1 &gt; '9') {</span>
+<span class="fc" id="L695">                return false;</span>
+            }
+<span class="fc bfc" id="L697" title="All 2 branches covered.">        } else if (h0 == '1') {</span>
+<span class="fc bfc" id="L698" title="All 4 branches covered.">            if (h1 &lt; '0' || h1 &gt; '9') {</span>
+<span class="fc" id="L699">                return false;</span>
+            }
+<span class="fc bfc" id="L701" title="All 2 branches covered.">        } else if (h0 == '2') {</span>
+<span class="fc bfc" id="L702" title="All 4 branches covered.">            if (h1 &lt; '0' || h1 &gt; '4') {</span>
+<span class="fc" id="L703">                return false;</span>
+            }
+        } else {
+<span class="fc" id="L706">            return false;</span>
+        }
+
+<span class="fc bfc" id="L709" title="All 4 branches covered.">        if (m0 &gt;= '0' &amp;&amp; m0 &lt;= '5') {</span>
+<span class="fc bfc" id="L710" title="All 4 branches covered.">            if (m1 &lt; '0' || m1 &gt; '9') {</span>
+<span class="fc" id="L711">                return false;</span>
+            }
+<span class="fc bfc" id="L713" title="All 2 branches covered.">        } else if (m0 == '6') {</span>
+<span class="fc bfc" id="L714" title="All 2 branches covered.">            if (m1 != '0') {</span>
+<span class="fc" id="L715">                return false;</span>
+            }
+        } else {
+<span class="fc" id="L718">            return false;</span>
+        }
+
+<span class="fc bfc" id="L721" title="All 4 branches covered.">        if (s0 &gt;= '0' &amp;&amp; s0 &lt;= '5') {</span>
+<span class="fc bfc" id="L722" title="All 4 branches covered.">            if (s1 &lt; '0' || s1 &gt; '9') {</span>
+<span class="fc" id="L723">                return false;</span>
+            }
+<span class="fc bfc" id="L725" title="All 2 branches covered.">        } else if (s0 == '6') {</span>
+<span class="fc bfc" id="L726" title="All 2 branches covered.">            if (s1 != '0') {</span>
+<span class="fc" id="L727">                return false;</span>
+            }
+        } else {
+<span class="fc" id="L730">            return false;</span>
+        }
+
+<span class="fc" id="L733">        return true;</span>
+    }
+
+    private void setCalendar(char y0, char y1, char y2, char y3, char M0, char M1, char d0, char d1) {
+<span class="fc" id="L737">        calendar = Calendar.getInstance(timeZone, locale);</span>
+<span class="fc" id="L738">        int year = (y0 - '0') * 1000 + (y1 - '0') * 100 + (y2 - '0') * 10 + (y3 - '0');</span>
+<span class="fc" id="L739">        int month = (M0 - '0') * 10 + (M1 - '0') - 1;</span>
+<span class="fc" id="L740">        int day = (d0 - '0') * 10 + (d1 - '0');</span>
+//        calendar.set(year, month, day);
+<span class="fc" id="L742">        calendar.set(Calendar.YEAR, year);</span>
+<span class="fc" id="L743">        calendar.set(Calendar.MONTH, month);</span>
+<span class="fc" id="L744">        calendar.set(Calendar.DAY_OF_MONTH, day);</span>
+<span class="fc" id="L745">    }</span>
+
+    static boolean checkDate(char y0, char y1, char y2, char y3, char M0, char M1, int d0, int d1) {
+<span class="pc bpc" id="L748" title="1 of 4 branches missed.">        if (y0 &lt; '0' || y0 &gt; '9') {</span>
+<span class="fc" id="L749">            return false;</span>
+        }
+<span class="fc bfc" id="L751" title="All 4 branches covered.">        if (y1 &lt; '0' || y1 &gt; '9') {</span>
+<span class="fc" id="L752">            return false;</span>
+        }
+<span class="fc bfc" id="L754" title="All 4 branches covered.">        if (y2 &lt; '0' || y2 &gt; '9') {</span>
+<span class="fc" id="L755">            return false;</span>
+        }
+<span class="fc bfc" id="L757" title="All 4 branches covered.">        if (y3 &lt; '0' || y3 &gt; '9') {</span>
+<span class="fc" id="L758">            return false;</span>
+        }
+
+<span class="fc bfc" id="L761" title="All 2 branches covered.">        if (M0 == '0') {</span>
+<span class="fc bfc" id="L762" title="All 4 branches covered.">            if (M1 &lt; '1' || M1 &gt; '9') {</span>
+<span class="fc" id="L763">                return false;</span>
+            }
+<span class="fc bfc" id="L765" title="All 2 branches covered.">        } else if (M0 == '1') {</span>
+<span class="fc bfc" id="L766" title="All 6 branches covered.">            if (M1 != '0' &amp;&amp; M1 != '1' &amp;&amp; M1 != '2') {</span>
+<span class="fc" id="L767">                return false;</span>
+            }
+        } else {
+<span class="fc" id="L770">            return false;</span>
+        }
+
+<span class="fc bfc" id="L773" title="All 2 branches covered.">        if (d0 == '0') {</span>
+<span class="fc bfc" id="L774" title="All 4 branches covered.">            if (d1 &lt; '1' || d1 &gt; '9') {</span>
+<span class="fc" id="L775">                return false;</span>
+            }
+<span class="fc bfc" id="L777" title="All 4 branches covered.">        } else if (d0 == '1' || d0 == '2') {</span>
+<span class="fc bfc" id="L778" title="All 4 branches covered.">            if (d1 &lt; '0' || d1 &gt; '9') {</span>
+<span class="fc" id="L779">                return false;</span>
+            }
+<span class="fc bfc" id="L781" title="All 2 branches covered.">        } else if (d0 == '3') {</span>
+<span class="fc bfc" id="L782" title="All 4 branches covered.">            if (d1 != '0' &amp;&amp; d1 != '1') {</span>
+<span class="fc" id="L783">                return false;</span>
+            }
+        } else {
+<span class="fc" id="L786">            return false;</span>
+        }
+
+<span class="fc" id="L789">        return true;</span>
+    }
+
+    @Override
+    public boolean isEOF() {
+<span class="pc bpc" id="L794" title="1 of 6 branches missed.">        return bp == len || ch == EOI &amp;&amp; bp + 1 == len;</span>
+    }
+
+    public int scanFieldInt(char[] fieldName) {
+<span class="fc" id="L798">        matchStat = UNKNOWN;</span>
+<span class="fc" id="L799">        int startPos = this.bp;</span>
+<span class="fc" id="L800">        char startChar = this.ch;</span>
+
+<span class="fc bfc" id="L802" title="All 2 branches covered.">        if (!charArrayCompare(text, bp, fieldName)) {</span>
+<span class="fc" id="L803">            matchStat = NOT_MATCH_NAME;</span>
+<span class="fc" id="L804">            return 0;</span>
+        }
+
+<span class="fc" id="L807">        int index = bp + fieldName.length;</span>
+
+<span class="fc" id="L809">        char ch = charAt(index++);</span>
+
+<span class="fc bfc" id="L811" title="All 2 branches covered.">        final boolean quote = ch == '&quot;';</span>
+
+<span class="fc bfc" id="L813" title="All 2 branches covered.">        if (quote) {</span>
+<span class="fc" id="L814">            ch = charAt(index++);</span>
+        }
+
+<span class="fc bfc" id="L817" title="All 2 branches covered.">        final boolean negative = ch == '-';</span>
+<span class="fc bfc" id="L818" title="All 2 branches covered.">        if (negative) {</span>
+<span class="fc" id="L819">            ch = charAt(index++);</span>
+        }
+
+        int value;
+<span class="fc bfc" id="L823" title="All 4 branches covered.">        if (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="fc" id="L824">            value = ch - '0';</span>
+            for (;;) {
+<span class="fc" id="L826">                ch = charAt(index++);</span>
+<span class="fc bfc" id="L827" title="All 4 branches covered.">                if (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="fc" id="L828">                    int value_10 = value * 10;</span>
+<span class="fc bfc" id="L829" title="All 2 branches covered.">                    if (value_10 &lt; value) {</span>
+<span class="fc" id="L830">                        matchStat = NOT_MATCH;</span>
+<span class="fc" id="L831">                        return 0;</span>
+                    }
+
+<span class="fc" id="L834">                    value = value_10 + (ch - '0');</span>
+<span class="fc bfc" id="L835" title="All 2 branches covered.">                } else if (ch == '.') {</span>
+<span class="fc" id="L836">                    matchStat = NOT_MATCH;</span>
+<span class="fc" id="L837">                    return 0;</span>
+                } else {
+                    break;
+                }
+            }
+
+<span class="fc bfc" id="L843" title="All 2 branches covered.">            if (value &lt; 0) {</span>
+<span class="fc" id="L844">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L845">                return 0;</span>
+            }
+
+<span class="fc bfc" id="L848" title="All 2 branches covered.">            if (quote) {</span>
+<span class="pc bpc" id="L849" title="1 of 2 branches missed.">                if (ch != '&quot;') {</span>
+<span class="nc" id="L850">                    matchStat = NOT_MATCH;</span>
+<span class="nc" id="L851">                    return 0;</span>
+                } else {
+<span class="fc" id="L853">                    ch = charAt(index++);</span>
+                }
+            }
+
+            for (;;) {
+<span class="fc bfc" id="L858" title="All 4 branches covered.">                if (ch == ',' || ch == '}') {</span>
+<span class="fc" id="L859">                    bp = index - 1;</span>
+<span class="fc" id="L860">                    break;</span>
+<span class="fc bfc" id="L861" title="All 2 branches covered.">                } else if(isWhitespace(ch)) {</span>
+<span class="fc" id="L862">                    ch = charAt(index++);</span>
+<span class="fc" id="L863">                    continue;</span>
+                } else {
+<span class="fc" id="L865">                    matchStat = NOT_MATCH;</span>
+<span class="fc" id="L866">                    return 0;</span>
+                }
+            }
+        } else {
+<span class="fc" id="L870">            matchStat = NOT_MATCH;</span>
+<span class="fc" id="L871">            return 0;</span>
+        }
+
+<span class="fc bfc" id="L874" title="All 2 branches covered.">        if (ch == ',') {</span>
+<span class="fc" id="L875">            this.ch = charAt(++bp);</span>
+<span class="fc" id="L876">            matchStat = VALUE;</span>
+<span class="fc" id="L877">            token = JSONToken.COMMA;</span>
+<span class="pc bpc" id="L878" title="1 of 2 branches missed.">            return negative ? -value : value;</span>
+        }
+
+<span class="pc bpc" id="L881" title="1 of 2 branches missed.">        if (ch == '}') {</span>
+<span class="fc" id="L882">            bp = index - 1;</span>
+<span class="fc" id="L883">            ch = charAt(++bp);</span>
+            for (; ; ) {
+<span class="fc bfc" id="L885" title="All 2 branches covered.">                if (ch == ',') {</span>
+<span class="fc" id="L886">                    token = JSONToken.COMMA;</span>
+<span class="fc" id="L887">                    this.ch = charAt(++bp);</span>
+<span class="fc" id="L888">                    break;</span>
+<span class="fc bfc" id="L889" title="All 2 branches covered.">                } else if (ch == ']') {</span>
+<span class="fc" id="L890">                    token = JSONToken.RBRACKET;</span>
+<span class="fc" id="L891">                    this.ch = charAt(++bp);</span>
+<span class="fc" id="L892">                    break;</span>
+<span class="fc bfc" id="L893" title="All 2 branches covered.">                } else if (ch == '}') {</span>
+<span class="fc" id="L894">                    token = JSONToken.RBRACE;</span>
+<span class="fc" id="L895">                    this.ch = charAt(++bp);</span>
+<span class="fc" id="L896">                    break;</span>
+<span class="fc bfc" id="L897" title="All 2 branches covered.">                } else if (ch == EOI) {</span>
+<span class="fc" id="L898">                    token = JSONToken.EOF;</span>
+<span class="fc" id="L899">                    break;</span>
+<span class="fc bfc" id="L900" title="All 2 branches covered.">                } else if (isWhitespace(ch)) {</span>
+<span class="fc" id="L901">                    ch = charAt(++bp);</span>
+<span class="fc" id="L902">                    continue;</span>
+                } else {
+<span class="fc" id="L904">                    this.bp = startPos;</span>
+<span class="fc" id="L905">                    this.ch = startChar;</span>
+<span class="fc" id="L906">                    matchStat = NOT_MATCH;</span>
+<span class="fc" id="L907">                    return 0;</span>
+                }
+            }
+<span class="fc" id="L910">            matchStat = END;</span>
+        }
+
+<span class="pc bpc" id="L913" title="1 of 2 branches missed.">        return negative ? -value : value;</span>
+    }
+
+    public String scanFieldString(char[] fieldName) {
+<span class="fc" id="L917">        matchStat = UNKNOWN;</span>
+<span class="fc" id="L918">        int startPos = this.bp;</span>
+<span class="fc" id="L919">        char startChar = this.ch;</span>
+
+        for (;;) {
+<span class="fc bfc" id="L922" title="All 2 branches covered.">            if (!charArrayCompare(text, bp, fieldName)) {</span>
+<span class="fc bfc" id="L923" title="All 2 branches covered.">                if (isWhitespace(ch)) {</span>
+<span class="fc" id="L924">                    next();</span>
+<span class="fc" id="L925">                    continue;</span>
+                }
+<span class="fc" id="L927">                matchStat = NOT_MATCH_NAME;</span>
+<span class="fc" id="L928">                return stringDefaultValue();</span>
+            } else {
+                break;
+            }
+        }
+
+<span class="fc" id="L934">        int index = bp + fieldName.length;</span>
+
+<span class="fc" id="L936">        char ch = charAt(index++);</span>
+<span class="fc bfc" id="L937" title="All 2 branches covered.">        if (ch != '&quot;') {</span>
+<span class="fc" id="L938">            matchStat = NOT_MATCH;</span>
+
+<span class="fc" id="L940">            return stringDefaultValue();</span>
+        }
+
+        final String strVal;
+        {
+<span class="fc" id="L945">            int startIndex = index;</span>
+<span class="fc" id="L946">            int endIndex = indexOf('&quot;', startIndex);</span>
+<span class="fc bfc" id="L947" title="All 2 branches covered.">            if (endIndex == -1) {</span>
+<span class="fc" id="L948">                throw new JSONException(&quot;unclosed str&quot;);</span>
+            }
+
+<span class="fc" id="L951">            String stringVal = subString(startIndex, endIndex - startIndex);</span>
+<span class="fc bfc" id="L952" title="All 2 branches covered.">            if (stringVal.indexOf('\\') != -1) {</span>
+                for (;;) {
+<span class="fc" id="L954">                    int slashCount = 0;</span>
+<span class="pc bpc" id="L955" title="1 of 2 branches missed.">                    for (int i = endIndex - 1; i &gt;= 0; --i) {</span>
+<span class="fc bfc" id="L956" title="All 2 branches covered.">                        if (charAt(i) == '\\') {</span>
+<span class="fc" id="L957">                            slashCount++;</span>
+                        } else {
+                            break;
+                        }
+                    }
+<span class="fc bfc" id="L962" title="All 2 branches covered.">                    if (slashCount % 2 == 0) {</span>
+<span class="fc" id="L963">                        break;</span>
+                    }
+<span class="fc" id="L965">                    endIndex = indexOf('&quot;', endIndex + 1);</span>
+<span class="fc" id="L966">                }</span>
+
+<span class="fc" id="L968">                int chars_len = endIndex - (bp + fieldName.length + 1);</span>
+<span class="fc" id="L969">                char[] chars = sub_chars(bp + fieldName.length + 1, chars_len);</span>
+
+<span class="fc" id="L971">                stringVal = readString(chars, chars_len);</span>
+            }
+
+<span class="fc" id="L974">            ch = charAt(endIndex + 1);</span>
+
+            for (;;) {
+<span class="fc bfc" id="L977" title="All 4 branches covered.">                if (ch == ',' || ch == '}') {</span>
+<span class="fc" id="L978">                    bp = endIndex + 1;</span>
+<span class="fc" id="L979">                    this.ch = ch;</span>
+<span class="fc" id="L980">                    strVal = stringVal;</span>
+<span class="fc" id="L981">                    break;</span>
+<span class="fc bfc" id="L982" title="All 2 branches covered.">                } else if (isWhitespace(ch)) {</span>
+<span class="fc" id="L983">                    endIndex++;</span>
+<span class="fc" id="L984">                    ch = charAt(endIndex + 1);</span>
+                } else {
+<span class="fc" id="L986">                    matchStat = NOT_MATCH;</span>
+
+<span class="fc" id="L988">                    return stringDefaultValue();</span>
+                }
+            }
+        }
+
+<span class="fc bfc" id="L993" title="All 2 branches covered.">        if (ch == ',') {</span>
+<span class="fc" id="L994">            this.ch = charAt(++bp);</span>
+<span class="fc" id="L995">            matchStat = VALUE;</span>
+<span class="fc" id="L996">            return strVal;</span>
+        } else {
+            //condition ch == '}' is always 'true'
+<span class="fc" id="L999">            ch = charAt(++bp);</span>
+<span class="fc bfc" id="L1000" title="All 2 branches covered.">            if (ch == ',') {</span>
+<span class="fc" id="L1001">                token = JSONToken.COMMA;</span>
+<span class="fc" id="L1002">                this.ch = charAt(++bp);</span>
+<span class="fc bfc" id="L1003" title="All 2 branches covered.">            } else if (ch == ']') {</span>
+<span class="fc" id="L1004">                token = JSONToken.RBRACKET;</span>
+<span class="fc" id="L1005">                this.ch = charAt(++bp);</span>
+<span class="fc bfc" id="L1006" title="All 2 branches covered.">            } else if (ch == '}') {</span>
+<span class="fc" id="L1007">                token = JSONToken.RBRACE;</span>
+<span class="fc" id="L1008">                this.ch = charAt(++bp);</span>
+<span class="fc bfc" id="L1009" title="All 2 branches covered.">            } else if (ch == EOI) {</span>
+<span class="fc" id="L1010">                token = JSONToken.EOF;</span>
+            } else {
+<span class="fc" id="L1012">                this.bp = startPos;</span>
+<span class="fc" id="L1013">                this.ch = startChar;</span>
+<span class="fc" id="L1014">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1015">                return stringDefaultValue();</span>
+            }
+<span class="fc" id="L1017">            matchStat = END;</span>
+        }
+<span class="fc" id="L1019">        return strVal;</span>
+    }
+
+    public java.util.Date scanFieldDate(char[] fieldName) {
+<span class="fc" id="L1023">        matchStat = UNKNOWN;</span>
+<span class="fc" id="L1024">        int startPos = this.bp;</span>
+<span class="fc" id="L1025">        char startChar = this.ch;</span>
+
+<span class="fc bfc" id="L1027" title="All 2 branches covered.">        if (!charArrayCompare(text, bp, fieldName)) {</span>
+<span class="fc" id="L1028">            matchStat = NOT_MATCH_NAME;</span>
+<span class="fc" id="L1029">            return null;</span>
+        }
+
+<span class="fc" id="L1032">        int index = bp + fieldName.length;</span>
+
+<span class="fc" id="L1034">        char ch = charAt(index++);</span>
+
+        final java.util.Date dateVal;
+<span class="fc bfc" id="L1037" title="All 2 branches covered.">        if (ch == '&quot;') {</span>
+<span class="fc" id="L1038">            int startIndex = index;</span>
+<span class="fc" id="L1039">            int endIndex = indexOf('&quot;', startIndex);</span>
+<span class="fc bfc" id="L1040" title="All 2 branches covered.">            if (endIndex == -1) {</span>
+<span class="fc" id="L1041">                throw new JSONException(&quot;unclosed str&quot;);</span>
+            }
+
+<span class="fc" id="L1044">            int rest = endIndex - startIndex;</span>
+<span class="fc" id="L1045">            bp = index;</span>
+<span class="fc bfc" id="L1046" title="All 2 branches covered.">            if (scanISO8601DateIfMatch(false, rest)) {</span>
+<span class="fc" id="L1047">                dateVal = calendar.getTime();</span>
+            } else {
+<span class="fc" id="L1049">                bp = startPos;</span>
+<span class="fc" id="L1050">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1051">                return null;</span>
+            }
+<span class="fc" id="L1053">            ch = charAt(endIndex + 1);</span>
+<span class="fc" id="L1054">            bp = startPos;</span>
+
+            for (; ; ) {
+<span class="pc bpc" id="L1057" title="1 of 4 branches missed.">                if (ch == ',' || ch == '}') {</span>
+<span class="fc" id="L1058">                    bp = endIndex + 1;</span>
+<span class="fc" id="L1059">                    this.ch = ch;</span>
+<span class="fc" id="L1060">                    break;</span>
+<span class="nc bnc" id="L1061" title="All 2 branches missed.">                } else if (isWhitespace(ch)) {</span>
+<span class="nc" id="L1062">                    endIndex++;</span>
+<span class="nc" id="L1063">                    ch = charAt(endIndex + 1);</span>
+                } else {
+<span class="nc" id="L1065">                    matchStat = NOT_MATCH;</span>
+
+<span class="nc" id="L1067">                    return null;</span>
+                }
+            }
+<span class="pc bpc" id="L1070" title="2 of 6 branches missed.">        } else if (ch == '-' || (ch &gt;= '0' &amp;&amp; ch &lt;= '9')) {</span>
+<span class="fc" id="L1071">            long millis = 0;</span>
+
+<span class="fc" id="L1073">            boolean negative = false;</span>
+<span class="pc bpc" id="L1074" title="1 of 2 branches missed.">            if (ch == '-') {</span>
+<span class="nc" id="L1075">                ch = charAt(index++);</span>
+<span class="nc" id="L1076">                negative = true;</span>
+            }
+
+<span class="pc bpc" id="L1079" title="2 of 4 branches missed.">            if (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="fc" id="L1080">                millis = ch - '0';</span>
+                for (; ; ) {
+<span class="fc" id="L1082">                    ch = charAt(index++);</span>
+<span class="fc bfc" id="L1083" title="All 4 branches covered.">                    if (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="fc" id="L1084">                        millis = millis * 10 + (ch - '0');</span>
+                    } else {
+<span class="fc bfc" id="L1086" title="All 4 branches covered.">                        if (ch == ',' || ch == '}') {</span>
+<span class="fc" id="L1087">                            bp = index - 1;</span>
+                        }
+                        break;
+                    }
+                }
+            }
+
+<span class="pc bpc" id="L1094" title="1 of 2 branches missed.">            if (millis &lt; 0) {</span>
+<span class="nc" id="L1095">                matchStat = NOT_MATCH;</span>
+<span class="nc" id="L1096">                return null;</span>
+            }
+
+<span class="pc bpc" id="L1099" title="1 of 2 branches missed.">            if (negative) {</span>
+<span class="nc" id="L1100">                millis = -millis;</span>
+            }
+
+<span class="fc" id="L1103">            dateVal = new java.util.Date(millis);</span>
+<span class="fc" id="L1104">        } else {</span>
+<span class="fc" id="L1105">            matchStat = NOT_MATCH;</span>
+
+<span class="fc" id="L1107">            return null;</span>
+        }
+
+<span class="fc bfc" id="L1110" title="All 2 branches covered.">        if (ch == ',') {</span>
+<span class="fc" id="L1111">            this.ch = charAt(++bp);</span>
+<span class="fc" id="L1112">            matchStat = VALUE;</span>
+<span class="fc" id="L1113">            token = JSONToken.COMMA;</span>
+<span class="fc" id="L1114">            return dateVal;</span>
+        } else {
+            //condition ch == '}' is always 'true'
+<span class="fc" id="L1117">            ch = charAt(++bp);</span>
+<span class="pc bpc" id="L1118" title="1 of 2 branches missed.">            if (ch == ',') {</span>
+<span class="nc" id="L1119">                token = JSONToken.COMMA;</span>
+<span class="nc" id="L1120">                this.ch = charAt(++bp);</span>
+<span class="pc bpc" id="L1121" title="1 of 2 branches missed.">            } else if (ch == ']') {</span>
+<span class="nc" id="L1122">                token = JSONToken.RBRACKET;</span>
+<span class="nc" id="L1123">                this.ch = charAt(++bp);</span>
+<span class="fc bfc" id="L1124" title="All 2 branches covered.">            } else if (ch == '}') {</span>
+<span class="fc" id="L1125">                token = JSONToken.RBRACE;</span>
+<span class="fc" id="L1126">                this.ch = charAt(++bp);</span>
+<span class="fc bfc" id="L1127" title="All 2 branches covered.">            } else if (ch == EOI) {</span>
+<span class="fc" id="L1128">                token = JSONToken.EOF;</span>
+            } else {
+<span class="fc" id="L1130">                this.bp = startPos;</span>
+<span class="fc" id="L1131">                this.ch = startChar;</span>
+<span class="fc" id="L1132">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1133">                return null;</span>
+            }
+<span class="fc" id="L1135">            matchStat = END;</span>
+        }
+<span class="fc" id="L1137">        return dateVal;</span>
+    }
+
+    public long scanFieldSymbol(char[] fieldName) {
+<span class="fc" id="L1141">        matchStat = UNKNOWN;</span>
+
+<span class="pc bpc" id="L1143" title="1 of 2 branches missed.">        if (!charArrayCompare(text, bp, fieldName)) {</span>
+<span class="nc" id="L1144">            matchStat = NOT_MATCH_NAME;</span>
+<span class="nc" id="L1145">            return 0;</span>
+        }
+
+<span class="fc" id="L1148">        int index = bp + fieldName.length;</span>
+
+<span class="fc" id="L1150">        char ch = charAt(index++);</span>
+<span class="pc bpc" id="L1151" title="1 of 2 branches missed.">        if (ch != '&quot;') {</span>
+<span class="nc" id="L1152">            matchStat = NOT_MATCH;</span>
+<span class="nc" id="L1153">            return 0;</span>
+        }
+
+<span class="fc" id="L1156">        long hash = 0xcbf29ce484222325L;</span>
+        for (;;) {
+<span class="fc" id="L1158">            ch = charAt(index++);</span>
+<span class="fc bfc" id="L1159" title="All 2 branches covered.">            if (ch == '\&quot;') {</span>
+<span class="fc" id="L1160">                bp = index;</span>
+<span class="fc" id="L1161">                this.ch = ch = charAt(bp);</span>
+<span class="fc" id="L1162">                break;</span>
+<span class="pc bpc" id="L1163" title="1 of 2 branches missed.">            } else if (index &gt; len) {</span>
+<span class="nc" id="L1164">                matchStat = NOT_MATCH;</span>
+<span class="nc" id="L1165">                return 0;</span>
+            }
+
+<span class="fc" id="L1168">            hash ^= ch;</span>
+<span class="fc" id="L1169">            hash *= 0x100000001b3L;</span>
+        }
+
+        for (;;) {
+<span class="pc bpc" id="L1173" title="1 of 2 branches missed.">            if (ch == ',') {</span>
+<span class="nc" id="L1174">                this.ch = charAt(++bp);</span>
+<span class="nc" id="L1175">                matchStat = VALUE;</span>
+<span class="nc" id="L1176">                return hash;</span>
+<span class="fc bfc" id="L1177" title="All 2 branches covered.">            } else if (ch == '}') {</span>
+<span class="fc" id="L1178">                next();</span>
+<span class="fc" id="L1179">                skipWhitespace();</span>
+<span class="fc" id="L1180">                ch = getCurrent();</span>
+<span class="fc bfc" id="L1181" title="All 2 branches covered.">                if (ch == ',') {</span>
+<span class="fc" id="L1182">                    token = JSONToken.COMMA;</span>
+<span class="fc" id="L1183">                    this.ch = charAt(++bp);</span>
+<span class="fc bfc" id="L1184" title="All 2 branches covered.">                } else if (ch == ']') {</span>
+<span class="fc" id="L1185">                    token = JSONToken.RBRACKET;</span>
+<span class="fc" id="L1186">                    this.ch = charAt(++bp);</span>
+<span class="fc bfc" id="L1187" title="All 2 branches covered.">                } else if (ch == '}') {</span>
+<span class="fc" id="L1188">                    token = JSONToken.RBRACE;</span>
+<span class="fc" id="L1189">                    this.ch = charAt(++bp);</span>
+<span class="fc bfc" id="L1190" title="All 2 branches covered.">                } else if (ch == EOI) {</span>
+<span class="fc" id="L1191">                    token = JSONToken.EOF;</span>
+                } else {
+<span class="fc" id="L1193">                    matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1194">                    return 0;</span>
+                }
+<span class="fc" id="L1196">                matchStat = END;</span>
+<span class="fc" id="L1197">                break;</span>
+<span class="pc bpc" id="L1198" title="1 of 2 branches missed.">            } else if (isWhitespace(ch)) {</span>
+<span class="nc" id="L1199">                ch = charAt(++bp);</span>
+<span class="nc" id="L1200">                continue;</span>
+            } else {
+<span class="fc" id="L1202">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1203">                return 0;</span>
+            }
+        }
+
+<span class="fc" id="L1207">        return hash;</span>
+    }
+
+    public Collection&lt;String&gt; newCollectionByType(Class&lt;?&gt; type){
+<span class="fc bfc" id="L1211" title="All 2 branches covered.">        if (type.isAssignableFrom(HashSet.class)) {</span>
+<span class="fc" id="L1212">            HashSet&lt;String&gt; list = new HashSet&lt;String&gt;();</span>
+<span class="fc" id="L1213">            return list;</span>
+<span class="fc bfc" id="L1214" title="All 2 branches covered.">        } else if (type.isAssignableFrom(ArrayList.class)) {</span>
+<span class="fc" id="L1215">            ArrayList&lt;String&gt; list2 = new ArrayList&lt;String&gt;();</span>
+<span class="fc" id="L1216">            return list2;</span>
+        } else {
+            try {
+<span class="fc" id="L1219">                Collection&lt;String&gt; list = (Collection&lt;String&gt;) type.newInstance();</span>
+<span class="fc" id="L1220">                return list;</span>
+<span class="fc" id="L1221">            } catch (Exception e) {</span>
+<span class="fc" id="L1222">                throw new JSONException(e.getMessage(), e);</span>
+            }
+        }
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public Collection&lt;String&gt; scanFieldStringArray(char[] fieldName, Class&lt;?&gt; type) {
+<span class="fc" id="L1229">        matchStat = UNKNOWN;</span>
+
+<span class="pc bpc" id="L1231" title="1 of 4 branches missed.">        while (ch == '\n' || ch == ' ') {</span>
+<span class="fc" id="L1232">            int index = ++bp;</span>
+<span class="pc bpc" id="L1233" title="1 of 2 branches missed.">            ch = (index &gt;= this.len ? //</span>
+                    EOI //
+<span class="fc" id="L1235">                    : text.charAt(index));</span>
+<span class="fc" id="L1236">        }</span>
+
+<span class="fc bfc" id="L1238" title="All 2 branches covered.">        if (!charArrayCompare(text, bp, fieldName)) {</span>
+<span class="fc" id="L1239">            matchStat = NOT_MATCH_NAME;</span>
+<span class="fc" id="L1240">            return null;</span>
+        }
+
+<span class="fc" id="L1243">        Collection&lt;String&gt; list = newCollectionByType(type);</span>
+
+//        if (type.isAssignableFrom(HashSet.class)) {
+//            list = new HashSet&lt;String&gt;();
+//        } else if (type.isAssignableFrom(ArrayList.class)) {
+//            list = new ArrayList&lt;String&gt;();
+//        } else {
+//            try {
+//                list = (Collection&lt;String&gt;) type.newInstance();
+//            } catch (Exception e) {
+//                throw new JSONException(e.getMessage(), e);
+//            }
+//        }
+
+<span class="fc" id="L1257">        int startPos = this.bp;</span>
+<span class="fc" id="L1258">        char startChar = this.ch;</span>
+
+<span class="fc" id="L1260">        int index = bp + fieldName.length;</span>
+
+<span class="fc" id="L1262">        char ch = charAt(index++);</span>
+
+<span class="fc bfc" id="L1264" title="All 2 branches covered.">        if (ch == '[') {</span>
+<span class="fc" id="L1265">            ch = charAt(index++);</span>
+
+            for (;;) {
+<span class="fc bfc" id="L1268" title="All 2 branches covered.">                if (ch == '&quot;') {</span>
+<span class="fc" id="L1269">                    int startIndex = index;</span>
+<span class="fc" id="L1270">                    int endIndex = indexOf('&quot;', startIndex);</span>
+<span class="fc bfc" id="L1271" title="All 2 branches covered.">                    if (endIndex == -1) {</span>
+<span class="fc" id="L1272">                        throw new JSONException(&quot;unclosed str&quot;);</span>
+                    }
+
+<span class="fc" id="L1275">                    String stringVal = subString(startIndex, endIndex - startIndex);</span>
+<span class="fc bfc" id="L1276" title="All 2 branches covered.">                    if (stringVal.indexOf('\\') != -1) {</span>
+                        for (;;) {
+<span class="fc" id="L1278">                            int slashCount = 0;</span>
+<span class="pc bpc" id="L1279" title="1 of 2 branches missed.">                            for (int i = endIndex - 1; i &gt;= 0; --i) {</span>
+<span class="fc bfc" id="L1280" title="All 2 branches covered.">                                if (charAt(i) == '\\') {</span>
+<span class="fc" id="L1281">                                    slashCount++;</span>
+                                } else {
+                                    break;
+                                }
+                            }
+<span class="fc bfc" id="L1286" title="All 2 branches covered.">                            if (slashCount % 2 == 0) {</span>
+<span class="fc" id="L1287">                                break;</span>
+                            }
+<span class="fc" id="L1289">                            endIndex = indexOf('&quot;', endIndex + 1);</span>
+<span class="fc" id="L1290">                        }</span>
+
+<span class="fc" id="L1292">                        int chars_len = endIndex - startIndex;</span>
+<span class="fc" id="L1293">                        char[] chars = sub_chars(startIndex, chars_len);</span>
+
+<span class="fc" id="L1295">                        stringVal = readString(chars, chars_len);</span>
+                    }
+
+<span class="fc" id="L1298">                    index = endIndex + 1;</span>
+<span class="fc" id="L1299">                    ch = charAt(index++);</span>
+
+<span class="fc" id="L1301">                    list.add(stringVal);</span>
+<span class="fc bfc" id="L1302" title="All 4 branches covered.">                } else if (ch == 'n' &amp;&amp; text.startsWith(&quot;ull&quot;, index)) {</span>
+<span class="fc" id="L1303">                    index += 3;</span>
+<span class="fc" id="L1304">                    ch = charAt(index++);</span>
+<span class="fc" id="L1305">                    list.add(null);</span>
+<span class="fc bfc" id="L1306" title="All 4 branches covered.">                } else if (ch == ']' &amp;&amp; list.size() == 0) {</span>
+<span class="fc" id="L1307">                    ch = charAt(index++);</span>
+<span class="fc" id="L1308">                    break;</span>
+                } else {
+<span class="fc" id="L1310">                    matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1311">                    return null;</span>
+                }
+
+<span class="fc bfc" id="L1314" title="All 2 branches covered.">                if (ch == ',') {</span>
+<span class="fc" id="L1315">                    ch = charAt(index++);</span>
+<span class="fc" id="L1316">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L1319" title="All 2 branches covered.">                if (ch == ']') {</span>
+<span class="fc" id="L1320">                    ch = charAt(index++);</span>
+<span class="fc bfc" id="L1321" title="All 2 branches covered.">                    while (isWhitespace(ch)) {</span>
+<span class="fc" id="L1322">                        ch = charAt(index++);</span>
+                    }
+                    break;
+                }
+
+<span class="fc" id="L1327">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1328">                return null;</span>
+            }
+<span class="fc bfc" id="L1330" title="All 2 branches covered.">        } else if (text.startsWith(&quot;ull&quot;, index)) {</span>
+<span class="fc" id="L1331">            index += 3;</span>
+<span class="fc" id="L1332">            ch = charAt(index++);</span>
+<span class="fc" id="L1333">            list = null;</span>
+        } else {
+<span class="fc" id="L1335">            matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1336">            return null;</span>
+        }
+
+<span class="fc" id="L1339">        bp = index;</span>
+<span class="fc bfc" id="L1340" title="All 2 branches covered.">        if (ch == ',') {</span>
+<span class="fc" id="L1341">            this.ch = charAt(bp);</span>
+<span class="fc" id="L1342">            matchStat = VALUE;</span>
+<span class="fc" id="L1343">            return list;</span>
+<span class="fc bfc" id="L1344" title="All 2 branches covered.">        } else if (ch == '}') {</span>
+<span class="fc" id="L1345">            ch = charAt(bp);</span>
+            for (;;) {
+<span class="fc bfc" id="L1347" title="All 2 branches covered.">                if (ch == ',') {</span>
+<span class="fc" id="L1348">                    token = JSONToken.COMMA;</span>
+<span class="fc" id="L1349">                    this.ch = charAt(++bp);</span>
+<span class="fc" id="L1350">                    break;</span>
+<span class="fc bfc" id="L1351" title="All 2 branches covered.">                } else if (ch == ']') {</span>
+<span class="fc" id="L1352">                    token = JSONToken.RBRACKET;</span>
+<span class="fc" id="L1353">                    this.ch = charAt(++bp);</span>
+<span class="fc" id="L1354">                    break;</span>
+<span class="fc bfc" id="L1355" title="All 2 branches covered.">                } else if (ch == '}') {</span>
+<span class="fc" id="L1356">                    token = JSONToken.RBRACE;</span>
+<span class="fc" id="L1357">                    this.ch = charAt(++bp);</span>
+<span class="fc" id="L1358">                    break;</span>
+<span class="fc bfc" id="L1359" title="All 2 branches covered.">                } else if (ch == EOI) {</span>
+<span class="fc" id="L1360">                    token = JSONToken.EOF;</span>
+<span class="fc" id="L1361">                    this.ch = ch;</span>
+<span class="fc" id="L1362">                    break;</span>
+                } else {
+<span class="fc" id="L1364">                    boolean space = false;</span>
+<span class="fc bfc" id="L1365" title="All 2 branches covered.">                    while (isWhitespace(ch)) {</span>
+<span class="fc" id="L1366">                        ch = charAt(index++);</span>
+<span class="fc" id="L1367">                        bp = index;</span>
+<span class="fc" id="L1368">                        space = true;</span>
+                    }
+<span class="fc bfc" id="L1370" title="All 2 branches covered.">                    if (space) {</span>
+<span class="fc" id="L1371">                        continue;</span>
+                    }
+
+<span class="fc" id="L1374">                    matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1375">                    return null;</span>
+                }
+            }
+
+<span class="fc" id="L1379">            matchStat = END;</span>
+        } else {
+<span class="fc" id="L1381">            this.ch = startChar;</span>
+<span class="fc" id="L1382">            bp = startPos;</span>
+<span class="fc" id="L1383">            matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1384">            return null;</span>
+        }
+
+<span class="fc" id="L1387">        return list;</span>
+    }
+
+    public long scanFieldLong(char[] fieldName) {
+<span class="fc" id="L1391">        matchStat = UNKNOWN;</span>
+<span class="fc" id="L1392">        int startPos = this.bp;</span>
+<span class="fc" id="L1393">        char startChar = this.ch;</span>
+
+<span class="fc bfc" id="L1395" title="All 2 branches covered.">        if (!charArrayCompare(text, bp, fieldName)) {</span>
+<span class="fc" id="L1396">            matchStat = NOT_MATCH_NAME;</span>
+<span class="fc" id="L1397">            return 0;</span>
+        }
+
+<span class="fc" id="L1400">        int index = bp + fieldName.length;</span>
+
+<span class="fc" id="L1402">        char ch = charAt(index++);</span>
+
+<span class="fc bfc" id="L1404" title="All 2 branches covered.">        final boolean quote = ch == '&quot;';</span>
+<span class="fc bfc" id="L1405" title="All 2 branches covered.">        if (quote) {</span>
+<span class="fc" id="L1406">            ch = charAt(index++);</span>
+        }
+
+<span class="fc" id="L1409">        boolean negative = false;</span>
+<span class="fc bfc" id="L1410" title="All 2 branches covered.">        if (ch == '-') {</span>
+<span class="fc" id="L1411">            ch = charAt(index++);</span>
+<span class="fc" id="L1412">            negative = true;</span>
+        }
+
+        long value;
+<span class="fc bfc" id="L1416" title="All 4 branches covered.">        if (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="fc" id="L1417">            value = ch - '0';</span>
+            for (;;) {
+<span class="fc" id="L1419">                ch = charAt(index++);</span>
+<span class="fc bfc" id="L1420" title="All 4 branches covered.">                if (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="fc" id="L1421">                    value = value * 10 + (ch - '0');</span>
+<span class="fc bfc" id="L1422" title="All 2 branches covered.">                } else if (ch == '.') {</span>
+<span class="fc" id="L1423">                    matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1424">                    return 0;</span>
+                } else {
+<span class="fc bfc" id="L1426" title="All 2 branches covered.">                    if (quote) {</span>
+<span class="fc bfc" id="L1427" title="All 2 branches covered.">                        if (ch != '&quot;') {</span>
+<span class="fc" id="L1428">                            matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1429">                            return 0;</span>
+                        } else {
+<span class="fc" id="L1431">                            ch = charAt(index++);</span>
+                        }
+                    }
+
+<span class="fc bfc" id="L1435" title="All 4 branches covered.">                    if (ch == ',' || ch == '}') {</span>
+<span class="fc" id="L1436">                        bp = index - 1;</span>
+                    }
+                    break;
+                }
+            }
+
+<span class="fc bfc" id="L1442" title="All 6 branches covered.">            boolean valid = value &gt;= 0 || (value == -9223372036854775808L &amp;&amp; negative);</span>
+<span class="fc bfc" id="L1443" title="All 2 branches covered.">            if (!valid) {</span>
+<span class="fc" id="L1444">                this.bp = startPos;</span>
+<span class="fc" id="L1445">                this.ch = startChar;</span>
+<span class="fc" id="L1446">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1447">                return 0;</span>
+            }
+<span class="fc" id="L1449">        } else {</span>
+<span class="fc" id="L1450">            this.bp = startPos;</span>
+<span class="fc" id="L1451">            this.ch = startChar;</span>
+<span class="fc" id="L1452">            matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1453">            return 0;</span>
+        }
+
+        for (;;) {
+<span class="fc bfc" id="L1457" title="All 2 branches covered.">            if (ch == ',') {</span>
+<span class="fc" id="L1458">                this.ch = charAt(++bp);</span>
+<span class="fc" id="L1459">                matchStat = VALUE;</span>
+<span class="fc" id="L1460">                token = JSONToken.COMMA;</span>
+<span class="fc bfc" id="L1461" title="All 2 branches covered.">                return negative ? -value : value;</span>
+<span class="fc bfc" id="L1462" title="All 2 branches covered.">            } else if (ch == '}') {</span>
+<span class="fc" id="L1463">                ch = charAt(++bp);</span>
+                for (;;) {
+<span class="fc bfc" id="L1465" title="All 2 branches covered.">                    if (ch == ',') {</span>
+<span class="fc" id="L1466">                        token = JSONToken.COMMA;</span>
+<span class="fc" id="L1467">                        this.ch = charAt(++bp);</span>
+<span class="fc" id="L1468">                        break;</span>
+<span class="fc bfc" id="L1469" title="All 2 branches covered.">                    } else if (ch == ']') {</span>
+<span class="fc" id="L1470">                        token = JSONToken.RBRACKET;</span>
+<span class="fc" id="L1471">                        this.ch = charAt(++bp);</span>
+<span class="fc" id="L1472">                        break;</span>
+<span class="fc bfc" id="L1473" title="All 2 branches covered.">                    } else if (ch == '}') {</span>
+<span class="fc" id="L1474">                        token = JSONToken.RBRACE;</span>
+<span class="fc" id="L1475">                        this.ch = charAt(++bp);</span>
+<span class="fc" id="L1476">                        break;</span>
+<span class="fc bfc" id="L1477" title="All 2 branches covered.">                    } else if (ch == EOI) {</span>
+<span class="fc" id="L1478">                        token = JSONToken.EOF;</span>
+<span class="fc" id="L1479">                        break;</span>
+<span class="fc bfc" id="L1480" title="All 2 branches covered.">                    } else if (isWhitespace(ch)) {</span>
+<span class="fc" id="L1481">                        ch = charAt(++bp);</span>
+                    } else {
+<span class="fc" id="L1483">                        this.bp = startPos;</span>
+<span class="fc" id="L1484">                        this.ch = startChar;</span>
+<span class="fc" id="L1485">                        matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1486">                        return 0;</span>
+                    }
+                }
+<span class="fc" id="L1489">                matchStat = END;</span>
+<span class="fc" id="L1490">                break;</span>
+<span class="fc bfc" id="L1491" title="All 2 branches covered.">            } else if (isWhitespace(ch)) {</span>
+<span class="fc" id="L1492">                bp = index;</span>
+<span class="fc" id="L1493">                ch = charAt(index++);</span>
+<span class="fc" id="L1494">                continue;</span>
+            } else {
+<span class="fc" id="L1496">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1497">                return 0;</span>
+            }
+        }
+
+<span class="fc bfc" id="L1501" title="All 2 branches covered.">        return negative ? -value : value;</span>
+    }
+
+    public boolean scanFieldBoolean(char[] fieldName) {
+<span class="fc" id="L1505">        matchStat = UNKNOWN;</span>
+
+<span class="fc bfc" id="L1507" title="All 2 branches covered.">        if (!charArrayCompare(text, bp, fieldName)) {</span>
+<span class="fc" id="L1508">            matchStat = NOT_MATCH_NAME;</span>
+<span class="fc" id="L1509">            return false;</span>
+        }
+
+<span class="fc" id="L1512">        int startPos = bp;</span>
+<span class="fc" id="L1513">        int index = bp + fieldName.length;</span>
+
+<span class="fc" id="L1515">        char ch = charAt(index++);</span>
+
+<span class="fc bfc" id="L1517" title="All 2 branches covered.">        final boolean quote = ch == '&quot;';</span>
+<span class="fc bfc" id="L1518" title="All 2 branches covered.">        if (quote) {</span>
+<span class="fc" id="L1519">            ch = charAt(index++);</span>
+        }
+
+        boolean value;
+<span class="fc bfc" id="L1523" title="All 2 branches covered.">        if (ch == 't') {</span>
+<span class="fc bfc" id="L1524" title="All 2 branches covered.">            if (charAt(index++) != 'r') {</span>
+<span class="fc" id="L1525">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1526">                return false;</span>
+            }
+<span class="fc bfc" id="L1528" title="All 2 branches covered.">            if (charAt(index++) != 'u') {</span>
+<span class="fc" id="L1529">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1530">                return false;</span>
+            }
+<span class="fc bfc" id="L1532" title="All 2 branches covered.">            if (charAt(index++) != 'e') {</span>
+<span class="fc" id="L1533">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1534">                return false;</span>
+            }
+
+<span class="pc bpc" id="L1537" title="1 of 4 branches missed.">            if (quote &amp;&amp; charAt(index++) != '&quot;') {</span>
+<span class="nc" id="L1538">                matchStat = NOT_MATCH;</span>
+<span class="nc" id="L1539">                return false;</span>
+            }
+
+<span class="fc" id="L1542">            bp = index;</span>
+<span class="fc" id="L1543">            ch = charAt(bp);</span>
+<span class="fc" id="L1544">            value = true;</span>
+<span class="fc bfc" id="L1545" title="All 2 branches covered.">        } else if (ch == 'f') {</span>
+<span class="fc bfc" id="L1546" title="All 2 branches covered.">            if (charAt(index++) != 'a') {</span>
+<span class="fc" id="L1547">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1548">                return false;</span>
+            }
+<span class="fc bfc" id="L1550" title="All 2 branches covered.">            if (charAt(index++) != 'l') {</span>
+<span class="fc" id="L1551">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1552">                return false;</span>
+            }
+<span class="fc bfc" id="L1554" title="All 2 branches covered.">            if (charAt(index++) != 's') {</span>
+<span class="fc" id="L1555">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1556">                return false;</span>
+            }
+<span class="fc bfc" id="L1558" title="All 2 branches covered.">            if (charAt(index++) != 'e') {</span>
+<span class="fc" id="L1559">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1560">                return false;</span>
+            }
+
+<span class="pc bpc" id="L1563" title="1 of 4 branches missed.">            if (quote &amp;&amp; charAt(index++) != '&quot;') {</span>
+<span class="nc" id="L1564">                matchStat = NOT_MATCH;</span>
+<span class="nc" id="L1565">                return false;</span>
+            }
+
+<span class="fc" id="L1568">            bp = index;</span>
+<span class="fc" id="L1569">            ch = charAt(bp);</span>
+<span class="fc" id="L1570">            value = false;</span>
+<span class="fc bfc" id="L1571" title="All 2 branches covered.">        } else if (ch == '1') {</span>
+<span class="pc bpc" id="L1572" title="1 of 4 branches missed.">            if (quote &amp;&amp; charAt(index++) != '&quot;') {</span>
+<span class="nc" id="L1573">                matchStat = NOT_MATCH;</span>
+<span class="nc" id="L1574">                return false;</span>
+            }
+
+<span class="fc" id="L1577">            bp = index;</span>
+<span class="fc" id="L1578">            ch = charAt(bp);</span>
+<span class="fc" id="L1579">            value = true;</span>
+<span class="fc bfc" id="L1580" title="All 2 branches covered.">        } else if (ch == '0') {</span>
+<span class="pc bpc" id="L1581" title="3 of 4 branches missed.">            if (quote &amp;&amp; charAt(index++) != '&quot;') {</span>
+<span class="nc" id="L1582">                matchStat = NOT_MATCH;</span>
+<span class="nc" id="L1583">                return false;</span>
+            }
+
+<span class="fc" id="L1586">            bp = index;</span>
+<span class="fc" id="L1587">            ch = charAt(bp);</span>
+<span class="fc" id="L1588">            value = false;</span>
+        } else {
+<span class="fc" id="L1590">            matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1591">            return false;</span>
+        }
+
+        for (;;) {
+<span class="fc bfc" id="L1595" title="All 2 branches covered.">            if (ch == ',') {</span>
+<span class="fc" id="L1596">                this.ch = charAt(++bp);</span>
+<span class="fc" id="L1597">                matchStat = VALUE;</span>
+<span class="fc" id="L1598">                token = JSONToken.COMMA;</span>
+<span class="fc" id="L1599">                break;</span>
+<span class="fc bfc" id="L1600" title="All 2 branches covered.">            } else if (ch == '}') {</span>
+<span class="fc" id="L1601">                ch = charAt(++bp);</span>
+                for (;;) {
+<span class="fc bfc" id="L1603" title="All 2 branches covered.">                    if (ch == ',') {</span>
+<span class="fc" id="L1604">                        token = JSONToken.COMMA;</span>
+<span class="fc" id="L1605">                        this.ch = charAt(++bp);</span>
+<span class="fc bfc" id="L1606" title="All 2 branches covered.">                    } else if (ch == ']') {</span>
+<span class="fc" id="L1607">                        token = JSONToken.RBRACKET;</span>
+<span class="fc" id="L1608">                        this.ch = charAt(++bp);</span>
+<span class="fc bfc" id="L1609" title="All 2 branches covered.">                    } else if (ch == '}') {</span>
+<span class="fc" id="L1610">                        token = JSONToken.RBRACE;</span>
+<span class="fc" id="L1611">                        this.ch = charAt(++bp);</span>
+<span class="fc bfc" id="L1612" title="All 2 branches covered.">                    } else if (ch == EOI) {</span>
+<span class="fc" id="L1613">                        token = JSONToken.EOF;</span>
+<span class="fc bfc" id="L1614" title="All 2 branches covered.">                    } else if (isWhitespace(ch)) {</span>
+<span class="fc" id="L1615">                        ch = charAt(++bp);</span>
+<span class="fc" id="L1616">                        continue;</span>
+                    } else {
+<span class="fc" id="L1618">                        matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1619">                        return false;</span>
+                    }
+                    break;
+                }
+<span class="fc" id="L1623">                matchStat = END;</span>
+<span class="fc" id="L1624">                break;</span>
+<span class="fc bfc" id="L1625" title="All 2 branches covered.">            } else if (isWhitespace(ch)) {</span>
+<span class="fc" id="L1626">                ch = charAt(++bp);</span>
+            } else {
+<span class="fc" id="L1628">                bp = startPos;</span>
+<span class="fc" id="L1629">                ch = charAt(bp);</span>
+<span class="fc" id="L1630">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1631">                return false;</span>
+            }
+        }
+
+<span class="fc" id="L1635">        return value;</span>
+    }
+
+    public final int scanInt(char expectNext) {
+<span class="fc" id="L1639">        matchStat = UNKNOWN;</span>
+
+<span class="fc" id="L1641">        final int mark = bp;</span>
+<span class="fc" id="L1642">        int offset = bp;</span>
+<span class="fc" id="L1643">        char chLocal = charAt(offset++);</span>
+
+<span class="fc bfc" id="L1645" title="All 2 branches covered.">        while (isWhitespace(chLocal)) {</span>
+<span class="fc" id="L1646">            chLocal = charAt(offset++);</span>
+        }
+
+<span class="fc bfc" id="L1649" title="All 2 branches covered.">        final boolean quote = chLocal == '&quot;';</span>
+
+<span class="fc bfc" id="L1651" title="All 2 branches covered.">        if (quote) {</span>
+<span class="fc" id="L1652">            chLocal = charAt(offset++);</span>
+        }
+
+<span class="fc bfc" id="L1655" title="All 2 branches covered.">        final boolean negative = chLocal == '-';</span>
+<span class="fc bfc" id="L1656" title="All 2 branches covered.">        if (negative) {</span>
+<span class="fc" id="L1657">            chLocal = charAt(offset++);</span>
+        }
+
+        int value;
+<span class="fc bfc" id="L1661" title="All 4 branches covered.">        if (chLocal &gt;= '0' &amp;&amp; chLocal &lt;= '9') {</span>
+<span class="fc" id="L1662">            value = chLocal - '0';</span>
+            for (;;) {
+<span class="fc" id="L1664">                chLocal = charAt(offset++);</span>
+<span class="fc bfc" id="L1665" title="All 4 branches covered.">                if (chLocal &gt;= '0' &amp;&amp; chLocal &lt;= '9') {</span>
+<span class="fc" id="L1666">                    int value_10 = value * 10;</span>
+<span class="fc bfc" id="L1667" title="All 2 branches covered.">                    if (value_10 &lt; value) {</span>
+<span class="fc" id="L1668">                        throw new JSONException(&quot;parseInt error : &quot;</span>
+<span class="fc" id="L1669">                                + subString(mark, offset - 1));</span>
+                    }
+<span class="fc" id="L1671">                    value = value_10 + (chLocal - '0');</span>
+<span class="fc bfc" id="L1672" title="All 2 branches covered.">                } else if (chLocal == '.') {</span>
+<span class="fc" id="L1673">                    matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1674">                    return 0;</span>
+                } else {
+<span class="fc bfc" id="L1676" title="All 2 branches covered.">                    if (quote) {</span>
+<span class="pc bpc" id="L1677" title="1 of 2 branches missed.">                        if (chLocal != '&quot;') {</span>
+<span class="nc" id="L1678">                            matchStat = NOT_MATCH;</span>
+<span class="nc" id="L1679">                            return 0;</span>
+                        } else {
+<span class="fc" id="L1681">                            chLocal = charAt(offset++);</span>
+                        }
+                    }
+                    break;
+                }
+            }
+<span class="fc bfc" id="L1687" title="All 2 branches covered.">            if (value &lt; 0) {</span>
+<span class="fc" id="L1688">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1689">                return 0;</span>
+            }
+<span class="fc bfc" id="L1691" title="All 2 branches covered.">        } else if (chLocal == 'n'</span>
+<span class="pc bpc" id="L1692" title="1 of 2 branches missed.">                &amp;&amp; charAt(offset++) == 'u'</span>
+<span class="pc bpc" id="L1693" title="1 of 2 branches missed.">                &amp;&amp; charAt(offset++) == 'l'</span>
+<span class="pc bpc" id="L1694" title="1 of 2 branches missed.">                &amp;&amp; charAt(offset++) == 'l') {</span>
+<span class="fc" id="L1695">            matchStat = VALUE_NULL;</span>
+<span class="fc" id="L1696">            value = 0;</span>
+<span class="fc" id="L1697">            chLocal = charAt(offset++);</span>
+
+<span class="pc bpc" id="L1699" title="2 of 4 branches missed.">            if (quote &amp;&amp; chLocal == '&quot;') {</span>
+<span class="fc" id="L1700">                chLocal = charAt(offset++);</span>
+            }
+
+            for (;;) {
+<span class="fc bfc" id="L1704" title="All 2 branches covered.">                if (chLocal == ',') {</span>
+<span class="fc" id="L1705">                    bp = offset;</span>
+<span class="fc" id="L1706">                    this.ch = charAt(bp);</span>
+<span class="fc" id="L1707">                    matchStat = VALUE_NULL;</span>
+<span class="fc" id="L1708">                    token = JSONToken.COMMA;</span>
+<span class="fc" id="L1709">                    return value;</span>
+<span class="fc bfc" id="L1710" title="All 2 branches covered.">                } else if (chLocal == ']') {</span>
+<span class="fc" id="L1711">                    bp = offset;</span>
+<span class="fc" id="L1712">                    this.ch = charAt(bp);</span>
+<span class="fc" id="L1713">                    matchStat = VALUE_NULL;</span>
+<span class="fc" id="L1714">                    token = JSONToken.RBRACKET;</span>
+<span class="fc" id="L1715">                    return value;</span>
+<span class="pc bpc" id="L1716" title="1 of 2 branches missed.">                } else if (isWhitespace(chLocal)) {</span>
+<span class="fc" id="L1717">                    chLocal = charAt(offset++);</span>
+<span class="fc" id="L1718">                    continue;</span>
+                }
+                break;
+            }
+<span class="nc" id="L1722">            matchStat = NOT_MATCH;</span>
+<span class="nc" id="L1723">            return 0;</span>
+        } else {
+<span class="fc" id="L1725">            matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1726">            return 0;</span>
+        }
+
+        for (;;) {
+<span class="fc bfc" id="L1730" title="All 2 branches covered.">            if (chLocal == expectNext) {</span>
+<span class="fc" id="L1731">                bp = offset;</span>
+<span class="fc" id="L1732">                this.ch = charAt(bp);</span>
+<span class="fc" id="L1733">                matchStat = VALUE;</span>
+<span class="fc" id="L1734">                token = JSONToken.COMMA;</span>
+<span class="fc bfc" id="L1735" title="All 2 branches covered.">                return negative ? -value : value;</span>
+            } else {
+<span class="fc bfc" id="L1737" title="All 2 branches covered.">                if (isWhitespace(chLocal)) {</span>
+<span class="fc" id="L1738">                    chLocal = charAt(offset++);</span>
+<span class="fc" id="L1739">                    continue;</span>
+                }
+<span class="fc" id="L1741">                matchStat = NOT_MATCH;</span>
+<span class="fc bfc" id="L1742" title="All 2 branches covered.">                return negative ? -value : value;</span>
+            }
+        }
+    }
+
+    public  double scanDouble(char seperator) {
+<span class="fc" id="L1748">        matchStat = UNKNOWN;</span>
+
+<span class="fc" id="L1750">        int offset = bp;</span>
+<span class="fc" id="L1751">        char chLocal = charAt(offset++);</span>
+<span class="fc bfc" id="L1752" title="All 2 branches covered.">        final boolean quote = chLocal == '&quot;';</span>
+<span class="fc bfc" id="L1753" title="All 2 branches covered.">        if (quote) {</span>
+<span class="fc" id="L1754">            chLocal = charAt(offset++);</span>
+        }
+
+<span class="fc bfc" id="L1757" title="All 2 branches covered.">        boolean negative = chLocal == '-';</span>
+<span class="fc bfc" id="L1758" title="All 2 branches covered.">        if (negative) {</span>
+<span class="fc" id="L1759">            chLocal = charAt(offset++);</span>
+        }
+
+        double value;
+<span class="pc bpc" id="L1763" title="1 of 4 branches missed.">        if (chLocal &gt;= '0' &amp;&amp; chLocal &lt;= '9') {</span>
+<span class="fc" id="L1764">            long intVal = chLocal - '0';</span>
+            for (; ; ) {
+<span class="fc" id="L1766">                chLocal = charAt(offset++);</span>
+<span class="fc bfc" id="L1767" title="All 4 branches covered.">                if (chLocal &gt;= '0' &amp;&amp; chLocal &lt;= '9') {</span>
+<span class="fc" id="L1768">                    intVal = intVal * 10 + (chLocal - '0');</span>
+<span class="fc" id="L1769">                    continue;</span>
+                } else {
+                    break;
+                }
+            }
+
+<span class="fc" id="L1775">            long power = 1;</span>
+<span class="fc bfc" id="L1776" title="All 2 branches covered.">            boolean small = (chLocal == '.');</span>
+<span class="fc bfc" id="L1777" title="All 2 branches covered.">            if (small) {</span>
+<span class="fc" id="L1778">                chLocal = charAt(offset++);</span>
+<span class="pc bpc" id="L1779" title="1 of 4 branches missed.">                if (chLocal &gt;= '0' &amp;&amp; chLocal &lt;= '9') {</span>
+<span class="fc" id="L1780">                    intVal = intVal * 10 + (chLocal - '0');</span>
+<span class="fc" id="L1781">                    power = 10;</span>
+                    for (; ; ) {
+<span class="fc" id="L1783">                        chLocal = charAt(offset++);</span>
+<span class="fc bfc" id="L1784" title="All 4 branches covered.">                        if (chLocal &gt;= '0' &amp;&amp; chLocal &lt;= '9') {</span>
+<span class="fc" id="L1785">                            intVal = intVal * 10 + (chLocal - '0');</span>
+<span class="fc" id="L1786">                            power *= 10;</span>
+<span class="fc" id="L1787">                            continue;</span>
+                        } else {
+                            break;
+                        }
+                    }
+                } else {
+<span class="fc" id="L1793">                    matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1794">                    return 0;</span>
+                }
+            }
+
+<span class="pc bpc" id="L1798" title="1 of 4 branches missed.">            boolean exp = chLocal == 'e' || chLocal == 'E';</span>
+<span class="fc bfc" id="L1799" title="All 2 branches covered.">            if (exp) {</span>
+<span class="fc" id="L1800">                chLocal = charAt(offset++);</span>
+<span class="pc bpc" id="L1801" title="2 of 4 branches missed.">                if (chLocal == '+' || chLocal == '-') {</span>
+<span class="fc" id="L1802">                    chLocal = charAt(offset++);</span>
+                }
+                for (; ; ) {
+<span class="pc bpc" id="L1805" title="1 of 4 branches missed.">                    if (chLocal &gt;= '0' &amp;&amp; chLocal &lt;= '9') {</span>
+<span class="fc" id="L1806">                        chLocal = charAt(offset++);</span>
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            int start, count;
+<span class="fc bfc" id="L1814" title="All 2 branches covered.">            if (quote) {</span>
+<span class="pc bpc" id="L1815" title="1 of 2 branches missed.">                if (chLocal != '&quot;') {</span>
+<span class="nc" id="L1816">                    matchStat = NOT_MATCH;</span>
+<span class="nc" id="L1817">                    return 0;</span>
+                } else {
+<span class="fc" id="L1819">                    chLocal = charAt(offset++);</span>
+                }
+<span class="fc" id="L1821">                start = bp + 1;</span>
+<span class="fc" id="L1822">                count = offset - start - 2;</span>
+            } else {
+<span class="fc" id="L1824">                start = bp;</span>
+<span class="fc" id="L1825">                count = offset - start - 1;</span>
+            }
+
+<span class="fc bfc" id="L1828" title="All 4 branches covered.">            if (!exp &amp;&amp; count &lt; 18) {</span>
+<span class="fc" id="L1829">                value = ((double) intVal) / power;</span>
+<span class="fc bfc" id="L1830" title="All 2 branches covered.">                if (negative) {</span>
+<span class="fc" id="L1831">                    value = -value;</span>
+                }
+            } else {
+<span class="fc" id="L1834">                String text = this.subString(start, count);</span>
+<span class="fc" id="L1835">                value = Double.parseDouble(text);</span>
+            }
+<span class="fc bfc" id="L1837" title="All 2 branches covered.">        } else if (chLocal == 'n'</span>
+<span class="pc bpc" id="L1838" title="1 of 2 branches missed.">                &amp;&amp; charAt(offset++) == 'u'</span>
+<span class="pc bpc" id="L1839" title="1 of 2 branches missed.">                &amp;&amp; charAt(offset++) == 'l'</span>
+<span class="pc bpc" id="L1840" title="1 of 2 branches missed.">                &amp;&amp; charAt(offset++) == 'l') {</span>
+<span class="fc" id="L1841">            matchStat = VALUE_NULL;</span>
+<span class="fc" id="L1842">            value = 0;</span>
+<span class="fc" id="L1843">            chLocal = charAt(offset++);</span>
+
+<span class="pc bpc" id="L1845" title="2 of 4 branches missed.">            if (quote &amp;&amp; chLocal == '&quot;') {</span>
+<span class="fc" id="L1846">                chLocal = charAt(offset++);</span>
+            }
+
+            for (;;) {
+<span class="fc bfc" id="L1850" title="All 2 branches covered.">                if (chLocal == ',') {</span>
+<span class="fc" id="L1851">                    bp = offset;</span>
+<span class="fc" id="L1852">                    this.ch = charAt(bp);</span>
+<span class="fc" id="L1853">                    matchStat = VALUE_NULL;</span>
+<span class="fc" id="L1854">                    token = JSONToken.COMMA;</span>
+<span class="fc" id="L1855">                    return value;</span>
+<span class="fc bfc" id="L1856" title="All 2 branches covered.">                } else if (chLocal == ']') {</span>
+<span class="fc" id="L1857">                    bp = offset;</span>
+<span class="fc" id="L1858">                    this.ch = charAt(bp);</span>
+<span class="fc" id="L1859">                    matchStat = VALUE_NULL;</span>
+<span class="fc" id="L1860">                    token = JSONToken.RBRACKET;</span>
+<span class="fc" id="L1861">                    return value;</span>
+<span class="pc bpc" id="L1862" title="1 of 2 branches missed.">                } else if (isWhitespace(chLocal)) {</span>
+<span class="fc" id="L1863">                    chLocal = charAt(offset++);</span>
+<span class="fc" id="L1864">                    continue;</span>
+                }
+                break;
+            }
+<span class="nc" id="L1868">            matchStat = NOT_MATCH;</span>
+<span class="nc" id="L1869">            return 0;</span>
+        } else {
+<span class="fc" id="L1871">            matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1872">            return 0;</span>
+        }
+
+<span class="fc bfc" id="L1875" title="All 2 branches covered.">        if (chLocal == seperator) {</span>
+<span class="fc" id="L1876">            bp = offset;</span>
+<span class="fc" id="L1877">            this.ch = this.charAt(bp);</span>
+<span class="fc" id="L1878">            matchStat = VALUE;</span>
+<span class="fc" id="L1879">            token = JSONToken.COMMA;</span>
+<span class="fc" id="L1880">            return value;</span>
+        } else {
+<span class="fc" id="L1882">            matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1883">            return value;</span>
+        }
+    }
+
+    public long scanLong(char seperator) {
+<span class="fc" id="L1888">        matchStat = UNKNOWN;</span>
+
+<span class="fc" id="L1890">        int offset = bp;</span>
+<span class="fc" id="L1891">        char chLocal = charAt(offset++);</span>
+<span class="fc bfc" id="L1892" title="All 2 branches covered.">        final boolean quote = chLocal == '&quot;';</span>
+
+<span class="fc bfc" id="L1894" title="All 2 branches covered.">        if (quote) {</span>
+<span class="fc" id="L1895">            chLocal = charAt(offset++);</span>
+        }
+
+<span class="fc bfc" id="L1898" title="All 2 branches covered.">        final boolean negative = chLocal == '-';</span>
+<span class="fc bfc" id="L1899" title="All 2 branches covered.">        if (negative) {</span>
+<span class="fc" id="L1900">            chLocal = charAt(offset++);</span>
+        }
+
+        long value;
+<span class="fc bfc" id="L1904" title="All 4 branches covered.">        if (chLocal &gt;= '0' &amp;&amp; chLocal &lt;= '9') {</span>
+<span class="fc" id="L1905">            value = chLocal - '0';</span>
+            for (;;) {
+<span class="fc" id="L1907">                chLocal = charAt(offset++);</span>
+<span class="fc bfc" id="L1908" title="All 4 branches covered.">                if (chLocal &gt;= '0' &amp;&amp; chLocal &lt;= '9') {</span>
+<span class="fc" id="L1909">                    value = value * 10 + (chLocal - '0');</span>
+<span class="fc bfc" id="L1910" title="All 2 branches covered.">                } else if (chLocal == '.') {</span>
+<span class="fc" id="L1911">                    matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1912">                    return 0;</span>
+                } else {
+<span class="fc bfc" id="L1914" title="All 2 branches covered.">                    if (quote) {</span>
+<span class="pc bpc" id="L1915" title="1 of 2 branches missed.">                        if (chLocal != '&quot;') {</span>
+<span class="nc" id="L1916">                            matchStat = NOT_MATCH;</span>
+<span class="nc" id="L1917">                            return 0;</span>
+                        } else {
+<span class="fc" id="L1919">                            chLocal = charAt(offset++);</span>
+                        }
+                    }
+                    break;
+                }
+            }
+
+<span class="fc bfc" id="L1926" title="All 6 branches covered.">            boolean valid = value &gt;= 0 || (value == -9223372036854775808L &amp;&amp; negative);</span>
+<span class="fc bfc" id="L1927" title="All 2 branches covered.">            if (!valid) {</span>
+<span class="fc" id="L1928">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1929">                return 0;</span>
+            }
+<span class="fc bfc" id="L1931" title="All 2 branches covered.">        } else if (chLocal == 'n'</span>
+<span class="pc bpc" id="L1932" title="1 of 2 branches missed.">                &amp;&amp; charAt(offset++) == 'u'</span>
+<span class="pc bpc" id="L1933" title="1 of 2 branches missed.">                &amp;&amp; charAt(offset++) == 'l'</span>
+<span class="pc bpc" id="L1934" title="1 of 2 branches missed.">                &amp;&amp; charAt(offset++) == 'l') {</span>
+<span class="fc" id="L1935">            matchStat = VALUE_NULL;</span>
+<span class="fc" id="L1936">            value = 0;</span>
+<span class="fc" id="L1937">            chLocal = charAt(offset++);</span>
+
+<span class="pc bpc" id="L1939" title="2 of 4 branches missed.">            if (quote &amp;&amp; chLocal == '&quot;') {</span>
+<span class="fc" id="L1940">                chLocal = charAt(offset++);</span>
+            }
+
+            for (;;) {
+<span class="fc bfc" id="L1944" title="All 2 branches covered.">                if (chLocal == ',') {</span>
+<span class="fc" id="L1945">                    bp = offset;</span>
+<span class="fc" id="L1946">                    this.ch = charAt(bp);</span>
+<span class="fc" id="L1947">                    matchStat = VALUE_NULL;</span>
+<span class="fc" id="L1948">                    token = JSONToken.COMMA;</span>
+<span class="fc" id="L1949">                    return value;</span>
+<span class="fc bfc" id="L1950" title="All 2 branches covered.">                } else if (chLocal == ']') {</span>
+<span class="fc" id="L1951">                    bp = offset;</span>
+<span class="fc" id="L1952">                    this.ch = charAt(bp);</span>
+<span class="fc" id="L1953">                    matchStat = VALUE_NULL;</span>
+<span class="fc" id="L1954">                    token = JSONToken.RBRACKET;</span>
+<span class="fc" id="L1955">                    return value;</span>
+<span class="pc bpc" id="L1956" title="1 of 2 branches missed.">                } else if (isWhitespace(chLocal)) {</span>
+<span class="fc" id="L1957">                    chLocal = charAt(offset++);</span>
+<span class="fc" id="L1958">                    continue;</span>
+                }
+                break;
+            }
+<span class="nc" id="L1962">            matchStat = NOT_MATCH;</span>
+<span class="nc" id="L1963">            return 0;</span>
+        } else {
+<span class="fc" id="L1965">            matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1966">            return 0;</span>
+        }
+
+        for (;;) {
+<span class="fc bfc" id="L1970" title="All 2 branches covered.">            if (chLocal == seperator) {</span>
+<span class="fc" id="L1971">                bp = offset;</span>
+<span class="fc" id="L1972">                this.ch = charAt(bp);</span>
+<span class="fc" id="L1973">                matchStat = VALUE;</span>
+<span class="fc" id="L1974">                token = JSONToken.COMMA;</span>
+<span class="fc bfc" id="L1975" title="All 2 branches covered.">                return negative ? -value : value;</span>
+            } else {
+<span class="fc bfc" id="L1977" title="All 2 branches covered.">                if (isWhitespace(chLocal)) {</span>
+<span class="fc" id="L1978">                    chLocal = charAt(offset++);</span>
+<span class="fc" id="L1979">                    continue;</span>
+                }
+
+<span class="fc" id="L1982">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L1983">                return value;</span>
+            }
+        }
+    }
+
+    public java.util.Date scanDate(char seperator) {
+<span class="fc" id="L1989">        matchStat = UNKNOWN;</span>
+<span class="fc" id="L1990">        int startPos = this.bp;</span>
+<span class="fc" id="L1991">        char startChar = this.ch;</span>
+
+<span class="fc" id="L1993">        int index = bp;</span>
+
+<span class="fc" id="L1995">        char ch = charAt(index++);</span>
+
+        final java.util.Date dateVal;
+<span class="fc bfc" id="L1998" title="All 2 branches covered.">        if (ch == '&quot;') {</span>
+<span class="fc" id="L1999">            int startIndex = index;</span>
+<span class="fc" id="L2000">            int endIndex = indexOf('&quot;', startIndex);</span>
+<span class="pc bpc" id="L2001" title="1 of 2 branches missed.">            if (endIndex == -1) {</span>
+<span class="nc" id="L2002">                throw new JSONException(&quot;unclosed str&quot;);</span>
+            }
+
+<span class="fc" id="L2005">            int rest = endIndex - startIndex;</span>
+<span class="fc" id="L2006">            bp = index;</span>
+<span class="pc bpc" id="L2007" title="1 of 2 branches missed.">            if (scanISO8601DateIfMatch(false, rest)) {</span>
+<span class="fc" id="L2008">                dateVal = calendar.getTime();</span>
+            } else {
+<span class="nc" id="L2010">                bp = startPos;</span>
+<span class="nc" id="L2011">                this.ch = startChar;</span>
+<span class="nc" id="L2012">                matchStat = NOT_MATCH;</span>
+<span class="nc" id="L2013">                return null;</span>
+            }
+<span class="fc" id="L2015">            ch = charAt(endIndex + 1);</span>
+<span class="fc" id="L2016">            bp = startPos;</span>
+
+            for (; ; ) {
+<span class="pc bpc" id="L2019" title="1 of 4 branches missed.">                if (ch == ',' || ch == ']') {</span>
+<span class="fc" id="L2020">                    bp = endIndex + 1;</span>
+<span class="fc" id="L2021">                    this.ch = ch;</span>
+<span class="fc" id="L2022">                    break;</span>
+<span class="nc bnc" id="L2023" title="All 2 branches missed.">                } else if (isWhitespace(ch)) {</span>
+<span class="nc" id="L2024">                    endIndex++;</span>
+<span class="nc" id="L2025">                    ch = charAt(endIndex + 1);</span>
+                } else {
+<span class="nc" id="L2027">                    this.bp = startPos;</span>
+<span class="nc" id="L2028">                    this.ch = startChar;</span>
+<span class="nc" id="L2029">                    matchStat = NOT_MATCH;</span>
+
+<span class="nc" id="L2031">                    return null;</span>
+                }
+            }
+<span class="pc bpc" id="L2034" title="2 of 6 branches missed.">        } else if (ch == '-' || (ch &gt;= '0' &amp;&amp; ch &lt;= '9')) {</span>
+<span class="fc" id="L2035">            long millis = 0;</span>
+
+<span class="fc" id="L2037">            boolean negative = false;</span>
+<span class="pc bpc" id="L2038" title="1 of 2 branches missed.">            if (ch == '-') {</span>
+<span class="nc" id="L2039">                ch = charAt(index++);</span>
+<span class="nc" id="L2040">                negative = true;</span>
+            }
+
+<span class="pc bpc" id="L2043" title="2 of 4 branches missed.">            if (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="fc" id="L2044">                millis = ch - '0';</span>
+                for (; ; ) {
+<span class="fc" id="L2046">                    ch = charAt(index++);</span>
+<span class="fc bfc" id="L2047" title="All 4 branches covered.">                    if (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="fc" id="L2048">                        millis = millis * 10 + (ch - '0');</span>
+                    } else {
+<span class="pc bpc" id="L2050" title="1 of 4 branches missed.">                        if (ch == ',' || ch == ']') {</span>
+<span class="fc" id="L2051">                            bp = index - 1;</span>
+                        }
+                        break;
+                    }
+                }
+            }
+
+<span class="pc bpc" id="L2058" title="1 of 2 branches missed.">            if (millis &lt; 0) {</span>
+<span class="nc" id="L2059">                this.bp = startPos;</span>
+<span class="nc" id="L2060">                this.ch = startChar;</span>
+<span class="nc" id="L2061">                matchStat = NOT_MATCH;</span>
+<span class="nc" id="L2062">                return null;</span>
+            }
+
+<span class="pc bpc" id="L2065" title="1 of 2 branches missed.">            if (negative) {</span>
+<span class="nc" id="L2066">                millis = -millis;</span>
+            }
+
+<span class="fc" id="L2069">            dateVal = new java.util.Date(millis);</span>
+<span class="pc bpc" id="L2070" title="1 of 2 branches missed.">        } else if (ch == 'n'</span>
+<span class="pc bpc" id="L2071" title="1 of 2 branches missed.">                &amp;&amp; charAt(index++) == 'u'</span>
+<span class="pc bpc" id="L2072" title="1 of 2 branches missed.">                &amp;&amp; charAt(index++) == 'l'</span>
+<span class="pc bpc" id="L2073" title="1 of 2 branches missed.">                &amp;&amp; charAt(index++) == 'l') {</span>
+<span class="fc" id="L2074">            dateVal = null;</span>
+<span class="fc" id="L2075">            ch = charAt(index);</span>
+<span class="fc" id="L2076">            bp = index;</span>
+        } else {
+<span class="nc" id="L2078">            this.bp = startPos;</span>
+<span class="nc" id="L2079">            this.ch = startChar;</span>
+<span class="nc" id="L2080">            matchStat = NOT_MATCH;</span>
+
+<span class="nc" id="L2082">            return null;</span>
+        }
+
+<span class="fc bfc" id="L2085" title="All 2 branches covered.">        if (ch == ',') {</span>
+<span class="fc" id="L2086">            this.ch = charAt(++bp);</span>
+<span class="fc" id="L2087">            matchStat = VALUE;</span>
+<span class="fc" id="L2088">            return dateVal;</span>
+        } else {
+            //condition ch == '}' is always 'true'
+<span class="fc" id="L2091">            ch = charAt(++bp);</span>
+<span class="pc bpc" id="L2092" title="1 of 2 branches missed.">            if (ch == ',') {</span>
+<span class="nc" id="L2093">                token = JSONToken.COMMA;</span>
+<span class="nc" id="L2094">                this.ch = charAt(++bp);</span>
+<span class="pc bpc" id="L2095" title="1 of 2 branches missed.">            } else if (ch == ']') {</span>
+<span class="nc" id="L2096">                token = JSONToken.RBRACKET;</span>
+<span class="nc" id="L2097">                this.ch = charAt(++bp);</span>
+<span class="pc bpc" id="L2098" title="1 of 2 branches missed.">            } else if (ch == '}') {</span>
+<span class="nc" id="L2099">                token = JSONToken.RBRACE;</span>
+<span class="nc" id="L2100">                this.ch = charAt(++bp);</span>
+<span class="pc bpc" id="L2101" title="1 of 2 branches missed.">            } else if (ch == EOI) {</span>
+<span class="fc" id="L2102">                this.ch = EOI;</span>
+<span class="fc" id="L2103">                token = JSONToken.EOF;</span>
+            } else {
+<span class="nc" id="L2105">                this.bp = startPos;</span>
+<span class="nc" id="L2106">                this.ch = startChar;</span>
+<span class="nc" id="L2107">                matchStat = NOT_MATCH;</span>
+<span class="nc" id="L2108">                return null;</span>
+            }
+<span class="fc" id="L2110">            matchStat = END;</span>
+        }
+<span class="fc" id="L2112">        return dateVal;</span>
+    }
+
+    protected final void arrayCopy(int srcPos, char[] dest, int destPos, int length) {
+<span class="fc" id="L2116">        text.getChars(srcPos, srcPos + length, dest, destPos);</span>
+<span class="fc" id="L2117">    }</span>
+
+    public String info() {
+<span class="fc" id="L2120">        StringBuilder buf = new StringBuilder();</span>
+
+//        buf.append(&quot;pos &quot;).append(bp);
+//        return &quot;pos &quot; + bp //
+//                + &quot;, json : &quot; //
+//                + (text.length() &lt; 65536 //
+//                ? text //
+//                : text.substring(0, 65536));
+
+<span class="fc" id="L2129">        int line = 1;</span>
+<span class="fc" id="L2130">        int column = 1;</span>
+<span class="fc bfc" id="L2131" title="All 2 branches covered.">        for (int i = 0; i &lt; bp; ++i, column++) {</span>
+<span class="fc" id="L2132">            char ch = text.charAt(i);</span>
+<span class="pc bpc" id="L2133" title="1 of 2 branches missed.">            if (ch == '\n') {</span>
+<span class="nc" id="L2134">                column = 1;</span>
+<span class="nc" id="L2135">                line++;</span>
+            }
+        }
+
+<span class="fc" id="L2139">        buf.append(&quot;pos &quot;).append(bp)</span>
+<span class="fc" id="L2140">                .append(&quot;, line &quot;).append(line)</span>
+<span class="fc" id="L2141">                .append(&quot;, column &quot;).append(column);</span>
+
+<span class="pc bpc" id="L2143" title="1 of 2 branches missed.">        if (text.length() &lt; 65535) {</span>
+<span class="fc" id="L2144">            buf.append(text);</span>
+        } else {
+<span class="nc" id="L2146">            buf.append(text.substring(0, 65535));</span>
+        }
+
+<span class="fc" id="L2149">        return buf.toString();</span>
+    }
+
+    // for hsf support
+    public String[] scanFieldStringArray(char[] fieldName, int argTypesCount, SymbolTable typeSymbolTable) {
+<span class="fc" id="L2154">        int startPos = bp;</span>
+<span class="fc" id="L2155">        char starChar = ch;</span>
+
+<span class="fc bfc" id="L2157" title="All 2 branches covered.">        while (isWhitespace(ch)) {</span>
+<span class="fc" id="L2158">            next();</span>
+        }
+
+        int offset;
+        char ch;
+<span class="fc bfc" id="L2163" title="All 2 branches covered.">        if (fieldName != null) {</span>
+<span class="fc" id="L2164">            matchStat = UNKNOWN;</span>
+<span class="fc bfc" id="L2165" title="All 2 branches covered.">            if (!charArrayCompare(fieldName)) {</span>
+<span class="fc" id="L2166">                matchStat = NOT_MATCH_NAME;</span>
+<span class="fc" id="L2167">                return null;</span>
+            }
+
+<span class="fc" id="L2170">            offset = bp + fieldName.length;</span>
+<span class="fc" id="L2171">            ch = text.charAt(offset++);</span>
+<span class="fc bfc" id="L2172" title="All 2 branches covered.">            while (isWhitespace(ch)) {</span>
+<span class="fc" id="L2173">                ch = text.charAt(offset++);</span>
+            }
+
+<span class="pc bpc" id="L2176" title="1 of 2 branches missed.">            if (ch == ':') {</span>
+<span class="fc" id="L2177">                ch = text.charAt(offset++);</span>
+            } else {
+<span class="nc" id="L2179">                matchStat = NOT_MATCH;</span>
+<span class="nc" id="L2180">                return null;</span>
+            }
+
+<span class="fc bfc" id="L2183" title="All 2 branches covered.">            while (isWhitespace(ch)) {</span>
+<span class="fc" id="L2184">                ch = text.charAt(offset++);</span>
+            }
+        } else {
+<span class="fc" id="L2187">            offset = bp + 1;</span>
+<span class="fc" id="L2188">            ch = this.ch;</span>
+        }
+
+<span class="fc bfc" id="L2191" title="All 2 branches covered.">        if (ch == '[') {</span>
+<span class="fc" id="L2192">            bp = offset;</span>
+<span class="fc" id="L2193">            this.ch = text.charAt(bp);</span>
+<span class="pc bpc" id="L2194" title="2 of 4 branches missed.">        } else if (ch == 'n' &amp;&amp; text.startsWith(&quot;ull&quot;, bp + 1)) {</span>
+<span class="fc" id="L2195">            bp += 4;</span>
+<span class="fc" id="L2196">            this.ch = text.charAt(bp);</span>
+<span class="fc" id="L2197">            return null;</span>
+        } else {
+<span class="nc" id="L2199">            matchStat = NOT_MATCH;</span>
+<span class="nc" id="L2200">            return null;</span>
+        }
+
+<span class="pc bpc" id="L2203" title="1 of 2 branches missed.">        String[] types = argTypesCount &gt;= 0 ? new String[argTypesCount] : new String[4];</span>
+<span class="fc" id="L2204">        int typeIndex = 0;</span>
+        for (;;) {
+<span class="fc bfc" id="L2206" title="All 2 branches covered.">            while (isWhitespace(this.ch)) {</span>
+<span class="fc" id="L2207">                next();</span>
+            }
+
+<span class="fc bfc" id="L2210" title="All 2 branches covered.">            if (this.ch != '\&quot;') {</span>
+<span class="fc" id="L2211">                this.bp = startPos;</span>
+<span class="fc" id="L2212">                this.ch = starChar;</span>
+<span class="fc" id="L2213">                matchStat = NOT_MATCH;</span>
+<span class="fc" id="L2214">                return null;</span>
+            }
+
+<span class="fc" id="L2217">            String type = scanSymbol(typeSymbolTable, '&quot;');</span>
+<span class="pc bpc" id="L2218" title="1 of 2 branches missed.">            if (typeIndex == types.length) {</span>
+<span class="nc" id="L2219">                int newCapacity = types.length + (types.length &gt;&gt; 1) + 1;</span>
+<span class="nc" id="L2220">                String[] array = new String[newCapacity];</span>
+<span class="nc" id="L2221">                System.arraycopy(types, 0, array, 0, types.length);</span>
+<span class="nc" id="L2222">                types = array;</span>
+            }
+<span class="fc" id="L2224">            types[typeIndex++] = type;</span>
+<span class="pc bpc" id="L2225" title="1 of 2 branches missed.">            while (isWhitespace(this.ch)) {</span>
+<span class="nc" id="L2226">                next();</span>
+            }
+<span class="fc bfc" id="L2228" title="All 2 branches covered.">            if (this.ch == ',') {</span>
+<span class="fc" id="L2229">                next();</span>
+<span class="fc" id="L2230">                continue;</span>
+            }
+            break;
+        }
+<span class="pc bpc" id="L2234" title="1 of 2 branches missed.">        if (types.length != typeIndex) {</span>
+<span class="fc" id="L2235">            String[] array = new String[typeIndex];</span>
+<span class="fc" id="L2236">            System.arraycopy(types, 0, array, 0, typeIndex);</span>
+<span class="fc" id="L2237">            types = array;</span>
+        }
+
+<span class="pc bpc" id="L2240" title="1 of 2 branches missed.">        while (isWhitespace(this.ch)) {</span>
+<span class="nc" id="L2241">            next();</span>
+        }
+
+<span class="pc bpc" id="L2244" title="1 of 2 branches missed.">        if (this.ch == ']') {</span>
+<span class="fc" id="L2245">            next();</span>
+        } else {
+<span class="nc" id="L2247">            this.bp = startPos;</span>
+<span class="nc" id="L2248">            this.ch = starChar;</span>
+<span class="nc" id="L2249">            matchStat = NOT_MATCH;</span>
+<span class="nc" id="L2250">            return null;</span>
+        }
+
+<span class="fc" id="L2253">        return types;</span>
+    }
+
+    public boolean matchField2(char[] fieldName) {
+<span class="fc bfc" id="L2257" title="All 2 branches covered.">        while (isWhitespace(ch)) {</span>
+<span class="fc" id="L2258">            next();</span>
+        }
+
+<span class="pc bpc" id="L2261" title="1 of 2 branches missed.">        if (!charArrayCompare(fieldName)) {</span>
+<span class="nc" id="L2262">            matchStat = NOT_MATCH_NAME;</span>
+<span class="nc" id="L2263">            return false;</span>
+        }
+
+<span class="fc" id="L2266">        int offset = bp + fieldName.length;</span>
+<span class="fc" id="L2267">        char ch = text.charAt(offset++);</span>
+<span class="fc bfc" id="L2268" title="All 2 branches covered.">        while (isWhitespace(ch)) {</span>
+<span class="fc" id="L2269">            ch = text.charAt(offset++);</span>
+        }
+
+<span class="pc bpc" id="L2272" title="1 of 2 branches missed.">        if (ch == ':') {</span>
+<span class="fc" id="L2273">            this.bp = offset;</span>
+<span class="fc" id="L2274">            this.ch = charAt(bp);</span>
+<span class="fc" id="L2275">            return true;</span>
+        } else {
+<span class="nc" id="L2277">            matchStat = NOT_MATCH_NAME;</span>
+<span class="nc" id="L2278">            return false;</span>
+        }
+    }
+
+    public final void skipObject() {
+<span class="nc" id="L2283">        skipObject(false);</span>
+<span class="nc" id="L2284">    }</span>
+
+    public final void skipObject(boolean valid) {
+<span class="fc" id="L2287">        boolean quote = false;</span>
+<span class="fc" id="L2288">        int braceCnt = 0;</span>
+<span class="fc" id="L2289">        int i = bp;</span>
+<span class="fc bfc" id="L2290" title="All 2 branches covered.">        for (; i &lt; text.length(); ++i) {</span>
+<span class="fc" id="L2291">            final char ch = text.charAt(i);</span>
+<span class="pc bpc" id="L2292" title="1 of 2 branches missed.">            if (ch == '\\') {</span>
+<span class="nc bnc" id="L2293" title="All 2 branches missed.">                if (i &lt; len - 1) {</span>
+<span class="nc" id="L2294">                    ++i;</span>
+<span class="nc" id="L2295">                    continue;</span>
+                } else {
+<span class="nc" id="L2297">                    this.ch = ch;</span>
+<span class="nc" id="L2298">                    this.bp = i;</span>
+<span class="nc" id="L2299">                    throw new JSONException(&quot;illegal str, &quot; + info());</span>
+                }
+<span class="fc bfc" id="L2301" title="All 2 branches covered.">            } else if (ch == '&quot;') {</span>
+<span class="fc bfc" id="L2302" title="All 2 branches covered.">                quote = !quote;</span>
+<span class="fc bfc" id="L2303" title="All 2 branches covered.">            } else if (ch == '{') {</span>
+<span class="pc bpc" id="L2304" title="1 of 2 branches missed.">                if (quote) {</span>
+<span class="nc" id="L2305">                    continue;</span>
+                }
+<span class="fc" id="L2307">                braceCnt++;</span>
+<span class="fc bfc" id="L2308" title="All 2 branches covered.">            } else if (ch == '}') {</span>
+<span class="fc bfc" id="L2309" title="All 2 branches covered.">                if (quote) {</span>
+<span class="fc" id="L2310">                    continue;</span>
+                } else {
+<span class="fc" id="L2312">                    braceCnt--;</span>
+                }
+<span class="fc bfc" id="L2314" title="All 2 branches covered.">                if (braceCnt == -1) {</span>
+<span class="fc" id="L2315">                    this.bp = i + 1;</span>
+<span class="fc bfc" id="L2316" title="All 2 branches covered.">                    if (this.bp == text.length()) {</span>
+<span class="fc" id="L2317">                        this.ch = EOI;</span>
+<span class="fc" id="L2318">                        this.token = JSONToken.EOF;</span>
+<span class="fc" id="L2319">                        return;</span>
+                    }
+<span class="fc" id="L2321">                    this.ch = text.charAt(this.bp);</span>
+<span class="fc bfc" id="L2322" title="All 2 branches covered.">                    if (this.ch == ',') {</span>
+<span class="fc" id="L2323">                        token = JSONToken.COMMA;</span>
+<span class="fc" id="L2324">                        int index = ++bp;</span>
+<span class="pc bpc" id="L2325" title="1 of 2 branches missed.">                        this.ch = (index &gt;= text.length() //</span>
+                                ? EOI //
+<span class="fc" id="L2327">                                : text.charAt(index));</span>
+<span class="fc" id="L2328">                        return;</span>
+<span class="fc bfc" id="L2329" title="All 2 branches covered.">                    } else if (this.ch == '}') {</span>
+<span class="fc" id="L2330">                        token = JSONToken.RBRACE;</span>
+<span class="fc" id="L2331">                        next();</span>
+<span class="fc" id="L2332">                        return;</span>
+<span class="fc bfc" id="L2333" title="All 2 branches covered.">                    } else if (this.ch == ']') {</span>
+<span class="fc" id="L2334">                        token = JSONToken.RBRACKET;</span>
+<span class="fc" id="L2335">                        next();</span>
+<span class="fc" id="L2336">                        return;</span>
+                    } else {
+<span class="fc" id="L2338">                        nextToken(JSONToken.COMMA);</span>
+                    }
+<span class="fc" id="L2340">                    return;</span>
+                }
+            }
+        }
+
+<span class="fc bfc" id="L2345" title="All 2 branches covered.">        if (i == text.length()) {</span>
+<span class="fc" id="L2346">            throw new JSONException(&quot;illegal str, &quot; + info());</span>
+        }
+<span class="fc" id="L2348">    }</span>
+
+    public final void skipArray() {
+<span class="nc" id="L2351">        skipArray(false);</span>
+<span class="nc" id="L2352">    }</span>
+
+    public final void skipArray(boolean valid) {
+<span class="fc" id="L2355">        boolean quote = false;</span>
+<span class="fc" id="L2356">        int bracketCnt = 0;</span>
+<span class="fc" id="L2357">        int i = bp;</span>
+<span class="fc bfc" id="L2358" title="All 2 branches covered.">        for (; i &lt; text.length(); ++i) {</span>
+<span class="fc" id="L2359">            char ch = text.charAt(i);</span>
+<span class="pc bpc" id="L2360" title="1 of 2 branches missed.">            if (ch == '\\') {</span>
+<span class="nc bnc" id="L2361" title="All 2 branches missed.">                if (i &lt; len - 1) {</span>
+<span class="nc" id="L2362">                    ++i;</span>
+<span class="nc" id="L2363">                    continue;</span>
+                } else {
+<span class="nc" id="L2365">                    this.ch = ch;</span>
+<span class="nc" id="L2366">                    this.bp = i;</span>
+<span class="nc" id="L2367">                    throw new JSONException(&quot;illegal str, &quot; + info());</span>
+                }
+<span class="fc bfc" id="L2369" title="All 2 branches covered.">            } else if (ch == '&quot;') {</span>
+<span class="fc bfc" id="L2370" title="All 2 branches covered.">                quote = !quote;</span>
+<span class="fc bfc" id="L2371" title="All 2 branches covered.">            } else if (ch == '[') {</span>
+<span class="pc bpc" id="L2372" title="1 of 2 branches missed.">                if (quote) {</span>
+<span class="nc" id="L2373">                    continue;</span>
+                }
+<span class="fc" id="L2375">                bracketCnt++;</span>
+<span class="fc bfc" id="L2376" title="All 4 branches covered.">            } else if (ch == '{' &amp;&amp; valid) {</span>
+                {
+<span class="fc" id="L2378">                    int index = ++bp;</span>
+<span class="fc bfc" id="L2379" title="All 2 branches covered.">                    this.ch = (index &gt;= text.length() //</span>
+                            ? EOI //
+<span class="fc" id="L2381">                            : text.charAt(index));</span>
+                }
+
+<span class="fc" id="L2384">                skipObject(valid);</span>
+<span class="fc bfc" id="L2385" title="All 2 branches covered.">            } else if (ch == ']') {</span>
+<span class="pc bpc" id="L2386" title="1 of 2 branches missed.">                if (quote) {</span>
+<span class="nc" id="L2387">                    continue;</span>
+                } else {
+<span class="fc" id="L2389">                    bracketCnt--;</span>
+                }
+<span class="fc bfc" id="L2391" title="All 2 branches covered.">                if (bracketCnt == -1) {</span>
+<span class="fc" id="L2392">                    this.bp = i + 1;</span>
+<span class="fc bfc" id="L2393" title="All 2 branches covered.">                    if (this.bp == text.length()) {</span>
+<span class="fc" id="L2394">                        this.ch = EOI;</span>
+<span class="fc" id="L2395">                        token = JSONToken.EOF;</span>
+<span class="fc" id="L2396">                        return;</span>
+                    }
+<span class="fc" id="L2398">                    this.ch = text.charAt(this.bp);</span>
+<span class="fc" id="L2399">                    nextToken(JSONToken.COMMA);</span>
+<span class="fc" id="L2400">                    return;</span>
+                }
+            }
+        }
+
+<span class="pc bpc" id="L2405" title="1 of 2 branches missed.">        if (i == text.length()) {</span>
+<span class="fc" id="L2406">            throw new JSONException(&quot;illegal str, &quot; + info());</span>
+        }
+<span class="nc" id="L2408">    }</span>
+
+    public final void skipString() {
+<span class="pc bpc" id="L2411" title="1 of 2 branches missed.">        if (ch == '&quot;') {</span>
+<span class="pc bpc" id="L2412" title="1 of 2 branches missed.">            for (int i = bp + 1; i &lt; text.length(); ++i) {</span>
+<span class="fc" id="L2413">                char c = text.charAt(i);</span>
+<span class="fc bfc" id="L2414" title="All 2 branches covered.">                if (c == '\\') {</span>
+<span class="pc bpc" id="L2415" title="1 of 2 branches missed.">                    if (i &lt; len - 1) {</span>
+<span class="fc" id="L2416">                        ++i;</span>
+<span class="fc" id="L2417">                        continue;</span>
+                    }
+<span class="fc bfc" id="L2419" title="All 2 branches covered.">                } else if (c == '&quot;') {</span>
+<span class="fc" id="L2420">                    this.ch = text.charAt(bp = i + 1);</span>
+<span class="fc" id="L2421">                    return;</span>
+                }
+            }
+<span class="nc" id="L2424">            throw new JSONException(&quot;unclosed str&quot;);</span>
+        } else {
+<span class="nc" id="L2426">            throw new UnsupportedOperationException();</span>
+        }
+    }
+
+    public boolean seekArrayToItem(int index) {
+<span class="pc bpc" id="L2431" title="1 of 2 branches missed.">        if (index &lt; 0) {</span>
+<span class="nc" id="L2432">            throw new IllegalArgumentException(&quot;index must &gt; 0, but &quot; + index);</span>
+        }
+
+<span class="fc bfc" id="L2435" title="All 2 branches covered.">        if (token == JSONToken.EOF) {</span>
+<span class="fc" id="L2436">            return false;</span>
+        }
+
+<span class="pc bpc" id="L2439" title="1 of 2 branches missed.">        if (token != JSONToken.LBRACKET) {</span>
+<span class="nc" id="L2440">            throw new UnsupportedOperationException();</span>
+        }
+//        nextToken();
+
+<span class="fc bfc" id="L2444" title="All 2 branches covered.">        for (int i = 0; i &lt; index; ++i) {</span>
+<span class="fc" id="L2445">            skipWhitespace();</span>
+<span class="pc bpc" id="L2446" title="1 of 4 branches missed.">            if (ch == '&quot;' || ch == '\'') {</span>
+<span class="fc" id="L2447">                skipString();</span>
+<span class="pc bpc" id="L2448" title="1 of 2 branches missed.">                if (ch == ',') {</span>
+<span class="fc" id="L2449">                    next();</span>
+<span class="fc" id="L2450">                    continue;</span>
+<span class="nc bnc" id="L2451" title="All 2 branches missed.">                } else if (ch == ']') {</span>
+<span class="nc" id="L2452">                    next();</span>
+<span class="nc" id="L2453">                    nextToken(JSONToken.COMMA);</span>
+<span class="nc" id="L2454">                    return false;</span>
+                } else {
+<span class="nc" id="L2456">                    throw new JSONException(&quot;illegal json.&quot;);</span>
+                }
+<span class="fc bfc" id="L2458" title="All 2 branches covered.">            } else if (ch == '{') {</span>
+<span class="fc" id="L2459">                next();</span>
+<span class="fc" id="L2460">                token = JSONToken.LBRACE;</span>
+<span class="fc" id="L2461">                skipObject(false);</span>
+<span class="fc bfc" id="L2462" title="All 2 branches covered.">            } else if (ch == '[') {</span>
+<span class="fc" id="L2463">                next();</span>
+<span class="fc" id="L2464">                token = JSONToken.LBRACKET;</span>
+<span class="fc" id="L2465">                skipArray(false);</span>
+            } else {
+<span class="fc" id="L2467">                boolean match = false;</span>
+<span class="pc bpc" id="L2468" title="1 of 2 branches missed.">                for (int j = bp + 1; j &lt; text.length(); ++j) {</span>
+<span class="fc" id="L2469">                    char c = text.charAt(j);</span>
+<span class="fc bfc" id="L2470" title="All 2 branches covered.">                    if (c == ',') {</span>
+<span class="fc" id="L2471">                        match = true;</span>
+<span class="fc" id="L2472">                        bp = j + 1;</span>
+<span class="fc" id="L2473">                        ch = charAt(bp);</span>
+<span class="fc" id="L2474">                        break;</span>
+<span class="fc bfc" id="L2475" title="All 2 branches covered.">                    } else if (c == ']') {</span>
+<span class="fc" id="L2476">                        bp = j + 1;</span>
+<span class="fc" id="L2477">                        ch = charAt(bp);</span>
+<span class="fc" id="L2478">                        nextToken();</span>
+<span class="fc" id="L2479">                        return false;</span>
+                    }
+                }
+
+<span class="pc bpc" id="L2483" title="1 of 2 branches missed.">                if (!match) {</span>
+<span class="nc" id="L2484">                    throw new JSONException(&quot;illegal json.&quot;);</span>
+                }
+
+                continue;
+            }
+
+<span class="pc bpc" id="L2490" title="1 of 2 branches missed.">            if (token == JSONToken.COMMA) {</span>
+<span class="fc" id="L2491">                continue;</span>
+<span class="nc bnc" id="L2492" title="All 2 branches missed.">            } else if (token == JSONToken.RBRACKET) {</span>
+<span class="nc" id="L2493">                return false;</span>
+            } else {
+<span class="nc" id="L2495">                throw new UnsupportedOperationException();</span>
+            }
+
+        }
+
+<span class="fc" id="L2500">        nextToken();</span>
+<span class="fc" id="L2501">        return true;</span>
+    }
+
+    public int seekObjectToField(long fieldNameHash, boolean deepScan) {
+<span class="fc bfc" id="L2505" title="All 2 branches covered.">        if (token == JSONToken.EOF) {</span>
+<span class="fc" id="L2506">            return JSONLexer.NOT_MATCH;</span>
+        }
+
+<span class="pc bpc" id="L2509" title="1 of 4 branches missed.">        if (token == JSONToken.RBRACE || token == JSONToken.RBRACKET) {</span>
+<span class="fc" id="L2510">            nextToken();</span>
+<span class="fc" id="L2511">            return JSONLexer.NOT_MATCH;</span>
+        }
+
+<span class="pc bpc" id="L2514" title="1 of 4 branches missed.">        if (token != JSONToken.LBRACE &amp;&amp; token != JSONToken.COMMA) {</span>
+<span class="nc" id="L2515">            throw new UnsupportedOperationException(JSONToken.name(token));</span>
+        }
+
+        for (;;) {
+<span class="fc bfc" id="L2519" title="All 2 branches covered.">            if (ch == '}') {</span>
+<span class="fc" id="L2520">                next();</span>
+<span class="fc" id="L2521">                nextToken();</span>
+<span class="fc" id="L2522">                return JSONLexer.NOT_MATCH;</span>
+            }
+<span class="pc bpc" id="L2524" title="1 of 2 branches missed.">            if (ch == EOI) {</span>
+<span class="nc" id="L2525">                return JSONLexer.NOT_MATCH;</span>
+            }
+
+<span class="fc bfc" id="L2528" title="All 2 branches covered.">            if (ch != '&quot;') {</span>
+<span class="fc" id="L2529">                skipWhitespace();</span>
+            }
+
+            long hash;
+<span class="pc bpc" id="L2533" title="1 of 2 branches missed.">            if (ch == '&quot;') {</span>
+<span class="fc" id="L2534">                hash = 0xcbf29ce484222325L;</span>
+
+<span class="pc bpc" id="L2536" title="1 of 2 branches missed.">                for (int i = bp + 1; i &lt; text.length(); ++i) {</span>
+<span class="fc" id="L2537">                    char c = text.charAt(i);</span>
+<span class="pc bpc" id="L2538" title="1 of 2 branches missed.">                    if (c == '\\') {</span>
+<span class="nc" id="L2539">                        ++i;</span>
+<span class="nc bnc" id="L2540" title="All 2 branches missed.">                        if (i == text.length()) {</span>
+<span class="nc" id="L2541">                            throw new JSONException(&quot;unclosed str, &quot; + info());</span>
+                        }
+<span class="nc" id="L2543">                        c = text.charAt(i);</span>
+                    }
+
+<span class="fc bfc" id="L2546" title="All 2 branches covered.">                    if (c == '&quot;') {</span>
+<span class="fc" id="L2547">                        bp = i + 1;</span>
+<span class="pc bpc" id="L2548" title="1 of 2 branches missed.">                        ch = (bp &gt;= text.length() //</span>
+                                ? EOI //
+<span class="fc" id="L2550">                                : text.charAt(bp));</span>
+<span class="fc" id="L2551">                        break;</span>
+                    }
+
+<span class="fc" id="L2554">                    hash ^= c;</span>
+<span class="fc" id="L2555">                    hash *= 0x100000001b3L;</span>
+                }
+            } else {
+<span class="nc" id="L2558">                throw new UnsupportedOperationException();</span>
+            }
+
+<span class="fc bfc" id="L2561" title="All 2 branches covered.">            if (hash == fieldNameHash) {</span>
+<span class="fc bfc" id="L2562" title="All 2 branches covered.">                if (ch != ':') {</span>
+<span class="fc" id="L2563">                    skipWhitespace();</span>
+                }
+<span class="pc bpc" id="L2565" title="1 of 2 branches missed.">                if (ch == ':') {</span>
+                    {
+<span class="fc" id="L2567">                        int index = ++bp;</span>
+<span class="pc bpc" id="L2568" title="1 of 2 branches missed.">                        ch = (index &gt;= text.length() //</span>
+                                ? EOI //
+<span class="fc" id="L2570">                                : text.charAt(index));</span>
+                    }
+<span class="pc bpc" id="L2572" title="1 of 2 branches missed.">                    if (ch == ',') {</span>
+                        {
+<span class="nc" id="L2574">                            int index = ++bp;</span>
+<span class="nc bnc" id="L2575" title="All 2 branches missed.">                            ch = (index &gt;= text.length() //</span>
+                                    ? EOI //
+<span class="nc" id="L2577">                                    : text.charAt(index));</span>
+                        }
+<span class="nc" id="L2579">                        token = JSONToken.COMMA;</span>
+<span class="pc bpc" id="L2580" title="1 of 2 branches missed.">                    } else if (ch == ']') {</span>
+                        {
+<span class="nc" id="L2582">                            int index = ++bp;</span>
+<span class="nc bnc" id="L2583" title="All 2 branches missed.">                            ch = (index &gt;= text.length() //</span>
+                                    ? EOI //
+<span class="nc" id="L2585">                                    : text.charAt(index));</span>
+                        }
+<span class="nc" id="L2587">                        token = JSONToken.RBRACKET;</span>
+<span class="pc bpc" id="L2588" title="1 of 2 branches missed.">                    } else if (ch == '}') {</span>
+                        {
+<span class="nc" id="L2590">                            int index = ++bp;</span>
+<span class="nc bnc" id="L2591" title="All 2 branches missed.">                            ch = (index &gt;= text.length() //</span>
+                                    ? EOI //
+<span class="nc" id="L2593">                                    : text.charAt(index));</span>
+                        }
+<span class="nc" id="L2595">                        token = JSONToken.RBRACE;</span>
+<span class="fc bfc" id="L2596" title="All 4 branches covered.">                    } else if (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="fc" id="L2597">                        sp = 0;</span>
+<span class="fc" id="L2598">                        pos = bp;</span>
+<span class="fc" id="L2599">                        scanNumber();</span>
+                    } else {
+<span class="fc" id="L2601">                        nextToken(JSONToken.LITERAL_INT);</span>
+                    }
+                }
+<span class="fc" id="L2604">                return VALUE;</span>
+            }
+
+<span class="fc bfc" id="L2607" title="All 2 branches covered.">            if (ch != ':') {</span>
+<span class="fc" id="L2608">                skipWhitespace();</span>
+            }
+
+<span class="pc bpc" id="L2611" title="1 of 2 branches missed.">            if (ch == ':') {</span>
+<span class="fc" id="L2612">                int index = ++bp;</span>
+<span class="pc bpc" id="L2613" title="1 of 2 branches missed.">                ch = (index &gt;= text.length() //</span>
+                        ? EOI //
+<span class="fc" id="L2615">                        : text.charAt(index));</span>
+<span class="fc" id="L2616">            } else {</span>
+<span class="nc" id="L2617">                throw new JSONException(&quot;illegal json, &quot; + info());</span>
+            }
+
+<span class="pc bpc" id="L2620" title="15 of 32 branches missed.">            if (ch != '&quot;'</span>
+                    &amp;&amp; ch != '\''
+                    &amp;&amp; ch != '{'
+                    &amp;&amp; ch != '['
+                    &amp;&amp; ch != '0'
+                    &amp;&amp; ch != '1'
+                    &amp;&amp; ch != '2'
+                    &amp;&amp; ch != '3'
+                    &amp;&amp; ch != '4'
+                    &amp;&amp; ch != '5'
+                    &amp;&amp; ch != '6'
+                    &amp;&amp; ch != '7'
+                    &amp;&amp; ch != '8'
+                    &amp;&amp; ch != '9'
+                    &amp;&amp; ch != '+'
+                    &amp;&amp; ch != '-') {
+<span class="fc" id="L2636">                skipWhitespace();</span>
+            }
+
+            // skip fieldValues
+<span class="pc bpc" id="L2640" title="2 of 8 branches missed.">            if (ch == '-' || ch == '+' || (ch &gt;= '0' &amp;&amp; ch &lt;= '9')) {</span>
+<span class="fc" id="L2641">                next();</span>
+<span class="pc bpc" id="L2642" title="1 of 4 branches missed.">                while (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="fc" id="L2643">                    next();</span>
+                }
+
+                // scale
+<span class="fc bfc" id="L2647" title="All 2 branches covered.">                if (ch == '.') {</span>
+<span class="fc" id="L2648">                    next();</span>
+<span class="pc bpc" id="L2649" title="1 of 4 branches missed.">                    while (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="fc" id="L2650">                        next();</span>
+                    }
+                }
+
+                // exp
+<span class="pc bpc" id="L2655" title="2 of 4 branches missed.">                if (ch == 'E' || ch == 'e') {</span>
+<span class="nc" id="L2656">                    next();</span>
+<span class="nc bnc" id="L2657" title="All 4 branches missed.">                    if (ch == '-' || ch == '+') {</span>
+<span class="nc" id="L2658">                        next();</span>
+                    }
+<span class="nc bnc" id="L2660" title="All 4 branches missed.">                    while (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="nc" id="L2661">                        next();</span>
+                    }
+                }
+
+<span class="fc bfc" id="L2665" title="All 2 branches covered.">                if (ch != ',') {</span>
+<span class="fc" id="L2666">                    skipWhitespace();</span>
+                }
+<span class="fc bfc" id="L2668" title="All 2 branches covered.">                if (ch == ',') {</span>
+<span class="fc" id="L2669">                    next();</span>
+                }
+<span class="fc bfc" id="L2671" title="All 2 branches covered.">            } else if (ch == '&quot;') {</span>
+<span class="fc" id="L2672">                skipString();</span>
+
+<span class="pc bpc" id="L2674" title="1 of 4 branches missed.">                if (ch != ',' &amp;&amp; ch != '}') {</span>
+<span class="fc" id="L2675">                    skipWhitespace();</span>
+                }
+
+<span class="fc bfc" id="L2678" title="All 2 branches covered.">                if (ch == ',') {</span>
+<span class="fc" id="L2679">                    next();</span>
+                }
+<span class="fc bfc" id="L2681" title="All 2 branches covered.">            } else if (ch == 't') {</span>
+<span class="fc" id="L2682">                next();</span>
+<span class="pc bpc" id="L2683" title="1 of 2 branches missed.">                if (ch == 'r') {</span>
+<span class="fc" id="L2684">                    next();</span>
+<span class="pc bpc" id="L2685" title="1 of 2 branches missed.">                    if (ch == 'u') {</span>
+<span class="fc" id="L2686">                        next();</span>
+<span class="pc bpc" id="L2687" title="1 of 2 branches missed.">                        if (ch == 'e') {</span>
+<span class="fc" id="L2688">                            next();</span>
+                        }
+                    }
+                }
+
+<span class="pc bpc" id="L2693" title="1 of 4 branches missed.">                if (ch != ',' &amp;&amp; ch != '}') {</span>
+<span class="fc" id="L2694">                    skipWhitespace();</span>
+                }
+
+<span class="fc bfc" id="L2697" title="All 2 branches covered.">                if (ch == ',') {</span>
+<span class="fc" id="L2698">                    next();</span>
+                }
+<span class="fc bfc" id="L2700" title="All 2 branches covered.">            } else if (ch == 'n') {</span>
+<span class="fc" id="L2701">                next();</span>
+<span class="pc bpc" id="L2702" title="1 of 2 branches missed.">                if (ch == 'u') {</span>
+<span class="fc" id="L2703">                    next();</span>
+<span class="pc bpc" id="L2704" title="1 of 2 branches missed.">                    if (ch == 'l') {</span>
+<span class="fc" id="L2705">                        next();</span>
+<span class="pc bpc" id="L2706" title="1 of 2 branches missed.">                        if (ch == 'l') {</span>
+<span class="fc" id="L2707">                            next();</span>
+                        }
+                    }
+                }
+
+<span class="pc bpc" id="L2712" title="1 of 4 branches missed.">                if (ch != ',' &amp;&amp; ch != '}') {</span>
+<span class="fc" id="L2713">                    skipWhitespace();</span>
+                }
+
+<span class="fc bfc" id="L2716" title="All 2 branches covered.">                if (ch == ',') {</span>
+<span class="fc" id="L2717">                    next();</span>
+                }
+<span class="fc bfc" id="L2719" title="All 2 branches covered.">            } else if (ch == 'f') {</span>
+<span class="fc" id="L2720">                next();</span>
+<span class="pc bpc" id="L2721" title="1 of 2 branches missed.">                if (ch == 'a') {</span>
+<span class="fc" id="L2722">                    next();</span>
+<span class="pc bpc" id="L2723" title="1 of 2 branches missed.">                    if (ch == 'l') {</span>
+<span class="fc" id="L2724">                        next();</span>
+<span class="pc bpc" id="L2725" title="1 of 2 branches missed.">                        if (ch == 's') {</span>
+<span class="fc" id="L2726">                            next();</span>
+<span class="pc bpc" id="L2727" title="1 of 2 branches missed.">                            if (ch == 'e') {</span>
+<span class="fc" id="L2728">                                next();</span>
+                            }
+                        }
+                    }
+                }
+
+<span class="pc bpc" id="L2734" title="1 of 4 branches missed.">                if (ch != ',' &amp;&amp; ch != '}') {</span>
+<span class="fc" id="L2735">                    skipWhitespace();</span>
+                }
+
+<span class="fc bfc" id="L2738" title="All 2 branches covered.">                if (ch == ',') {</span>
+<span class="fc" id="L2739">                    next();</span>
+                }
+<span class="fc bfc" id="L2741" title="All 2 branches covered.">            } else if (ch == '{') {</span>
+                {
+<span class="fc" id="L2743">                    int index = ++bp;</span>
+<span class="pc bpc" id="L2744" title="1 of 2 branches missed.">                    ch = (index &gt;= text.length() //</span>
+                            ? EOI //
+<span class="fc" id="L2746">                            : text.charAt(index));</span>
+                }
+<span class="fc bfc" id="L2748" title="All 2 branches covered.">                if (deepScan) {</span>
+<span class="fc" id="L2749">                    token = JSONToken.LBRACE;</span>
+<span class="fc" id="L2750">                    return OBJECT;</span>
+                }
+
+<span class="fc" id="L2753">                skipObject(false);</span>
+<span class="fc bfc" id="L2754" title="All 2 branches covered.">                if (token == JSONToken.RBRACE) {</span>
+<span class="fc" id="L2755">                    return JSONLexer.NOT_MATCH;</span>
+                }
+<span class="pc bpc" id="L2757" title="1 of 2 branches missed.">            } else if (ch == '[') {</span>
+<span class="fc" id="L2758">                next();</span>
+<span class="fc bfc" id="L2759" title="All 2 branches covered.">                if (deepScan) {</span>
+<span class="fc" id="L2760">                    token = JSONToken.LBRACKET;</span>
+<span class="fc" id="L2761">                    return ARRAY;</span>
+                }
+<span class="fc" id="L2763">                skipArray(false);</span>
+<span class="pc bpc" id="L2764" title="1 of 2 branches missed.">                if (token == JSONToken.RBRACE) {</span>
+<span class="nc" id="L2765">                    return JSONLexer.NOT_MATCH;</span>
+                }
+            } else {
+<span class="nc" id="L2768">                throw new UnsupportedOperationException();</span>
+            }
+<span class="fc" id="L2770">        }</span>
+    }
+
+    public int seekObjectToField(long[] fieldNameHash) {
+<span class="pc bpc" id="L2774" title="1 of 4 branches missed.">        if (token != JSONToken.LBRACE &amp;&amp; token != JSONToken.COMMA) {</span>
+<span class="nc" id="L2775">            throw new UnsupportedOperationException();</span>
+        }
+
+        for (;;) {
+<span class="pc bpc" id="L2779" title="1 of 2 branches missed.">            if (ch == '}') {</span>
+<span class="nc" id="L2780">                next();</span>
+<span class="nc" id="L2781">                nextToken();</span>
+<span class="nc" id="L2782">                this.matchStat = JSONLexer.NOT_MATCH;</span>
+<span class="nc" id="L2783">                return -1;</span>
+            }
+<span class="pc bpc" id="L2785" title="1 of 2 branches missed.">            if (ch == EOI) {</span>
+<span class="nc" id="L2786">                this.matchStat = JSONLexer.NOT_MATCH;</span>
+<span class="nc" id="L2787">                return -1;</span>
+            }
+
+<span class="pc bpc" id="L2790" title="1 of 2 branches missed.">            if (ch != '&quot;') {</span>
+<span class="fc" id="L2791">                skipWhitespace();</span>
+            }
+
+            long hash;
+<span class="pc bpc" id="L2795" title="1 of 2 branches missed.">            if (ch == '&quot;') {</span>
+<span class="fc" id="L2796">                hash = 0xcbf29ce484222325L;</span>
+
+<span class="pc bpc" id="L2798" title="1 of 2 branches missed.">                for (int i = bp + 1; i &lt; text.length(); ++i) {</span>
+<span class="fc" id="L2799">                    char c = text.charAt(i);</span>
+<span class="pc bpc" id="L2800" title="1 of 2 branches missed.">                    if (c == '\\') {</span>
+<span class="nc" id="L2801">                        ++i;</span>
+<span class="nc bnc" id="L2802" title="All 2 branches missed.">                        if (i == text.length()) {</span>
+<span class="nc" id="L2803">                            throw new JSONException(&quot;unclosed str, &quot; + info());</span>
+                        }
+<span class="nc" id="L2805">                        c = text.charAt(i);</span>
+                    }
+
+<span class="fc bfc" id="L2808" title="All 2 branches covered.">                    if (c == '&quot;') {</span>
+<span class="fc" id="L2809">                        bp = i + 1;</span>
+<span class="pc bpc" id="L2810" title="1 of 2 branches missed.">                        ch = (bp &gt;= text.length() //</span>
+                                ? EOI //
+<span class="fc" id="L2812">                                : text.charAt(bp));</span>
+<span class="fc" id="L2813">                        break;</span>
+                    }
+
+<span class="fc" id="L2816">                    hash ^= c;</span>
+<span class="fc" id="L2817">                    hash *= 0x100000001b3L;</span>
+                }
+            } else {
+<span class="nc" id="L2820">                throw new UnsupportedOperationException();</span>
+            }
+
+<span class="fc" id="L2823">            int matchIndex = -1;</span>
+<span class="pc bpc" id="L2824" title="1 of 2 branches missed.">            for (int i = 0; i &lt; fieldNameHash.length; i++) {</span>
+<span class="fc bfc" id="L2825" title="All 2 branches covered.">                if (hash == fieldNameHash[i]) {</span>
+<span class="fc" id="L2826">                    matchIndex = i;</span>
+<span class="fc" id="L2827">                    break;</span>
+                }
+            }
+
+<span class="pc bpc" id="L2831" title="1 of 2 branches missed.">            if (matchIndex != -1) {</span>
+<span class="pc bpc" id="L2832" title="1 of 2 branches missed.">                if (ch != ':') {</span>
+<span class="fc" id="L2833">                    skipWhitespace();</span>
+                }
+<span class="pc bpc" id="L2835" title="1 of 2 branches missed.">                if (ch == ':') {</span>
+                    {
+<span class="fc" id="L2837">                        int index = ++bp;</span>
+<span class="pc bpc" id="L2838" title="1 of 2 branches missed.">                        ch = (index &gt;= text.length() //</span>
+                                ? EOI //
+<span class="fc" id="L2840">                                : text.charAt(index));</span>
+                    }
+<span class="pc bpc" id="L2842" title="1 of 2 branches missed.">                    if (ch == ',') {</span>
+                        {
+<span class="nc" id="L2844">                            int index = ++bp;</span>
+<span class="nc bnc" id="L2845" title="All 2 branches missed.">                            ch = (index &gt;= text.length() //</span>
+                                    ? EOI //
+<span class="nc" id="L2847">                                    : text.charAt(index));</span>
+                        }
+<span class="nc" id="L2849">                        token = JSONToken.COMMA;</span>
+<span class="pc bpc" id="L2850" title="1 of 2 branches missed.">                    } else if (ch == ']') {</span>
+                        {
+<span class="nc" id="L2852">                            int index = ++bp;</span>
+<span class="nc bnc" id="L2853" title="All 2 branches missed.">                            ch = (index &gt;= text.length() //</span>
+                                    ? EOI //
+<span class="nc" id="L2855">                                    : text.charAt(index));</span>
+                        }
+<span class="nc" id="L2857">                        token = JSONToken.RBRACKET;</span>
+<span class="pc bpc" id="L2858" title="1 of 2 branches missed.">                    } else if (ch == '}') {</span>
+                        {
+<span class="nc" id="L2860">                            int index = ++bp;</span>
+<span class="nc bnc" id="L2861" title="All 2 branches missed.">                            ch = (index &gt;= text.length() //</span>
+                                    ? EOI //
+<span class="nc" id="L2863">                                    : text.charAt(index));</span>
+                        }
+<span class="nc" id="L2865">                        token = JSONToken.RBRACE;</span>
+<span class="pc bpc" id="L2866" title="3 of 4 branches missed.">                    } else if (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="nc" id="L2867">                        sp = 0;</span>
+<span class="nc" id="L2868">                        pos = bp;</span>
+<span class="nc" id="L2869">                        scanNumber();</span>
+                    } else {
+<span class="fc" id="L2871">                        nextToken(JSONToken.LITERAL_INT);</span>
+                    }
+                }
+
+<span class="fc" id="L2875">                matchStat = VALUE;</span>
+<span class="fc" id="L2876">                return matchIndex;</span>
+            }
+
+<span class="nc bnc" id="L2879" title="All 2 branches missed.">            if (ch != ':') {</span>
+<span class="nc" id="L2880">                skipWhitespace();</span>
+            }
+
+<span class="nc bnc" id="L2883" title="All 2 branches missed.">            if (ch == ':') {</span>
+<span class="nc" id="L2884">                int index = ++bp;</span>
+<span class="nc bnc" id="L2885" title="All 2 branches missed.">                ch = (index &gt;= text.length() //</span>
+                        ? EOI //
+<span class="nc" id="L2887">                        : text.charAt(index));</span>
+<span class="nc" id="L2888">            } else {</span>
+<span class="nc" id="L2889">                throw new JSONException(&quot;illegal json, &quot; + info());</span>
+            }
+
+<span class="nc bnc" id="L2892" title="All 32 branches missed.">            if (ch != '&quot;'</span>
+                    &amp;&amp; ch != '\''
+                    &amp;&amp; ch != '{'
+                    &amp;&amp; ch != '['
+                    &amp;&amp; ch != '0'
+                    &amp;&amp; ch != '1'
+                    &amp;&amp; ch != '2'
+                    &amp;&amp; ch != '3'
+                    &amp;&amp; ch != '4'
+                    &amp;&amp; ch != '5'
+                    &amp;&amp; ch != '6'
+                    &amp;&amp; ch != '7'
+                    &amp;&amp; ch != '8'
+                    &amp;&amp; ch != '9'
+                    &amp;&amp; ch != '+'
+                    &amp;&amp; ch != '-') {
+<span class="nc" id="L2908">                skipWhitespace();</span>
+            }
+
+            // skip fieldValues
+<span class="nc bnc" id="L2912" title="All 8 branches missed.">            if (ch == '-' || ch == '+' || (ch &gt;= '0' &amp;&amp; ch &lt;= '9')) {</span>
+<span class="nc" id="L2913">                next();</span>
+<span class="nc bnc" id="L2914" title="All 4 branches missed.">                while (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="nc" id="L2915">                    next();</span>
+                }
+
+                // scale
+<span class="nc bnc" id="L2919" title="All 2 branches missed.">                if (ch == '.') {</span>
+<span class="nc" id="L2920">                    next();</span>
+<span class="nc bnc" id="L2921" title="All 4 branches missed.">                    while (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="nc" id="L2922">                        next();</span>
+                    }
+                }
+
+                // exp
+<span class="nc bnc" id="L2927" title="All 4 branches missed.">                if (ch == 'E' || ch == 'e') {</span>
+<span class="nc" id="L2928">                    next();</span>
+<span class="nc bnc" id="L2929" title="All 4 branches missed.">                    if (ch == '-' || ch == '+') {</span>
+<span class="nc" id="L2930">                        next();</span>
+                    }
+<span class="nc bnc" id="L2932" title="All 4 branches missed.">                    while (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="nc" id="L2933">                        next();</span>
+                    }
+                }
+
+<span class="nc bnc" id="L2937" title="All 2 branches missed.">                if (ch != ',') {</span>
+<span class="nc" id="L2938">                    skipWhitespace();</span>
+                }
+<span class="nc bnc" id="L2940" title="All 2 branches missed.">                if (ch == ',') {</span>
+<span class="nc" id="L2941">                    next();</span>
+                }
+<span class="nc bnc" id="L2943" title="All 2 branches missed.">            } else if (ch == '&quot;') {</span>
+<span class="nc" id="L2944">                skipString();</span>
+
+<span class="nc bnc" id="L2946" title="All 4 branches missed.">                if (ch != ',' &amp;&amp; ch != '}') {</span>
+<span class="nc" id="L2947">                    skipWhitespace();</span>
+                }
+
+<span class="nc bnc" id="L2950" title="All 2 branches missed.">                if (ch == ',') {</span>
+<span class="nc" id="L2951">                    next();</span>
+                }
+<span class="nc bnc" id="L2953" title="All 2 branches missed.">            } else if (ch == '{') {</span>
+                {
+<span class="nc" id="L2955">                    int index = ++bp;</span>
+<span class="nc bnc" id="L2956" title="All 2 branches missed.">                    ch = (index &gt;= text.length() //</span>
+                            ? EOI //
+<span class="nc" id="L2958">                            : text.charAt(index));</span>
+                }
+
+<span class="nc" id="L2961">                skipObject(false);</span>
+<span class="nc bnc" id="L2962" title="All 2 branches missed.">            } else if (ch == '[') {</span>
+<span class="nc" id="L2963">                next();</span>
+
+<span class="nc" id="L2965">                skipArray(false);</span>
+            } else {
+<span class="nc" id="L2967">                throw new UnsupportedOperationException();</span>
+            }
+<span class="nc" id="L2969">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>
