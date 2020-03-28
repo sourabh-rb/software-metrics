@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EnumDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">EnumDeserializer.java</span></div><h1>EnumDeserializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Type;
+import java.util.*;
+
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.Feature;
+import com.alibaba.fastjson.parser.JSONLexer;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.util.TypeUtils;
+
+@SuppressWarnings(&quot;rawtypes&quot;)
+public class EnumDeserializer implements ObjectDeserializer {
+
+    protected final Class&lt;?&gt; enumClass;
+    protected final Enum[]   enums;
+    protected final Enum[]   ordinalEnums;
+    protected       long[]   enumNameHashCodes;
+
+<span class="fc" id="L23">    public EnumDeserializer(Class&lt;?&gt; enumClass){</span>
+<span class="fc" id="L24">        this.enumClass = enumClass;</span>
+
+<span class="fc" id="L26">        ordinalEnums = (Enum[]) enumClass.getEnumConstants();</span>
+
+<span class="fc" id="L28">        Map&lt;Long, Enum&gt; enumMap = new HashMap&lt;Long, Enum&gt;();</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        for (int i = 0; i &lt; ordinalEnums.length; ++i) {</span>
+<span class="fc" id="L30">            Enum e = ordinalEnums[i];</span>
+<span class="fc" id="L31">            String name = e.name();</span>
+
+<span class="fc" id="L33">            JSONField jsonField = null;</span>
+            try {
+<span class="fc" id="L35">                Field field = enumClass.getField(name);</span>
+<span class="fc" id="L36">                jsonField = TypeUtils.getAnnotation(field, JSONField.class);</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">                if (jsonField != null) {</span>
+<span class="fc" id="L38">                    String jsonFieldName = jsonField.name();</span>
+<span class="pc bpc" id="L39" title="1 of 4 branches missed.">                    if (jsonFieldName != null &amp;&amp; jsonFieldName.length() &gt; 0) {</span>
+<span class="fc" id="L40">                        name = jsonFieldName;</span>
+                    }
+                }
+<span class="nc" id="L43">            } catch (Exception ex) {</span>
+                // skip
+<span class="fc" id="L45">            }</span>
+
+<span class="fc" id="L47">            long hash = 0xcbf29ce484222325L;</span>
+<span class="fc" id="L48">            long hash_lower = 0xcbf29ce484222325L;</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            for (int j = 0; j &lt; name.length(); ++j) {</span>
+<span class="fc" id="L50">                char ch = name.charAt(j);</span>
+
+<span class="fc" id="L52">                hash ^= ch;</span>
+<span class="fc bfc" id="L53" title="All 4 branches covered.">                hash_lower ^= ((ch &gt;= 'A' &amp;&amp; ch &lt;= 'Z') ? (ch + 32) : ch);</span>
+
+<span class="fc" id="L55">                hash *= 0x100000001b3L;</span>
+<span class="fc" id="L56">                hash_lower *= 0x100000001b3L;</span>
+            }
+
+<span class="fc" id="L59">            enumMap.put(hash, e);</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">            if (hash != hash_lower) {</span>
+<span class="fc" id="L61">                enumMap.put(hash_lower, e);</span>
+            }
+
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (jsonField != null) {</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">                for (String alterName : jsonField.alternateNames()) {</span>
+<span class="fc" id="L66">                    long alterNameHash = 0xcbf29ce484222325L;</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">                    for (int j = 0; j &lt; alterName.length(); ++j) {</span>
+<span class="fc" id="L68">                        char ch = alterName.charAt(j);</span>
+<span class="fc" id="L69">                        alterNameHash ^= ch;</span>
+<span class="fc" id="L70">                        alterNameHash *= 0x100000001b3L;</span>
+                    }
+<span class="pc bpc" id="L72" title="2 of 4 branches missed.">                    if (alterNameHash != hash &amp;&amp; alterNameHash != hash_lower) {</span>
+<span class="fc" id="L73">                        enumMap.put(alterNameHash, e);</span>
+                    }
+                }
+            }
+        }
+
+<span class="fc" id="L79">        this.enumNameHashCodes = new long[enumMap.size()];</span>
+        {
+<span class="fc" id="L81">            int i = 0;</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            for (Long h : enumMap.keySet()) {</span>
+<span class="fc" id="L83">                enumNameHashCodes[i++] = h;</span>
+<span class="fc" id="L84">            }</span>
+<span class="fc" id="L85">            Arrays.sort(this.enumNameHashCodes);</span>
+        }
+
+<span class="fc" id="L88">        this.enums = new Enum[enumNameHashCodes.length];</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        for (int i = 0; i &lt; this.enumNameHashCodes.length; ++i) {</span>
+<span class="fc" id="L90">            long hash = enumNameHashCodes[i];</span>
+<span class="fc" id="L91">            Enum e = enumMap.get(hash);</span>
+<span class="fc" id="L92">            this.enums[i] = e;</span>
+        }
+<span class="fc" id="L94">    }</span>
+
+    public Enum getEnumByHashCode(long hashCode) {
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        if (enums == null) {</span>
+<span class="nc" id="L98">            return null;</span>
+        }
+
+<span class="fc" id="L101">        int enumIndex = Arrays.binarySearch(this.enumNameHashCodes, hashCode);</span>
+
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (enumIndex &lt; 0) {</span>
+<span class="fc" id="L104">            return null;</span>
+        }
+
+<span class="fc" id="L107">        return enums[enumIndex];</span>
+    }
+    
+    public Enum&lt;?&gt; valueOf(int ordinal) {
+<span class="fc" id="L111">        return ordinalEnums[ordinal];</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type type, Object fieldName) {
+        try {
+            Object value;
+<span class="fc" id="L118">            final JSONLexer lexer = parser.lexer;</span>
+<span class="fc" id="L119">            final int token = lexer.token();</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">            if (token == JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L121">                int intValue = lexer.intValue();</span>
+<span class="fc" id="L122">                lexer.nextToken(JSONToken.COMMA);</span>
+
+<span class="pc bpc" id="L124" title="1 of 4 branches missed.">                if (intValue &lt; 0 || intValue &gt; ordinalEnums.length) {</span>
+<span class="fc" id="L125">                    throw new JSONException(&quot;parse enum &quot; + enumClass.getName() + &quot; error, value : &quot; + intValue);</span>
+                }
+
+<span class="fc" id="L128">                return (T) ordinalEnums[intValue];</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">            } else if (token == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L130">                String name = lexer.stringVal();</span>
+<span class="fc" id="L131">                lexer.nextToken(JSONToken.COMMA);</span>
+
+<span class="fc bfc" id="L133" title="All 2 branches covered.">                if (name.length() == 0) {</span>
+<span class="fc" id="L134">                    return (T) null;</span>
+                }
+
+<span class="fc" id="L137">                long hash = 0xcbf29ce484222325L;</span>
+<span class="fc" id="L138">                long hash_lower = 0xcbf29ce484222325L;</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">                for (int j = 0; j &lt; name.length(); ++j) {</span>
+<span class="fc" id="L140">                    char ch = name.charAt(j);</span>
+
+<span class="fc" id="L142">                    hash ^= ch;</span>
+<span class="fc bfc" id="L143" title="All 4 branches covered.">                    hash_lower ^= ((ch &gt;= 'A' &amp;&amp; ch &lt;= 'Z') ? (ch + 32) : ch);</span>
+
+<span class="fc" id="L145">                    hash *= 0x100000001b3L;</span>
+<span class="fc" id="L146">                    hash_lower *= 0x100000001b3L;</span>
+                }
+
+<span class="fc" id="L149">                Enum e = getEnumByHashCode(hash);</span>
+<span class="fc bfc" id="L150" title="All 4 branches covered.">                if (e == null &amp;&amp; hash_lower != hash) {</span>
+<span class="fc" id="L151">                    e = getEnumByHashCode(hash_lower);</span>
+                }
+
+<span class="fc bfc" id="L154" title="All 4 branches covered.">                if (e == null &amp;&amp; lexer.isEnabled(Feature.ErrorOnEnumNotMatch)) {</span>
+<span class="fc" id="L155">                    throw new JSONException(&quot;not match enum value, &quot; + enumClass.getName() + &quot; : &quot; + name);</span>
+                }
+<span class="fc" id="L157">                return (T) e;</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">            } else if (token == JSONToken.NULL) {</span>
+<span class="fc" id="L159">                value = null;</span>
+<span class="fc" id="L160">                lexer.nextToken(JSONToken.COMMA);</span>
+
+<span class="fc" id="L162">                return null;</span>
+            } else {
+<span class="fc" id="L164">                value = parser.parse();</span>
+            }
+
+<span class="fc" id="L167">            throw new JSONException(&quot;parse enum &quot; + enumClass.getName() + &quot; error, value : &quot; + value);</span>
+<span class="fc" id="L168">        } catch (JSONException e) {</span>
+<span class="fc" id="L169">            throw e;</span>
+<span class="nc" id="L170">        } catch (Exception e) {</span>
+<span class="nc" id="L171">            throw new JSONException(e.getMessage(), e);</span>
+        }
+    }
+
+    public int getFastMatchToken() {
+<span class="fc" id="L176">        return JSONToken.LITERAL_INT;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>
