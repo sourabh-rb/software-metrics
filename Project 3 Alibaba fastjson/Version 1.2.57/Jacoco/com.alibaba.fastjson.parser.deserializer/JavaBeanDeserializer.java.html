@@ -1,0 +1,1614 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaBeanDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">JavaBeanDeserializer.java</span></div><h1>JavaBeanDeserializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import java.lang.reflect.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.DefaultJSONParser.ResolveTask;
+import com.alibaba.fastjson.parser.Feature;
+import com.alibaba.fastjson.parser.JSONLexer;
+import com.alibaba.fastjson.parser.JSONLexerBase;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.parser.ParseContext;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.util.FieldInfo;
+import com.alibaba.fastjson.util.JavaBeanInfo;
+import com.alibaba.fastjson.util.TypeUtils;
+
+public class JavaBeanDeserializer implements ObjectDeserializer {
+
+    private final FieldDeserializer[]   fieldDeserializers;
+    protected final FieldDeserializer[] sortedFieldDeserializers;
+    protected final Class&lt;?&gt;            clazz;
+    public final JavaBeanInfo           beanInfo;
+    private ConcurrentMap&lt;String, Object&gt; extraFieldDeserializers;
+
+    private final Map&lt;String, FieldDeserializer&gt; alterNameFieldDeserializers;
+    private Map&lt;String, FieldDeserializer&gt; fieldDeserializerMap;
+
+    private transient long[] smartMatchHashArray;
+    private transient short[] smartMatchHashArrayMapping;
+
+    private transient long[] hashArray;
+    private transient short[] hashArrayMapping;
+    
+    public JavaBeanDeserializer(ParserConfig config, Class&lt;?&gt; clazz) {
+<span class="nc" id="L44">        this(config, clazz, clazz);</span>
+<span class="nc" id="L45">    }</span>
+
+    public JavaBeanDeserializer(ParserConfig config, Class&lt;?&gt; clazz, Type type){
+<span class="fc" id="L48">        this(config //</span>
+<span class="fc" id="L49">                , JavaBeanInfo.build(clazz, type, config.propertyNamingStrategy, config.fieldBased, config.compatibleWithJavaBean, config.isJacksonCompatible())</span>
+        );
+<span class="fc" id="L51">    }</span>
+    
+<span class="fc" id="L53">    public JavaBeanDeserializer(ParserConfig config, JavaBeanInfo beanInfo){</span>
+<span class="fc" id="L54">        this.clazz = beanInfo.clazz;</span>
+<span class="fc" id="L55">        this.beanInfo = beanInfo;</span>
+
+<span class="fc" id="L57">        Map&lt;String, FieldDeserializer&gt; alterNameFieldDeserializers = null;</span>
+<span class="fc" id="L58">        sortedFieldDeserializers = new FieldDeserializer[beanInfo.sortedFields.length];</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        for (int i = 0, size = beanInfo.sortedFields.length; i &lt; size; ++i) {</span>
+<span class="fc" id="L60">            FieldInfo fieldInfo = beanInfo.sortedFields[i];</span>
+<span class="fc" id="L61">            FieldDeserializer fieldDeserializer = config.createFieldDeserializer(config, beanInfo, fieldInfo);</span>
+
+<span class="fc" id="L63">            sortedFieldDeserializers[i] = fieldDeserializer;</span>
+
+<span class="fc bfc" id="L65" title="All 2 branches covered.">            if (size &gt; 128) {</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                if (fieldDeserializerMap == null) {</span>
+<span class="fc" id="L67">                    fieldDeserializerMap = new HashMap&lt;String, FieldDeserializer&gt;();</span>
+                }
+<span class="fc" id="L69">                fieldDeserializerMap.put(fieldInfo.name, fieldDeserializer);</span>
+            }
+
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            for (String name : fieldInfo.alternateNames) {</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">                if (alterNameFieldDeserializers == null) {</span>
+<span class="fc" id="L74">                    alterNameFieldDeserializers = new HashMap&lt;String, FieldDeserializer&gt;();</span>
+                }
+<span class="fc" id="L76">                alterNameFieldDeserializers.put(name, fieldDeserializer);</span>
+            }
+        }
+<span class="fc" id="L79">        this.alterNameFieldDeserializers = alterNameFieldDeserializers;</span>
+
+<span class="fc" id="L81">        fieldDeserializers = new FieldDeserializer[beanInfo.fields.length];</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        for (int i = 0, size = beanInfo.fields.length; i &lt; size; ++i) {</span>
+<span class="fc" id="L83">            FieldInfo fieldInfo = beanInfo.fields[i];</span>
+<span class="fc" id="L84">            FieldDeserializer fieldDeserializer = getFieldDeserializer(fieldInfo.name);</span>
+<span class="fc" id="L85">            fieldDeserializers[i] = fieldDeserializer;</span>
+        }
+<span class="fc" id="L87">    }</span>
+
+    public FieldDeserializer getFieldDeserializer(String key) {
+<span class="fc" id="L90">        return getFieldDeserializer(key, null);</span>
+    }
+
+    public FieldDeserializer getFieldDeserializer(String key, int[] setFlags) {
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        if (key == null) {</span>
+<span class="fc" id="L95">            return null;</span>
+        }
+
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (fieldDeserializerMap != null) {</span>
+<span class="fc" id="L99">            FieldDeserializer fieldDeserializer = fieldDeserializerMap.get(key);</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">            if (fieldDeserializer != null) {</span>
+<span class="fc" id="L101">                return fieldDeserializer;</span>
+            }
+        }
+        
+<span class="fc" id="L105">        int low = 0;</span>
+<span class="fc" id="L106">        int high = sortedFieldDeserializers.length - 1;</span>
+
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        while (low &lt;= high) {</span>
+<span class="fc" id="L109">            int mid = (low + high) &gt;&gt;&gt; 1;</span>
+            
+<span class="fc" id="L111">            String fieldName = sortedFieldDeserializers[mid].fieldInfo.name;</span>
+            
+<span class="fc" id="L113">            int cmp = fieldName.compareTo(key);</span>
+
+<span class="fc bfc" id="L115" title="All 2 branches covered.">            if (cmp &lt; 0) {</span>
+<span class="fc" id="L116">                low = mid + 1;</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">            } else if (cmp &gt; 0) {</span>
+<span class="fc" id="L118">                high = mid - 1;</span>
+            } else {
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">                if (isSetFlag(mid, setFlags)) {</span>
+<span class="nc" id="L121">                    return null;</span>
+                }
+
+<span class="fc" id="L124">                return sortedFieldDeserializers[mid]; // key found</span>
+            }
+<span class="fc" id="L126">        }</span>
+
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        if(this.alterNameFieldDeserializers != null){</span>
+<span class="fc" id="L129">            return this.alterNameFieldDeserializers.get(key);</span>
+        }
+        
+<span class="fc" id="L132">        return null;  // key not found.</span>
+    }
+
+    public FieldDeserializer getFieldDeserializer(long hash) {
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">        if (this.hashArray == null) {</span>
+<span class="fc" id="L137">            long[] hashArray = new long[sortedFieldDeserializers.length];</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            for (int i = 0; i &lt; sortedFieldDeserializers.length; i++) {</span>
+<span class="fc" id="L139">                hashArray[i] = TypeUtils.fnv1a_64(sortedFieldDeserializers[i].fieldInfo.name);</span>
+            }
+<span class="fc" id="L141">            Arrays.sort(hashArray);</span>
+<span class="fc" id="L142">            this.hashArray = hashArray;</span>
+        }
+
+<span class="fc" id="L145">        int pos = Arrays.binarySearch(hashArray, hash);</span>
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">        if (pos &lt; 0) {</span>
+<span class="nc" id="L147">            return null;</span>
+        }
+
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">        if (hashArrayMapping == null) {</span>
+<span class="fc" id="L151">            short[] mapping = new short[hashArray.length];</span>
+<span class="fc" id="L152">            Arrays.fill(mapping, (short) -1);</span>
+<span class="fc bfc" id="L153" title="All 2 branches covered.">            for (int i = 0; i &lt; sortedFieldDeserializers.length; i++) {</span>
+<span class="fc" id="L154">                int p = Arrays.binarySearch(hashArray</span>
+<span class="fc" id="L155">                        , TypeUtils.fnv1a_64(sortedFieldDeserializers[i].fieldInfo.name));</span>
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">                if (p &gt;= 0) {</span>
+<span class="fc" id="L157">                    mapping[p] = (short) i;</span>
+                }
+            }
+<span class="fc" id="L160">            hashArrayMapping = mapping;</span>
+        }
+
+<span class="fc" id="L163">        int setterIndex = hashArrayMapping[pos];</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        if (setterIndex != -1) {</span>
+<span class="fc" id="L165">            return sortedFieldDeserializers[setterIndex];</span>
+        }
+
+<span class="nc" id="L168">        return null; // key not found.</span>
+    }
+
+    static boolean isSetFlag(int i, int[] setFlags) {
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        if (setFlags == null) {</span>
+<span class="fc" id="L173">            return false;</span>
+        }
+
+<span class="fc" id="L176">        int flagIndex = i / 32;</span>
+<span class="fc" id="L177">        int bitIndex = i % 32;</span>
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">        if (flagIndex &lt; setFlags.length) {</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">            if ((setFlags[flagIndex] &amp; (1 &lt;&lt; bitIndex)) != 0) {</span>
+<span class="fc" id="L180">                return true;</span>
+            }
+        }
+
+<span class="fc" id="L184">        return false;</span>
+    }
+    
+    public Object createInstance(DefaultJSONParser parser, Type type) {
+<span class="fc bfc" id="L188" title="All 2 branches covered.">        if (type instanceof Class) {</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">            if (clazz.isInterface()) {</span>
+<span class="fc" id="L190">                Class&lt;?&gt; clazz = (Class&lt;?&gt;) type;</span>
+<span class="fc" id="L191">                ClassLoader loader = Thread.currentThread().getContextClassLoader();</span>
+<span class="fc" id="L192">                final JSONObject obj = new JSONObject();</span>
+<span class="fc" id="L193">                Object proxy = Proxy.newProxyInstance(loader, new Class&lt;?&gt;[] { clazz }, obj);</span>
+<span class="fc" id="L194">                return proxy;</span>
+            }
+        }
+
+<span class="fc bfc" id="L198" title="All 4 branches covered.">        if (beanInfo.defaultConstructor == null &amp;&amp; beanInfo.factoryMethod == null) {</span>
+<span class="fc" id="L199">            return null;</span>
+        }
+
+<span class="fc bfc" id="L202" title="All 4 branches covered.">        if (beanInfo.factoryMethod != null &amp;&amp; beanInfo.defaultConstructorParameterSize &gt; 0) {</span>
+<span class="fc" id="L203">            return null;</span>
+        }
+
+        Object object;
+        try {
+<span class="fc" id="L208">            Constructor&lt;?&gt; constructor = beanInfo.defaultConstructor;</span>
+<span class="fc bfc" id="L209" title="All 2 branches covered.">            if (beanInfo.defaultConstructorParameterSize == 0) {</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">                if (constructor != null) {</span>
+<span class="fc" id="L211">                    object = constructor.newInstance();</span>
+                } else {
+<span class="fc" id="L213">                    object = beanInfo.factoryMethod.invoke(null);</span>
+                }
+            } else {
+<span class="fc" id="L216">                ParseContext context = parser.getContext();</span>
+<span class="pc bpc" id="L217" title="1 of 4 branches missed.">                if (context == null || context.object == null) {</span>
+<span class="fc" id="L218">                    throw new JSONException(&quot;can't create non-static inner class instance.&quot;);</span>
+                }
+
+                final String typeName;
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">                if (type instanceof Class) {</span>
+<span class="fc" id="L223">                    typeName = ((Class&lt;?&gt;) type).getName();</span>
+                } else {
+<span class="nc" id="L225">                    throw new JSONException(&quot;can't create non-static inner class instance.&quot;);</span>
+                }
+
+<span class="fc" id="L228">                final int lastIndex = typeName.lastIndexOf('$');</span>
+<span class="fc" id="L229">                String parentClassName = typeName.substring(0, lastIndex);</span>
+
+<span class="fc" id="L231">                Object ctxObj = context.object;</span>
+<span class="fc" id="L232">                String parentName = ctxObj.getClass().getName();</span>
+
+<span class="fc" id="L234">                Object param = null;</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">                if (!parentName.equals(parentClassName)) {</span>
+<span class="fc" id="L236">                    ParseContext parentContext = context.parent;</span>
+<span class="pc bpc" id="L237" title="1 of 4 branches missed.">                    if (parentContext != null</span>
+                            &amp;&amp; parentContext.object != null
+<span class="fc bfc" id="L239" title="All 2 branches covered.">                            &amp;&amp; (&quot;java.util.ArrayList&quot;.equals(parentName)</span>
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">                            || &quot;java.util.List&quot;.equals(parentName)</span>
+<span class="pc bpc" id="L241" title="1 of 2 branches missed.">                            || &quot;java.util.Collection&quot;.equals(parentName)</span>
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">                            || &quot;java.util.Map&quot;.equals(parentName)</span>
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">                            || &quot;java.util.HashMap&quot;.equals(parentName))) {</span>
+<span class="fc" id="L244">                        parentName = parentContext.object.getClass().getName();</span>
+<span class="pc bpc" id="L245" title="1 of 2 branches missed.">                        if (parentName.equals(parentClassName)) {</span>
+<span class="fc" id="L246">                            param = parentContext.object;</span>
+                        }
+                    } else {
+<span class="fc" id="L249">                        param = ctxObj;</span>
+                    }
+<span class="fc" id="L251">                } else {</span>
+<span class="fc" id="L252">                    param = ctxObj;</span>
+                }
+
+<span class="pc bpc" id="L255" title="2 of 6 branches missed.">                if (param == null || param instanceof Collection &amp;&amp; ((Collection)param).isEmpty()) {</span>
+<span class="fc" id="L256">                    throw new JSONException(&quot;can't create non-static inner class instance.&quot;);</span>
+                }
+
+<span class="fc" id="L259">                object = constructor.newInstance(param);</span>
+            }
+<span class="fc" id="L261">        } catch (JSONException e) {</span>
+<span class="fc" id="L262">            throw e;</span>
+<span class="fc" id="L263">        } catch (Exception e) {</span>
+<span class="fc" id="L264">            throw new JSONException(&quot;create instance error, class &quot; + clazz.getName(), e);</span>
+<span class="fc" id="L265">        }</span>
+
+<span class="fc bfc" id="L267" title="All 2 branches covered.">        if (parser != null // </span>
+<span class="fc bfc" id="L268" title="All 2 branches covered.">                &amp;&amp; parser.lexer.isEnabled(Feature.InitStringFieldAsEmpty)) {</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">            for (FieldInfo fieldInfo : beanInfo.fields) {</span>
+<span class="pc bpc" id="L270" title="1 of 2 branches missed.">                if (fieldInfo.fieldClass == String.class) {</span>
+                    try {
+<span class="fc" id="L272">                        fieldInfo.set(object, &quot;&quot;);</span>
+<span class="fc" id="L273">                    } catch (Exception e) {</span>
+<span class="fc" id="L274">                        throw new JSONException(&quot;create instance error, class &quot; + clazz.getName(), e);</span>
+<span class="fc" id="L275">                    }</span>
+                }
+            }
+        }
+
+<span class="fc" id="L280">        return object;</span>
+    }
+    
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type type, Object fieldName) {
+<span class="fc" id="L284">        return deserialze(parser, type, fieldName, 0);</span>
+    }
+
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type type, Object fieldName, int features) {
+<span class="fc" id="L288">        return deserialze(parser, type, fieldName, null, features, null);</span>
+    }
+
+    @SuppressWarnings({ &quot;unchecked&quot; })
+    public &lt;T&gt; T deserialzeArrayMapping(DefaultJSONParser parser, Type type, Object fieldName, Object object) {
+<span class="fc" id="L293">        final JSONLexer lexer = parser.lexer; // xxx</span>
+<span class="pc bpc" id="L294" title="1 of 2 branches missed.">        if (lexer.token() != JSONToken.LBRACKET) {</span>
+<span class="nc" id="L295">            throw new JSONException(&quot;error&quot;);</span>
+        }
+
+<span class="fc" id="L298">        object = createInstance(parser, type);</span>
+
+<span class="fc bfc" id="L300" title="All 2 branches covered.">        for (int i = 0, size = sortedFieldDeserializers.length; i &lt; size; ++i) {</span>
+<span class="fc bfc" id="L301" title="All 2 branches covered.">            final char seperator = (i == size - 1) ? ']' : ',';</span>
+<span class="fc" id="L302">            FieldDeserializer fieldDeser = sortedFieldDeserializers[i];</span>
+<span class="fc" id="L303">            Class&lt;?&gt; fieldClass = fieldDeser.fieldInfo.fieldClass;</span>
+<span class="fc bfc" id="L304" title="All 2 branches covered.">            if (fieldClass == int.class) {</span>
+<span class="fc" id="L305">                int value = lexer.scanInt(seperator);</span>
+<span class="fc" id="L306">                fieldDeser.setValue(object, value);</span>
+<span class="fc bfc" id="L307" title="All 2 branches covered.">            } else if (fieldClass == String.class) {</span>
+<span class="fc" id="L308">                String value = lexer.scanString(seperator);</span>
+<span class="fc" id="L309">                fieldDeser.setValue(object, value);</span>
+<span class="fc bfc" id="L310" title="All 2 branches covered.">            } else if (fieldClass == long.class) {</span>
+<span class="fc" id="L311">                long value = lexer.scanLong(seperator);</span>
+<span class="fc" id="L312">                fieldDeser.setValue(object, value);</span>
+<span class="fc bfc" id="L313" title="All 2 branches covered.">            } else if (fieldClass.isEnum()) {</span>
+<span class="fc" id="L314">                char ch = lexer.getCurrent();</span>
+                
+                Object value;
+<span class="fc bfc" id="L317" title="All 4 branches covered.">                if (ch == '\&quot;' || ch == 'n') {</span>
+<span class="fc" id="L318">                    value = lexer.scanEnum(fieldClass, parser.getSymbolTable(), seperator);</span>
+<span class="pc bpc" id="L319" title="1 of 4 branches missed.">                } else if (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {</span>
+<span class="fc" id="L320">                    int ordinal = lexer.scanInt(seperator);</span>
+                    
+<span class="fc" id="L322">                    EnumDeserializer enumDeser = (EnumDeserializer) ((DefaultFieldDeserializer) fieldDeser).getFieldValueDeserilizer(parser.getConfig());</span>
+<span class="fc" id="L323">                    value = enumDeser.valueOf(ordinal);</span>
+<span class="fc" id="L324">                } else {</span>
+<span class="nc" id="L325">                    value = scanEnum(lexer, seperator);</span>
+                }
+                
+<span class="fc" id="L328">                fieldDeser.setValue(object, value);</span>
+<span class="fc bfc" id="L329" title="All 2 branches covered.">            } else if (fieldClass == boolean.class) {</span>
+<span class="fc" id="L330">                boolean value = lexer.scanBoolean(seperator);</span>
+<span class="fc" id="L331">                fieldDeser.setValue(object, value);</span>
+<span class="fc bfc" id="L332" title="All 2 branches covered.">            } else if (fieldClass == float.class) {</span>
+<span class="fc" id="L333">                float value = lexer.scanFloat(seperator);</span>
+<span class="fc" id="L334">                fieldDeser.setValue(object, value);</span>
+<span class="fc bfc" id="L335" title="All 2 branches covered.">            } else if (fieldClass == double.class) {</span>
+<span class="fc" id="L336">                double value = lexer.scanDouble(seperator);</span>
+<span class="fc" id="L337">                fieldDeser.setValue(object, value);</span>
+<span class="fc bfc" id="L338" title="All 4 branches covered.">            } else if (fieldClass == java.util.Date.class &amp;&amp; lexer.getCurrent() == '1') {</span>
+<span class="fc" id="L339">                long longValue = lexer.scanLong(seperator);</span>
+<span class="fc" id="L340">                fieldDeser.setValue(object, new java.util.Date(longValue));</span>
+<span class="pc bpc" id="L341" title="1 of 2 branches missed.">            } else if (fieldClass == BigDecimal.class) {</span>
+<span class="nc" id="L342">                BigDecimal value = lexer.scanDecimal(seperator);</span>
+<span class="nc" id="L343">                fieldDeser.setValue(object, value);</span>
+<span class="nc" id="L344">            } else {</span>
+<span class="fc" id="L345">                lexer.nextToken(JSONToken.LBRACKET);</span>
+<span class="fc" id="L346">                Object value = parser.parseObject(fieldDeser.fieldInfo.fieldType, fieldDeser.fieldInfo.name);</span>
+<span class="fc" id="L347">                fieldDeser.setValue(object, value);</span>
+
+<span class="fc bfc" id="L349" title="All 2 branches covered.">                if (lexer.token() == JSONToken.RBRACKET) {</span>
+<span class="fc" id="L350">                    break;</span>
+                }
+
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">                check(lexer, seperator == ']' ? JSONToken.RBRACKET : JSONToken.COMMA);</span>
+                // parser.accept(seperator == ']' ? JSONToken.RBRACKET : JSONToken.COMMA);
+            }
+        }
+<span class="fc" id="L357">        lexer.nextToken(JSONToken.COMMA);</span>
+
+<span class="fc" id="L359">        return (T) object;</span>
+    }
+
+    protected void check(final JSONLexer lexer, int token) {
+<span class="fc bfc" id="L363" title="All 2 branches covered.">        if (lexer.token() != token) {</span>
+<span class="fc" id="L364">            throw new JSONException(&quot;syntax error&quot;);</span>
+        }
+<span class="fc" id="L366">    }</span>
+    
+    protected Enum&lt;?&gt; scanEnum(JSONLexer lexer, char seperator) {
+<span class="fc" id="L369">        throw new JSONException(&quot;illegal enum. &quot; + lexer.info());</span>
+    }
+
+    @SuppressWarnings({ &quot;unchecked&quot;, &quot;rawtypes&quot; })
+    protected &lt;T&gt; T deserialze(DefaultJSONParser parser, // 
+                               Type type, // 
+                               Object fieldName, // 
+                               Object object, //
+                               int features, //
+                               int[] setFlags) {
+<span class="pc bpc" id="L379" title="1 of 4 branches missed.">        if (type == JSON.class || type == JSONObject.class) {</span>
+<span class="fc" id="L380">            return (T) parser.parse();</span>
+        }
+
+<span class="fc" id="L383">        final JSONLexerBase lexer = (JSONLexerBase) parser.lexer; // xxx</span>
+<span class="fc" id="L384">        final ParserConfig config = parser.getConfig();</span>
+
+<span class="fc" id="L386">        int token = lexer.token();</span>
+<span class="fc bfc" id="L387" title="All 2 branches covered.">        if (token == JSONToken.NULL) {</span>
+<span class="fc" id="L388">            lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc" id="L389">            return null;</span>
+        }
+
+<span class="fc" id="L392">        ParseContext context = parser.getContext();</span>
+<span class="fc bfc" id="L393" title="All 4 branches covered.">        if (object != null &amp;&amp; context != null) {</span>
+<span class="fc" id="L394">            context = context.parent;</span>
+        }
+<span class="fc" id="L396">        ParseContext childContext = null;</span>
+
+        try {
+<span class="fc" id="L399">            Map&lt;String, Object&gt; fieldValues = null;</span>
+
+<span class="fc bfc" id="L401" title="All 2 branches covered.">            if (token == JSONToken.RBRACE) {</span>
+<span class="fc" id="L402">                lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc bfc" id="L403" title="All 2 branches covered.">                if (object == null) {</span>
+<span class="fc" id="L404">                    object = createInstance(parser, type);</span>
+                }
+<span class="fc" id="L406">                return (T) object;</span>
+            }
+
+<span class="fc bfc" id="L409" title="All 2 branches covered.">            if (token == JSONToken.LBRACKET) {</span>
+<span class="fc" id="L410">                final int mask = Feature.SupportArrayToBean.mask;</span>
+<span class="fc bfc" id="L411" title="All 2 branches covered.">                boolean isSupportArrayToBean = (beanInfo.parserFeatures &amp; mask) != 0 //</span>
+<span class="fc bfc" id="L412" title="All 4 branches covered.">                                               || lexer.isEnabled(Feature.SupportArrayToBean) //</span>
+                                               || (features &amp; mask) != 0
+                                               ;
+<span class="fc bfc" id="L415" title="All 2 branches covered.">                if (isSupportArrayToBean) {</span>
+<span class="fc" id="L416">                    return deserialzeArrayMapping(parser, type, fieldName, object);</span>
+                }
+            }
+
+<span class="fc bfc" id="L420" title="All 4 branches covered.">            if (token != JSONToken.LBRACE &amp;&amp; token != JSONToken.COMMA) {</span>
+<span class="fc bfc" id="L421" title="All 2 branches covered.">                if (lexer.isBlankInput()) {</span>
+<span class="fc" id="L422">                    return null;</span>
+                }
+
+<span class="fc bfc" id="L425" title="All 2 branches covered.">                if (token == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L426">                    String strVal = lexer.stringVal();</span>
+<span class="fc bfc" id="L427" title="All 2 branches covered.">                    if (strVal.length() == 0) {</span>
+<span class="fc" id="L428">                        lexer.nextToken();</span>
+<span class="fc" id="L429">                        return null;</span>
+                    }
+
+<span class="fc bfc" id="L432" title="All 2 branches covered.">                    if (beanInfo.jsonType != null) {</span>
+<span class="pc bpc" id="L433" title="1 of 2 branches missed.">                        for (Class&lt;?&gt; seeAlsoClass : beanInfo.jsonType.seeAlso()) {</span>
+<span class="pc bpc" id="L434" title="1 of 2 branches missed.">                            if (Enum.class.isAssignableFrom(seeAlsoClass)) {</span>
+                                try {
+<span class="fc" id="L436">                                    Enum&lt;?&gt; e = Enum.valueOf((Class&lt;Enum&gt;) seeAlsoClass, strVal);</span>
+<span class="fc" id="L437">                                    return (T) e;</span>
+<span class="fc" id="L438">                                } catch (IllegalArgumentException e) {</span>
+                                    // skip
+                                }
+                            }
+                        }
+                    }
+<span class="pc bpc" id="L444" title="1 of 2 branches missed.">                } else if (token == JSONToken.LITERAL_ISO8601_DATE) {</span>
+<span class="nc" id="L445">                    Calendar calendar = lexer.getCalendar();</span>
+                }
+
+<span class="fc bfc" id="L448" title="All 4 branches covered.">                if (token == JSONToken.LBRACKET &amp;&amp; lexer.getCurrent() == ']') {</span>
+<span class="fc" id="L449">                    lexer.next();</span>
+<span class="fc" id="L450">                    lexer.nextToken();</span>
+<span class="fc" id="L451">                    return null;</span>
+                }
+
+<span class="pc bpc" id="L454" title="1 of 4 branches missed.">                if (beanInfo.factoryMethod != null &amp;&amp; beanInfo.fields.length == 1) {</span>
+                    try {
+<span class="fc" id="L456">                        FieldInfo field = beanInfo.fields[0];</span>
+<span class="fc bfc" id="L457" title="All 2 branches covered.">                        if (field.fieldClass == Integer.class) {</span>
+<span class="pc bpc" id="L458" title="1 of 2 branches missed.">                            if (token == JSONToken.LITERAL_INT) {</span>
+<span class="fc" id="L459">                                int intValue = lexer.intValue();</span>
+<span class="fc" id="L460">                                lexer.nextToken();</span>
+<span class="fc" id="L461">                                return (T) createFactoryInstance(config, intValue);</span>
+                            }
+<span class="pc bpc" id="L463" title="1 of 2 branches missed.">                        } else if (field.fieldClass == String.class) {</span>
+<span class="pc bpc" id="L464" title="1 of 2 branches missed.">                            if (token == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L465">                                String stringVal = lexer.stringVal();</span>
+<span class="fc" id="L466">                                lexer.nextToken();</span>
+<span class="fc" id="L467">                                return (T) createFactoryInstance(config, stringVal);</span>
+                            }
+                        }
+<span class="nc" id="L470">                    } catch (Exception ex) {</span>
+<span class="nc" id="L471">                        throw new JSONException(ex.getMessage(), ex);</span>
+<span class="nc" id="L472">                    }</span>
+                }
+                
+<span class="fc" id="L475">                StringBuilder buf = (new StringBuilder()) //</span>
+<span class="fc" id="L476">                                                        .append(&quot;syntax error, expect {, actual &quot;) //</span>
+<span class="fc" id="L477">                                                        .append(lexer.tokenName()) //</span>
+<span class="fc" id="L478">                                                        .append(&quot;, pos &quot;) //</span>
+<span class="fc" id="L479">                                                        .append(lexer.pos());</span>
+
+<span class="fc bfc" id="L481" title="All 2 branches covered.">                if (fieldName instanceof String) {</span>
+<span class="fc" id="L482">                    buf //</span>
+<span class="fc" id="L483">                        .append(&quot;, fieldName &quot;) //</span>
+<span class="fc" id="L484">                        .append(fieldName);</span>
+                }
+
+<span class="fc" id="L487">                buf.append(&quot;, fastjson-version &quot;).append(JSON.VERSION);</span>
+                
+<span class="fc" id="L489">                throw new JSONException(buf.toString());</span>
+            }
+
+<span class="fc bfc" id="L492" title="All 2 branches covered.">            if (parser.resolveStatus == DefaultJSONParser.TypeNameRedirect) {</span>
+<span class="fc" id="L493">                parser.resolveStatus = DefaultJSONParser.NONE;</span>
+            }
+
+<span class="fc" id="L496">            String typeKey = beanInfo.typeKey;</span>
+<span class="fc" id="L497">            for (int fieldIndex = 0, notMatchCount = 0;; fieldIndex++) {</span>
+<span class="fc" id="L498">                String key = null;</span>
+<span class="fc" id="L499">                FieldDeserializer fieldDeser = null;</span>
+<span class="fc" id="L500">                FieldInfo fieldInfo = null;</span>
+<span class="fc" id="L501">                Class&lt;?&gt; fieldClass = null;</span>
+<span class="fc" id="L502">                JSONField feildAnnotation = null;</span>
+<span class="fc" id="L503">                boolean customDeserilizer = false;</span>
+<span class="fc bfc" id="L504" title="All 4 branches covered.">                if (fieldIndex &lt; sortedFieldDeserializers.length &amp;&amp; notMatchCount &lt; 16) {</span>
+<span class="fc" id="L505">                    fieldDeser = sortedFieldDeserializers[fieldIndex];</span>
+<span class="fc" id="L506">                    fieldInfo = fieldDeser.fieldInfo;</span>
+<span class="fc" id="L507">                    fieldClass = fieldInfo.fieldClass;</span>
+<span class="fc" id="L508">                    feildAnnotation = fieldInfo.getAnnotation();</span>
+<span class="fc bfc" id="L509" title="All 4 branches covered.">                    if (feildAnnotation != null &amp;&amp; fieldDeser instanceof DefaultFieldDeserializer) {</span>
+<span class="fc" id="L510">                        customDeserilizer = ((DefaultFieldDeserializer) fieldDeser).customDeserilizer;</span>
+                    }
+                }
+
+<span class="fc" id="L514">                boolean matchField = false;</span>
+<span class="fc" id="L515">                boolean valueParsed = false;</span>
+                
+<span class="fc" id="L517">                Object fieldValue = null;</span>
+<span class="fc bfc" id="L518" title="All 2 branches covered.">                if (fieldDeser != null) {</span>
+<span class="fc" id="L519">                    char[] name_chars = fieldInfo.name_chars;</span>
+<span class="fc bfc" id="L520" title="All 4 branches covered.">                    if (customDeserilizer &amp;&amp; lexer.matchField(name_chars)) {</span>
+<span class="fc" id="L521">                        matchField = true;</span>
+<span class="fc bfc" id="L522" title="All 4 branches covered.">                    } else if (fieldClass == int.class || fieldClass == Integer.class) {</span>
+<span class="fc" id="L523">                        int intVal = lexer.scanFieldInt(name_chars);</span>
+<span class="pc bpc" id="L524" title="1 of 4 branches missed.">                        if (intVal == 0 &amp;&amp; lexer.matchStat == JSONLexer.VALUE_NULL) {</span>
+<span class="nc" id="L525">                            fieldValue = null;</span>
+                        } else {
+<span class="fc" id="L527">                            fieldValue = intVal;</span>
+                        }
+
+<span class="fc bfc" id="L530" title="All 2 branches covered.">                        if (lexer.matchStat &gt; 0) {</span>
+<span class="fc" id="L531">                            matchField = true;</span>
+<span class="fc" id="L532">                            valueParsed = true;</span>
+<span class="fc bfc" id="L533" title="All 2 branches covered.">                        } else if (lexer.matchStat == JSONLexer.NOT_MATCH_NAME) {</span>
+<span class="fc" id="L534">                            notMatchCount++;</span>
+<span class="fc" id="L535">                            continue;</span>
+                        }
+<span class="fc bfc" id="L537" title="All 4 branches covered.">                    } else if (fieldClass == long.class || fieldClass == Long.class) {</span>
+<span class="fc" id="L538">                        long longVal = lexer.scanFieldLong(name_chars);</span>
+<span class="pc bpc" id="L539" title="1 of 4 branches missed.">                        if (longVal == 0 &amp;&amp; lexer.matchStat == JSONLexer.VALUE_NULL) {</span>
+<span class="nc" id="L540">                            fieldValue = null;</span>
+                        } else {
+<span class="fc" id="L542">                            fieldValue = longVal;</span>
+                        }
+
+<span class="fc bfc" id="L545" title="All 2 branches covered.">                        if (lexer.matchStat &gt; 0) {</span>
+<span class="fc" id="L546">                            matchField = true;</span>
+<span class="fc" id="L547">                            valueParsed = true;</span>
+<span class="fc bfc" id="L548" title="All 2 branches covered.">                        } else if (lexer.matchStat == JSONLexer.NOT_MATCH_NAME) {</span>
+<span class="fc" id="L549">                            notMatchCount++;</span>
+<span class="fc" id="L550">                            continue;</span>
+                        }
+<span class="fc bfc" id="L552" title="All 2 branches covered.">                    } else if (fieldClass == String.class) {</span>
+<span class="fc" id="L553">                        fieldValue = lexer.scanFieldString(name_chars);</span>
+                        
+<span class="fc bfc" id="L555" title="All 2 branches covered.">                        if (lexer.matchStat &gt; 0) {</span>
+<span class="fc" id="L556">                            matchField = true;</span>
+<span class="fc" id="L557">                            valueParsed = true;</span>
+<span class="fc bfc" id="L558" title="All 2 branches covered.">                        } else if (lexer.matchStat == JSONLexer.NOT_MATCH_NAME) {</span>
+<span class="fc" id="L559">                            notMatchCount++;</span>
+<span class="fc" id="L560">                            continue;</span>
+                        }
+<span class="fc bfc" id="L562" title="All 4 branches covered.">                    } else if (fieldClass == java.util.Date.class &amp;&amp; fieldInfo.format == null) {</span>
+<span class="fc" id="L563">                        fieldValue = lexer.scanFieldDate(name_chars);</span>
+
+<span class="fc bfc" id="L565" title="All 2 branches covered.">                        if (lexer.matchStat &gt; 0) {</span>
+<span class="fc" id="L566">                            matchField = true;</span>
+<span class="fc" id="L567">                            valueParsed = true;</span>
+<span class="fc bfc" id="L568" title="All 2 branches covered.">                        } else if (lexer.matchStat == JSONLexer.NOT_MATCH_NAME) {</span>
+<span class="fc" id="L569">                            notMatchCount++;</span>
+<span class="fc" id="L570">                            continue;</span>
+                        }
+<span class="fc bfc" id="L572" title="All 2 branches covered.">                    } else if (fieldClass == BigDecimal.class) {</span>
+<span class="fc" id="L573">                        fieldValue = lexer.scanFieldDecimal(name_chars);</span>
+
+<span class="pc bpc" id="L575" title="1 of 2 branches missed.">                        if (lexer.matchStat &gt; 0) {</span>
+<span class="nc" id="L576">                            matchField = true;</span>
+<span class="nc" id="L577">                            valueParsed = true;</span>
+<span class="fc bfc" id="L578" title="All 2 branches covered.">                        } else if (lexer.matchStat == JSONLexer.NOT_MATCH_NAME) {</span>
+<span class="fc" id="L579">                            notMatchCount++;</span>
+<span class="fc" id="L580">                            continue;</span>
+                        }
+<span class="fc bfc" id="L582" title="All 2 branches covered.">                    } else if (fieldClass == BigInteger.class) {</span>
+<span class="fc" id="L583">                        fieldValue = lexer.scanFieldBigInteger(name_chars);</span>
+
+<span class="fc bfc" id="L585" title="All 2 branches covered.">                        if (lexer.matchStat &gt; 0) {</span>
+<span class="fc" id="L586">                            matchField = true;</span>
+<span class="fc" id="L587">                            valueParsed = true;</span>
+<span class="pc bpc" id="L588" title="1 of 2 branches missed.">                        } else if (lexer.matchStat == JSONLexer.NOT_MATCH_NAME) {</span>
+<span class="nc" id="L589">                            notMatchCount++;</span>
+<span class="nc" id="L590">                            continue;</span>
+                        }
+<span class="fc bfc" id="L592" title="All 4 branches covered.">                    } else if (fieldClass == boolean.class || fieldClass == Boolean.class) {</span>
+<span class="fc" id="L593">                        boolean booleanVal = lexer.scanFieldBoolean(name_chars);</span>
+
+<span class="pc bpc" id="L595" title="1 of 2 branches missed.">                        if (lexer.matchStat == JSONLexer.VALUE_NULL) {</span>
+<span class="nc" id="L596">                            fieldValue = null;</span>
+                        } else {
+<span class="fc" id="L598">                            fieldValue = booleanVal;</span>
+                        }
+                        
+<span class="fc bfc" id="L601" title="All 2 branches covered.">                        if (lexer.matchStat &gt; 0) {</span>
+<span class="fc" id="L602">                            matchField = true;</span>
+<span class="fc" id="L603">                            valueParsed = true;</span>
+<span class="fc bfc" id="L604" title="All 2 branches covered.">                        } else if (lexer.matchStat == JSONLexer.NOT_MATCH_NAME) {</span>
+<span class="fc" id="L605">                            notMatchCount++;</span>
+<span class="fc" id="L606">                            continue;</span>
+                        }
+<span class="fc bfc" id="L608" title="All 4 branches covered.">                    } else if (fieldClass == float.class || fieldClass == Float.class) {</span>
+<span class="fc" id="L609">                        float floatVal = lexer.scanFieldFloat(name_chars);</span>
+<span class="pc bpc" id="L610" title="1 of 4 branches missed.">                        if (floatVal == 0 &amp;&amp; lexer.matchStat == JSONLexer.VALUE_NULL) {</span>
+<span class="nc" id="L611">                            fieldValue = null;</span>
+                        } else {
+<span class="fc" id="L613">                            fieldValue = floatVal;</span>
+                        }
+
+<span class="fc bfc" id="L616" title="All 2 branches covered.">                        if (lexer.matchStat &gt; 0) {</span>
+<span class="fc" id="L617">                            matchField = true;</span>
+<span class="fc" id="L618">                            valueParsed = true;</span>
+<span class="fc bfc" id="L619" title="All 2 branches covered.">                        } else if (lexer.matchStat == JSONLexer.NOT_MATCH_NAME) {</span>
+<span class="fc" id="L620">                            notMatchCount++;</span>
+<span class="fc" id="L621">                            continue;</span>
+                        }
+<span class="fc bfc" id="L623" title="All 4 branches covered.">                    } else if (fieldClass == double.class || fieldClass == Double.class) {</span>
+<span class="fc" id="L624">                        double doubleVal = lexer.scanFieldDouble(name_chars);</span>
+<span class="fc bfc" id="L625" title="All 4 branches covered.">                        if (doubleVal == 0 &amp;&amp; lexer.matchStat == JSONLexer.VALUE_NULL) {</span>
+<span class="fc" id="L626">                            fieldValue = null;</span>
+                        } else {
+<span class="fc" id="L628">                            fieldValue = doubleVal;</span>
+                        }
+
+<span class="fc bfc" id="L631" title="All 2 branches covered.">                        if (lexer.matchStat &gt; 0) {</span>
+<span class="fc" id="L632">                            matchField = true;</span>
+<span class="fc" id="L633">                            valueParsed = true;</span>
+<span class="fc bfc" id="L634" title="All 2 branches covered.">                        } else if (lexer.matchStat == JSONLexer.NOT_MATCH_NAME) {</span>
+<span class="fc" id="L635">                            notMatchCount++;</span>
+<span class="fc" id="L636">                            continue;</span>
+                        }
+<span class="fc bfc" id="L638" title="All 2 branches covered.">                    } else if (fieldClass.isEnum() // </span>
+<span class="pc bpc" id="L639" title="1 of 4 branches missed.">                            &amp;&amp; parser.getConfig().getDeserializer(fieldClass) instanceof EnumDeserializer</span>
+<span class="nc bnc" id="L640" title="All 2 branches missed.">                            &amp;&amp; (feildAnnotation == null || feildAnnotation.deserializeUsing() == Void.class)</span>
+                            ) {
+<span class="pc bpc" id="L642" title="1 of 2 branches missed.">                        if (fieldDeser instanceof DefaultFieldDeserializer) {</span>
+<span class="fc" id="L643">                            ObjectDeserializer fieldValueDeserilizer = ((DefaultFieldDeserializer) fieldDeser).fieldValueDeserilizer;</span>
+<span class="fc" id="L644">                            fieldValue = this.scanEnum(lexer, name_chars, fieldValueDeserilizer);</span>
+
+<span class="fc bfc" id="L646" title="All 2 branches covered.">                            if (lexer.matchStat &gt; 0) {</span>
+<span class="fc" id="L647">                                matchField = true;</span>
+<span class="fc" id="L648">                                valueParsed = true;</span>
+<span class="fc bfc" id="L649" title="All 2 branches covered.">                            } else if (lexer.matchStat == JSONLexer.NOT_MATCH_NAME) {</span>
+<span class="fc" id="L650">                                notMatchCount++;</span>
+<span class="fc" id="L651">                                continue;</span>
+                            }
+<span class="fc" id="L653">                        }</span>
+<span class="fc bfc" id="L654" title="All 2 branches covered.">                    } else if (fieldClass == int[].class) {</span>
+<span class="fc" id="L655">                        fieldValue = lexer.scanFieldIntArray(name_chars);</span>
+
+<span class="fc bfc" id="L657" title="All 2 branches covered.">                        if (lexer.matchStat &gt; 0) {</span>
+<span class="fc" id="L658">                            matchField = true;</span>
+<span class="fc" id="L659">                            valueParsed = true;</span>
+<span class="fc bfc" id="L660" title="All 2 branches covered.">                        } else if (lexer.matchStat == JSONLexer.NOT_MATCH_NAME) {</span>
+<span class="fc" id="L661">                            notMatchCount++;</span>
+<span class="fc" id="L662">                            continue;</span>
+                        }
+<span class="fc bfc" id="L664" title="All 2 branches covered.">                    } else if (fieldClass == float[].class) {</span>
+<span class="fc" id="L665">                        fieldValue = lexer.scanFieldFloatArray(name_chars);</span>
+
+<span class="fc bfc" id="L667" title="All 2 branches covered.">                        if (lexer.matchStat &gt; 0) {</span>
+<span class="fc" id="L668">                            matchField = true;</span>
+<span class="fc" id="L669">                            valueParsed = true;</span>
+<span class="fc bfc" id="L670" title="All 2 branches covered.">                        } else if (lexer.matchStat == JSONLexer.NOT_MATCH_NAME) {</span>
+<span class="fc" id="L671">                            notMatchCount++;</span>
+<span class="fc" id="L672">                            continue;</span>
+                        }
+<span class="fc bfc" id="L674" title="All 2 branches covered.">                    } else if (fieldClass == float[][].class) {</span>
+<span class="fc" id="L675">                        fieldValue = lexer.scanFieldFloatArray2(name_chars);</span>
+
+<span class="fc bfc" id="L677" title="All 2 branches covered.">                        if (lexer.matchStat &gt; 0) {</span>
+<span class="fc" id="L678">                            matchField = true;</span>
+<span class="fc" id="L679">                            valueParsed = true;</span>
+<span class="pc bpc" id="L680" title="1 of 2 branches missed.">                        } else if (lexer.matchStat == JSONLexer.NOT_MATCH_NAME) {</span>
+<span class="nc" id="L681">                            notMatchCount++;</span>
+<span class="nc" id="L682">                            continue;</span>
+                        }
+<span class="fc bfc" id="L684" title="All 2 branches covered.">                    } else if (lexer.matchField(name_chars)) {</span>
+<span class="fc" id="L685">                        matchField = true;</span>
+                    } else {
+                        continue;
+                    }
+                }
+                
+<span class="fc bfc" id="L691" title="All 2 branches covered.">                if (!matchField) {</span>
+<span class="fc" id="L692">                    key = lexer.scanSymbol(parser.symbolTable);</span>
+
+<span class="fc bfc" id="L694" title="All 2 branches covered.">                    if (key == null) {</span>
+<span class="fc" id="L695">                        token = lexer.token();</span>
+<span class="fc bfc" id="L696" title="All 2 branches covered.">                        if (token == JSONToken.RBRACE) {</span>
+<span class="fc" id="L697">                            lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc" id="L698">                            break;</span>
+                        }
+<span class="fc bfc" id="L700" title="All 2 branches covered.">                        if (token == JSONToken.COMMA) {</span>
+<span class="fc bfc" id="L701" title="All 2 branches covered.">                            if (lexer.isEnabled(Feature.AllowArbitraryCommas)) {</span>
+<span class="fc" id="L702">                                continue;</span>
+                            }
+                        }
+                    }
+
+<span class="fc bfc" id="L707" title="All 4 branches covered.">                    if (&quot;$ref&quot; == key &amp;&amp; context != null) {</span>
+<span class="fc" id="L708">                        lexer.nextTokenWithColon(JSONToken.LITERAL_STRING);</span>
+<span class="fc" id="L709">                        token = lexer.token();</span>
+<span class="fc bfc" id="L710" title="All 2 branches covered.">                        if (token == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L711">                            String ref = lexer.stringVal();</span>
+<span class="fc bfc" id="L712" title="All 2 branches covered.">                            if (&quot;@&quot;.equals(ref)) {</span>
+<span class="fc" id="L713">                                object = context.object;</span>
+<span class="fc bfc" id="L714" title="All 2 branches covered.">                            } else if (&quot;..&quot;.equals(ref)) {</span>
+<span class="fc" id="L715">                                ParseContext parentContext = context.parent;</span>
+<span class="fc bfc" id="L716" title="All 2 branches covered.">                                if (parentContext.object != null) {</span>
+<span class="fc" id="L717">                                    object = parentContext.object;</span>
+                                } else {
+<span class="fc" id="L719">                                    parser.addResolveTask(new ResolveTask(parentContext, ref));</span>
+<span class="fc" id="L720">                                    parser.resolveStatus = DefaultJSONParser.NeedToResolve;</span>
+                                }
+<span class="fc bfc" id="L722" title="All 2 branches covered.">                            } else if (&quot;$&quot;.equals(ref)) {</span>
+<span class="fc" id="L723">                                ParseContext rootContext = context;</span>
+<span class="fc bfc" id="L724" title="All 2 branches covered.">                                while (rootContext.parent != null) {</span>
+<span class="fc" id="L725">                                    rootContext = rootContext.parent;</span>
+                                }
+
+<span class="fc bfc" id="L728" title="All 2 branches covered.">                                if (rootContext.object != null) {</span>
+<span class="fc" id="L729">                                    object = rootContext.object;</span>
+                                } else {
+<span class="fc" id="L731">                                    parser.addResolveTask(new ResolveTask(rootContext, ref));</span>
+<span class="fc" id="L732">                                    parser.resolveStatus = DefaultJSONParser.NeedToResolve;</span>
+                                }
+<span class="fc" id="L734">                            } else {</span>
+<span class="fc bfc" id="L735" title="All 2 branches covered.">                                if (ref.indexOf('\\') &gt; 0) {</span>
+<span class="fc" id="L736">                                    StringBuilder buf = new StringBuilder();</span>
+<span class="fc bfc" id="L737" title="All 2 branches covered.">                                    for (int i = 0; i &lt; ref.length(); ++i) {</span>
+<span class="fc" id="L738">                                        char ch = ref.charAt(i);</span>
+<span class="fc bfc" id="L739" title="All 2 branches covered.">                                        if (ch == '\\') {</span>
+<span class="fc" id="L740">                                            ch = ref.charAt(++i);</span>
+                                        }
+<span class="fc" id="L742">                                        buf.append(ch);</span>
+                                    }
+<span class="fc" id="L744">                                    ref = buf.toString();</span>
+                                }
+<span class="fc" id="L746">                                Object refObj = parser.resolveReference(ref);</span>
+<span class="fc bfc" id="L747" title="All 2 branches covered.">                                if (refObj != null) {</span>
+<span class="fc" id="L748">                                    object = refObj;</span>
+                                } else {
+<span class="fc" id="L750">                                    parser.addResolveTask(new ResolveTask(context, ref));</span>
+<span class="fc" id="L751">                                    parser.resolveStatus = DefaultJSONParser.NeedToResolve;</span>
+                                }
+                            }
+<span class="fc" id="L754">                        } else {</span>
+<span class="fc" id="L755">                            throw new JSONException(&quot;illegal ref, &quot; + JSONToken.name(token));</span>
+                        }
+
+<span class="fc" id="L758">                        lexer.nextToken(JSONToken.RBRACE);</span>
+<span class="fc bfc" id="L759" title="All 2 branches covered.">                        if (lexer.token() != JSONToken.RBRACE) {</span>
+<span class="fc" id="L760">                            throw new JSONException(&quot;illegal ref&quot;);</span>
+                        }
+<span class="fc" id="L762">                        lexer.nextToken(JSONToken.COMMA);</span>
+
+<span class="fc" id="L764">                        parser.setContext(context, object, fieldName);</span>
+
+<span class="fc" id="L766">                        return (T) object;</span>
+                    }
+
+<span class="pc bpc" id="L769" title="1 of 6 branches missed.">                    if ((typeKey != null &amp;&amp; typeKey.equals(key))</span>
+                            || JSON.DEFAULT_TYPE_KEY == key) {
+<span class="fc" id="L771">                        lexer.nextTokenWithColon(JSONToken.LITERAL_STRING);</span>
+<span class="pc bpc" id="L772" title="1 of 2 branches missed.">                        if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L773">                            String typeName = lexer.stringVal();</span>
+<span class="fc" id="L774">                            lexer.nextToken(JSONToken.COMMA);</span>
+
+<span class="pc bpc" id="L776" title="1 of 4 branches missed.">                            if (typeName.equals(beanInfo.typeName)|| parser.isEnabled(Feature.IgnoreAutoType)) {</span>
+<span class="fc bfc" id="L777" title="All 2 branches covered.">                                if (lexer.token() == JSONToken.RBRACE) {</span>
+<span class="fc" id="L778">                                    lexer.nextToken();</span>
+<span class="fc" id="L779">                                    break;</span>
+                                }
+                                continue;
+                            }
+                            
+
+<span class="fc" id="L785">                            ObjectDeserializer deserializer = getSeeAlso(config, this.beanInfo, typeName);</span>
+<span class="fc" id="L786">                            Class&lt;?&gt; userType = null;</span>
+
+<span class="fc bfc" id="L788" title="All 2 branches covered.">                            if (deserializer == null) {</span>
+<span class="fc" id="L789">                                Class&lt;?&gt; expectClass = TypeUtils.getClass(type);</span>
+<span class="fc" id="L790">                                userType = config.checkAutoType(typeName, expectClass, lexer.getFeatures());</span>
+<span class="fc" id="L791">                                deserializer = parser.getConfig().getDeserializer(userType);</span>
+                            }
+
+<span class="fc" id="L794">                            Object typedObject = deserializer.deserialze(parser, userType, fieldName);</span>
+<span class="fc bfc" id="L795" title="All 2 branches covered.">                            if (deserializer instanceof JavaBeanDeserializer) {</span>
+<span class="fc" id="L796">                                JavaBeanDeserializer javaBeanDeserializer = (JavaBeanDeserializer) deserializer;</span>
+<span class="fc bfc" id="L797" title="All 2 branches covered.">                                if (typeKey != null) {</span>
+<span class="fc" id="L798">                                    FieldDeserializer typeKeyFieldDeser = javaBeanDeserializer.getFieldDeserializer(typeKey);</span>
+<span class="fc" id="L799">                                    typeKeyFieldDeser.setValue(typedObject, typeName);</span>
+                                }
+                            }
+<span class="fc" id="L802">                            return (T) typedObject;</span>
+                        } else {
+<span class="nc" id="L804">                            throw new JSONException(&quot;syntax error&quot;);</span>
+                        }
+                    }
+                }
+
+<span class="fc bfc" id="L809" title="All 4 branches covered.">                if (object == null &amp;&amp; fieldValues == null) {</span>
+<span class="fc" id="L810">                    object = createInstance(parser, type);</span>
+<span class="fc bfc" id="L811" title="All 2 branches covered.">                    if (object == null) {</span>
+<span class="fc" id="L812">                        fieldValues = new HashMap&lt;String, Object&gt;(this.fieldDeserializers.length);</span>
+                    }
+<span class="fc" id="L814">                    childContext = parser.setContext(context, object, fieldName);</span>
+<span class="pc bpc" id="L815" title="1 of 2 branches missed.">                    if (setFlags == null) {</span>
+<span class="fc" id="L816">                        setFlags = new int[(this.fieldDeserializers.length / 32) + 1];</span>
+                    }
+                }
+
+<span class="fc bfc" id="L820" title="All 2 branches covered.">                if (matchField) {</span>
+<span class="fc bfc" id="L821" title="All 2 branches covered.">                    if (!valueParsed) {</span>
+<span class="fc" id="L822">                        fieldDeser.parseField(parser, object, type, fieldValues);</span>
+                    } else {
+<span class="fc bfc" id="L824" title="All 2 branches covered.">                        if (object == null) {</span>
+<span class="fc" id="L825">                            fieldValues.put(fieldInfo.name, fieldValue);</span>
+<span class="fc bfc" id="L826" title="All 2 branches covered.">                        } else if (fieldValue == null) {</span>
+<span class="pc bpc" id="L827" title="5 of 10 branches missed.">                            if (fieldClass != int.class //</span>
+                                    &amp;&amp; fieldClass != long.class //
+                                    &amp;&amp; fieldClass != float.class //
+                                    &amp;&amp; fieldClass != double.class //
+                                    &amp;&amp; fieldClass != boolean.class //
+                                    ) {
+<span class="fc" id="L833">                                fieldDeser.setValue(object, fieldValue);</span>
+                            }
+                        } else {
+<span class="fc" id="L836">                            fieldDeser.setValue(object, fieldValue);</span>
+                        }
+
+<span class="pc bpc" id="L839" title="1 of 2 branches missed.">                        if (setFlags != null) {</span>
+<span class="fc" id="L840">                            int flagIndex = fieldIndex / 32;</span>
+<span class="fc" id="L841">                            int bitIndex = fieldIndex % 32;</span>
+<span class="fc" id="L842">                            setFlags[flagIndex] |= (1 &lt;&lt; bitIndex);</span>
+                        }
+
+<span class="fc bfc" id="L845" title="All 2 branches covered.">                        if (lexer.matchStat == JSONLexer.END) {</span>
+<span class="fc" id="L846">                            break;</span>
+                        }
+                    }
+                } else {
+<span class="fc" id="L850">                    boolean match = parseField(parser, key, object, type, fieldValues, setFlags);</span>
+
+<span class="fc bfc" id="L852" title="All 2 branches covered.">                    if (!match) {</span>
+<span class="fc bfc" id="L853" title="All 2 branches covered.">                        if (lexer.token() == JSONToken.RBRACE) {</span>
+<span class="fc" id="L854">                            lexer.nextToken();</span>
+<span class="fc" id="L855">                            break;</span>
+                        }
+
+                        continue;
+<span class="fc bfc" id="L859" title="All 2 branches covered.">                    } else if (lexer.token() == JSONToken.COLON) {</span>
+<span class="fc" id="L860">                        throw new JSONException(&quot;syntax error, unexpect token ':'&quot;);</span>
+                    }
+                }
+
+<span class="fc bfc" id="L864" title="All 2 branches covered.">                if (lexer.token() == JSONToken.COMMA) {</span>
+<span class="fc" id="L865">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L868" title="All 2 branches covered.">                if (lexer.token() == JSONToken.RBRACE) {</span>
+<span class="fc" id="L869">                    lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc" id="L870">                    break;</span>
+                }
+
+<span class="pc bpc" id="L873" title="1 of 4 branches missed.">                if (lexer.token() == JSONToken.IDENTIFIER || lexer.token() == JSONToken.ERROR) {</span>
+<span class="fc" id="L874">                    throw new JSONException(&quot;syntax error, unexpect token &quot; + JSONToken.name(lexer.token()));</span>
+                }
+            }
+
+<span class="fc bfc" id="L878" title="All 2 branches covered.">            if (object == null) {</span>
+<span class="fc bfc" id="L879" title="All 2 branches covered.">                if (fieldValues == null) {</span>
+<span class="fc" id="L880">                    object = createInstance(parser, type);</span>
+<span class="pc bpc" id="L881" title="1 of 2 branches missed.">                    if (childContext == null) {</span>
+<span class="fc" id="L882">                        childContext = parser.setContext(context, object, fieldName);</span>
+                    }
+<span class="fc" id="L884">                    return (T) object;</span>
+                }
+
+<span class="fc" id="L887">                String[] paramNames = beanInfo.creatorConstructorParameters;</span>
+                final Object[] params;
+<span class="fc bfc" id="L889" title="All 2 branches covered.">                if (paramNames != null) {</span>
+<span class="fc" id="L890">                    params = new Object[paramNames.length];</span>
+<span class="fc bfc" id="L891" title="All 2 branches covered.">                    for (int i = 0; i &lt; paramNames.length; i++) {</span>
+<span class="fc" id="L892">                        String paramName = paramNames[i];</span>
+
+<span class="fc" id="L894">                        Object param = fieldValues.remove(paramName);</span>
+<span class="fc bfc" id="L895" title="All 2 branches covered.">                        if (param == null) {</span>
+<span class="fc" id="L896">                            Type fieldType = beanInfo.creatorConstructorParameterTypes[i];</span>
+<span class="fc" id="L897">                            FieldInfo fieldInfo = beanInfo.fields[i];</span>
+<span class="pc bpc" id="L898" title="1 of 2 branches missed.">                            if (fieldType == byte.class) {</span>
+<span class="nc" id="L899">                                param = (byte) 0;</span>
+<span class="pc bpc" id="L900" title="1 of 2 branches missed.">                            } else if (fieldType == short.class) {</span>
+<span class="nc" id="L901">                                param = (short) 0;</span>
+<span class="fc bfc" id="L902" title="All 2 branches covered.">                            } else if (fieldType == int.class) {</span>
+<span class="fc" id="L903">                                param = 0;</span>
+<span class="fc bfc" id="L904" title="All 2 branches covered.">                            } else if (fieldType == long.class) {</span>
+<span class="fc" id="L905">                                param = 0L;</span>
+<span class="pc bpc" id="L906" title="1 of 2 branches missed.">                            } else if (fieldType == float.class) {</span>
+<span class="nc" id="L907">                                param = 0F;</span>
+<span class="pc bpc" id="L908" title="1 of 2 branches missed.">                            } else if (fieldType == double.class) {</span>
+<span class="nc" id="L909">                                param = 0D;</span>
+<span class="pc bpc" id="L910" title="1 of 2 branches missed.">                            } else if (fieldType == boolean.class) {</span>
+<span class="nc" id="L911">                                param = Boolean.FALSE;</span>
+<span class="pc bpc" id="L912" title="1 of 4 branches missed.">                            } else if (fieldType == String.class</span>
+                                    &amp;&amp; (fieldInfo.parserFeatures &amp; Feature.InitStringFieldAsEmpty.mask) != 0) {
+<span class="nc" id="L914">                                param = &quot;&quot;;</span>
+                            }
+<span class="fc" id="L916">                        } else {</span>
+<span class="pc bpc" id="L917" title="2 of 4 branches missed.">                            if (beanInfo.creatorConstructorParameterTypes != null &amp;&amp; i &lt; beanInfo.creatorConstructorParameterTypes.length) {</span>
+<span class="fc" id="L918">                                Type paramType = beanInfo.creatorConstructorParameterTypes[i];</span>
+<span class="pc bpc" id="L919" title="1 of 2 branches missed.">                                if (paramType instanceof Class) {</span>
+<span class="fc" id="L920">                                    Class paramClass = (Class) paramType;</span>
+<span class="fc bfc" id="L921" title="All 2 branches covered.">                                    if (!paramClass.isInstance(param)) {</span>
+<span class="fc bfc" id="L922" title="All 2 branches covered.">                                        if (param instanceof List) {</span>
+<span class="fc" id="L923">                                            List list = (List) param;</span>
+<span class="pc bpc" id="L924" title="1 of 2 branches missed.">                                            if (list.size() == 1) {</span>
+<span class="fc" id="L925">                                                Object first = list.get(0);</span>
+<span class="pc bpc" id="L926" title="1 of 2 branches missed.">                                                if (paramClass.isInstance(first)) {</span>
+<span class="fc" id="L927">                                                    param = list.get(0);</span>
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+<span class="fc" id="L935">                        params[i] = param;</span>
+                    }
+                } else {
+<span class="fc" id="L938">                    FieldInfo[] fieldInfoList = beanInfo.fields;</span>
+<span class="fc" id="L939">                    int size = fieldInfoList.length;</span>
+<span class="fc" id="L940">                    params = new Object[size];</span>
+<span class="fc bfc" id="L941" title="All 2 branches covered.">                    for (int i = 0; i &lt; size; ++i) {</span>
+<span class="fc" id="L942">                        FieldInfo fieldInfo = fieldInfoList[i];</span>
+<span class="fc" id="L943">                        Object param = fieldValues.get(fieldInfo.name);</span>
+<span class="fc bfc" id="L944" title="All 2 branches covered.">                        if (param == null) {</span>
+<span class="fc" id="L945">                            Type fieldType = fieldInfo.fieldType;</span>
+<span class="fc bfc" id="L946" title="All 2 branches covered.">                            if (fieldType == byte.class) {</span>
+<span class="fc" id="L947">                                param = (byte) 0;</span>
+<span class="fc bfc" id="L948" title="All 2 branches covered.">                            } else if (fieldType == short.class) {</span>
+<span class="fc" id="L949">                                param = (short) 0;</span>
+<span class="fc bfc" id="L950" title="All 2 branches covered.">                            } else if (fieldType == int.class) {</span>
+<span class="fc" id="L951">                                param = 0;</span>
+<span class="fc bfc" id="L952" title="All 2 branches covered.">                            } else if (fieldType == long.class) {</span>
+<span class="fc" id="L953">                                param = 0L;</span>
+<span class="fc bfc" id="L954" title="All 2 branches covered.">                            } else if (fieldType == float.class) {</span>
+<span class="fc" id="L955">                                param = 0F;</span>
+<span class="fc bfc" id="L956" title="All 2 branches covered.">                            } else if (fieldType == double.class) {</span>
+<span class="fc" id="L957">                                param = 0D;</span>
+<span class="fc bfc" id="L958" title="All 2 branches covered.">                            } else if (fieldType == boolean.class) {</span>
+<span class="fc" id="L959">                                param = Boolean.FALSE;</span>
+<span class="fc bfc" id="L960" title="All 4 branches covered.">                            } else if (fieldType == String.class</span>
+                                    &amp;&amp; (fieldInfo.parserFeatures &amp; Feature.InitStringFieldAsEmpty.mask) != 0) {
+<span class="fc" id="L962">                                param = &quot;&quot;;</span>
+                            }
+                        }
+<span class="fc" id="L965">                        params[i] = param;</span>
+                    }
+                }
+
+<span class="fc bfc" id="L969" title="All 2 branches covered.">                if (beanInfo.creatorConstructor != null) {</span>
+<span class="fc" id="L970">                    boolean hasNull = false;</span>
+<span class="fc bfc" id="L971" title="All 2 branches covered.">                    if (beanInfo.kotlin) {</span>
+<span class="fc bfc" id="L972" title="All 2 branches covered.">                        for (int i = 0; i &lt; params.length; i++) {</span>
+<span class="pc bpc" id="L973" title="2 of 6 branches missed.">                            if (params[i] == null &amp;&amp; beanInfo.fields != null &amp;&amp; i &lt; beanInfo.fields.length) {</span>
+<span class="fc" id="L974">                                FieldInfo fieldInfo = beanInfo.fields[i];</span>
+<span class="fc bfc" id="L975" title="All 2 branches covered.">                                if (fieldInfo.fieldClass == String.class) {</span>
+<span class="fc" id="L976">                                    hasNull = true;</span>
+                                }
+                                break;
+                            }
+                        }
+                    }
+
+                    try {
+<span class="pc bpc" id="L984" title="1 of 4 branches missed.">                        if (hasNull &amp;&amp; beanInfo.kotlinDefaultConstructor != null) {</span>
+<span class="fc" id="L985">                            object = beanInfo.kotlinDefaultConstructor.newInstance(new Object[0]);</span>
+
+<span class="fc bfc" id="L987" title="All 2 branches covered.">                            for (int i = 0; i &lt; params.length; i++) {</span>
+<span class="fc" id="L988">                                final Object param = params[i];</span>
+<span class="pc bpc" id="L989" title="2 of 6 branches missed.">                                if (param != null &amp;&amp; beanInfo.fields != null &amp;&amp; i &lt; beanInfo.fields.length) {</span>
+<span class="fc" id="L990">                                    FieldInfo fieldInfo = beanInfo.fields[i];</span>
+<span class="fc" id="L991">                                    fieldInfo.set(object, param);</span>
+                                }
+                            }
+                        } else {
+<span class="fc" id="L995">                            object = beanInfo.creatorConstructor.newInstance(params);</span>
+                        }
+<span class="fc" id="L997">                    } catch (Exception e) {</span>
+<span class="fc" id="L998">                        throw new JSONException(&quot;create instance error, &quot; + paramNames + &quot;, &quot;</span>
+<span class="fc" id="L999">                                                + beanInfo.creatorConstructor.toGenericString(), e);</span>
+<span class="fc" id="L1000">                    }</span>
+
+<span class="fc bfc" id="L1002" title="All 2 branches covered.">                    if (paramNames != null) {</span>
+<span class="fc bfc" id="L1003" title="All 2 branches covered.">                        for (Map.Entry&lt;String, Object&gt; entry : fieldValues.entrySet()) {</span>
+<span class="fc" id="L1004">                            FieldDeserializer fieldDeserializer = getFieldDeserializer(entry.getKey());</span>
+<span class="pc bpc" id="L1005" title="1 of 2 branches missed.">                            if (fieldDeserializer != null) {</span>
+<span class="fc" id="L1006">                                fieldDeserializer.setValue(object, entry.getValue());</span>
+                            }
+<span class="fc" id="L1008">                        }</span>
+                    }
+<span class="fc bfc" id="L1010" title="All 2 branches covered.">                } else if (beanInfo.factoryMethod != null) {</span>
+                    try {
+<span class="fc" id="L1012">                        object = beanInfo.factoryMethod.invoke(null, params);</span>
+<span class="fc" id="L1013">                    } catch (Exception e) {</span>
+<span class="fc" id="L1014">                        throw new JSONException(&quot;create factory method error, &quot; + beanInfo.factoryMethod.toString(), e);</span>
+<span class="fc" id="L1015">                    }</span>
+                }
+
+<span class="pc bpc" id="L1018" title="1 of 2 branches missed.">                if (childContext != null) {</span>
+<span class="fc" id="L1019">                    childContext.object = object;</span>
+                }
+            }
+            
+<span class="fc" id="L1023">            Method buildMethod = beanInfo.buildMethod;</span>
+<span class="fc bfc" id="L1024" title="All 2 branches covered.">            if (buildMethod == null) {</span>
+<span class="fc" id="L1025">                return (T) object;</span>
+            }
+            
+            
+            Object builtObj;
+            try {
+<span class="fc" id="L1031">                builtObj = buildMethod.invoke(object);</span>
+<span class="fc" id="L1032">            } catch (Exception e) {</span>
+<span class="fc" id="L1033">                throw new JSONException(&quot;build object error&quot;, e);</span>
+<span class="fc" id="L1034">            }</span>
+            
+<span class="fc" id="L1036">            return (T) builtObj;</span>
+        } finally {
+<span class="fc bfc" id="L1038" title="All 2 branches covered.">            if (childContext != null) {</span>
+<span class="fc" id="L1039">                childContext.object = object;</span>
+            }
+<span class="fc" id="L1041">            parser.setContext(context);</span>
+        }
+    }
+
+    protected Enum scanEnum(JSONLexerBase lexer, char[] name_chars, ObjectDeserializer fieldValueDeserilizer) {
+<span class="fc" id="L1046">        EnumDeserializer enumDeserializer = null;</span>
+<span class="fc bfc" id="L1047" title="All 2 branches covered.">        if (fieldValueDeserilizer instanceof EnumDeserializer) {</span>
+<span class="fc" id="L1048">            enumDeserializer = (EnumDeserializer) fieldValueDeserilizer;</span>
+        }
+
+<span class="fc bfc" id="L1051" title="All 2 branches covered.">        if (enumDeserializer == null) {</span>
+<span class="fc" id="L1052">            lexer.matchStat = JSONLexer.NOT_MATCH;</span>
+<span class="fc" id="L1053">            return null;</span>
+        }
+
+<span class="fc" id="L1056">        long enumNameHashCode = lexer.scanEnumSymbol(name_chars);</span>
+<span class="fc bfc" id="L1057" title="All 2 branches covered.">        if (lexer.matchStat &gt; 0) {</span>
+<span class="fc" id="L1058">            Enum e = enumDeserializer.getEnumByHashCode(enumNameHashCode);</span>
+<span class="fc bfc" id="L1059" title="All 2 branches covered.">            if (e == null) {</span>
+<span class="fc bfc" id="L1060" title="All 2 branches covered.">                if (enumNameHashCode == 0xcbf29ce484222325L) {</span>
+<span class="fc" id="L1061">                    return null;</span>
+                }
+
+<span class="fc bfc" id="L1064" title="All 2 branches covered.">                if (lexer.isEnabled(Feature.ErrorOnEnumNotMatch)) {</span>
+<span class="fc" id="L1065">                    throw new JSONException(&quot;not match enum value, &quot; + enumDeserializer.enumClass);</span>
+                }
+            }
+
+<span class="fc" id="L1069">            return e;</span>
+        } else {
+<span class="fc" id="L1071">            return null;</span>
+        }
+    }
+
+    public boolean parseField(DefaultJSONParser parser, String key, Object object, Type objectType,
+                              Map&lt;String, Object&gt; fieldValues) {
+<span class="nc" id="L1077">        return parseField(parser, key, object, objectType, fieldValues, null);</span>
+    }
+    
+    public boolean parseField(DefaultJSONParser parser, String key, Object object, Type objectType,
+                              Map&lt;String, Object&gt; fieldValues, int[] setFlags) {
+<span class="fc" id="L1082">        JSONLexer lexer = parser.lexer; // xxx</span>
+
+<span class="fc" id="L1084">        final int disableFieldSmartMatchMask = Feature.DisableFieldSmartMatch.mask;</span>
+        FieldDeserializer fieldDeserializer;
+<span class="fc bfc" id="L1086" title="All 4 branches covered.">        if (lexer.isEnabled(disableFieldSmartMatchMask) || (this.beanInfo.parserFeatures &amp; disableFieldSmartMatchMask) != 0) {</span>
+<span class="fc" id="L1087">            fieldDeserializer = getFieldDeserializer(key);</span>
+        } else {
+<span class="fc" id="L1089">            fieldDeserializer = smartMatch(key, setFlags);</span>
+        }
+
+<span class="fc" id="L1092">        final int mask = Feature.SupportNonPublicField.mask;</span>
+<span class="fc bfc" id="L1093" title="All 2 branches covered.">        if (fieldDeserializer == null</span>
+<span class="fc bfc" id="L1094" title="All 4 branches covered.">                &amp;&amp; (lexer.isEnabled(mask)</span>
+                    || (this.beanInfo.parserFeatures &amp; mask) != 0)) {
+<span class="fc bfc" id="L1096" title="All 2 branches covered.">            if (this.extraFieldDeserializers == null) {</span>
+<span class="fc" id="L1097">                ConcurrentHashMap extraFieldDeserializers = new ConcurrentHashMap&lt;String, Object&gt;(1, 0.75f, 1);</span>
+<span class="pc bpc" id="L1098" title="1 of 4 branches missed.">                for (Class c = this.clazz; c != null &amp;&amp; c != Object.class; c = c.getSuperclass()) {</span>
+<span class="fc" id="L1099">                    Field[] fields = c.getDeclaredFields();</span>
+<span class="fc bfc" id="L1100" title="All 2 branches covered.">                    for (Field field : fields) {</span>
+<span class="fc" id="L1101">                        String fieldName = field.getName();</span>
+<span class="pc bpc" id="L1102" title="1 of 2 branches missed.">                        if (this.getFieldDeserializer(fieldName) != null) {</span>
+<span class="nc" id="L1103">                            continue;</span>
+                        }
+<span class="fc" id="L1105">                        int fieldModifiers = field.getModifiers();</span>
+<span class="pc bpc" id="L1106" title="1 of 4 branches missed.">                        if ((fieldModifiers &amp; Modifier.FINAL) != 0 || (fieldModifiers &amp; Modifier.STATIC) != 0) {</span>
+<span class="fc" id="L1107">                            continue;</span>
+                        }
+<span class="fc" id="L1109">                        extraFieldDeserializers.put(fieldName, field);</span>
+                    }
+                }
+<span class="fc" id="L1112">                this.extraFieldDeserializers = extraFieldDeserializers;</span>
+            }
+
+<span class="fc" id="L1115">            Object deserOrField = extraFieldDeserializers.get(key);</span>
+<span class="pc bpc" id="L1116" title="1 of 2 branches missed.">            if (deserOrField != null) {</span>
+<span class="pc bpc" id="L1117" title="1 of 2 branches missed.">                if (deserOrField instanceof FieldDeserializer) {</span>
+<span class="nc" id="L1118">                    fieldDeserializer = ((FieldDeserializer) deserOrField);</span>
+                } else {
+<span class="fc" id="L1120">                    Field field = (Field) deserOrField;</span>
+<span class="fc" id="L1121">                    field.setAccessible(true);</span>
+<span class="fc" id="L1122">                    FieldInfo fieldInfo = new FieldInfo(key, field.getDeclaringClass(), field.getType(), field.getGenericType(), field, 0, 0, 0);</span>
+<span class="fc" id="L1123">                    fieldDeserializer = new DefaultFieldDeserializer(parser.getConfig(), clazz, fieldInfo);</span>
+<span class="fc" id="L1124">                    extraFieldDeserializers.put(key, fieldDeserializer);</span>
+                }
+            }
+        }
+
+<span class="fc bfc" id="L1129" title="All 2 branches covered.">        if (fieldDeserializer == null) {</span>
+<span class="fc bfc" id="L1130" title="All 2 branches covered.">            if (!lexer.isEnabled(Feature.IgnoreNotMatch)) {</span>
+<span class="fc" id="L1131">                throw new JSONException(&quot;setter not found, class &quot; + clazz.getName() + &quot;, property &quot; + key);</span>
+            }
+
+<span class="fc" id="L1134">            int fieldIndex = -1;</span>
+<span class="fc bfc" id="L1135" title="All 2 branches covered.">            for (int i = 0; i &lt; this.sortedFieldDeserializers.length; i++) {</span>
+<span class="fc" id="L1136">                FieldDeserializer fieldDeser = this.sortedFieldDeserializers[i];</span>
+
+<span class="fc" id="L1138">                FieldInfo fieldInfo = fieldDeser.fieldInfo;</span>
+<span class="pc bpc" id="L1139" title="1 of 4 branches missed.">                if (fieldInfo.unwrapped //</span>
+                        &amp;&amp; fieldDeser instanceof DefaultFieldDeserializer) {
+<span class="fc bfc" id="L1141" title="All 2 branches covered.">                    if (fieldInfo.field != null) {</span>
+<span class="fc" id="L1142">                        DefaultFieldDeserializer defaultFieldDeserializer = (DefaultFieldDeserializer) fieldDeser;</span>
+<span class="fc" id="L1143">                        ObjectDeserializer fieldValueDeser = defaultFieldDeserializer.getFieldValueDeserilizer(parser.getConfig());</span>
+<span class="fc bfc" id="L1144" title="All 2 branches covered.">                        if (fieldValueDeser instanceof JavaBeanDeserializer) {</span>
+<span class="fc" id="L1145">                            JavaBeanDeserializer javaBeanFieldValueDeserializer = (JavaBeanDeserializer) fieldValueDeser;</span>
+<span class="fc" id="L1146">                            FieldDeserializer unwrappedFieldDeser = javaBeanFieldValueDeserializer.getFieldDeserializer(key);</span>
+<span class="pc bpc" id="L1147" title="1 of 2 branches missed.">                            if (unwrappedFieldDeser != null) {</span>
+                                Object fieldObject;
+                                try {
+<span class="fc" id="L1150">                                    fieldObject = fieldInfo.field.get(object);</span>
+<span class="fc bfc" id="L1151" title="All 2 branches covered.">                                    if (fieldObject == null) {</span>
+<span class="fc" id="L1152">                                        fieldObject = ((JavaBeanDeserializer) fieldValueDeser).createInstance(parser, fieldInfo.fieldType);</span>
+<span class="fc" id="L1153">                                        fieldDeser.setValue(object, fieldObject);</span>
+                                    }
+<span class="fc" id="L1155">                                    lexer.nextTokenWithColon(defaultFieldDeserializer.getFastMatchToken());</span>
+<span class="fc" id="L1156">                                    unwrappedFieldDeser.parseField(parser, fieldObject, objectType, fieldValues);</span>
+<span class="fc" id="L1157">                                    fieldIndex = i;</span>
+<span class="nc" id="L1158">                                } catch (Exception e) {</span>
+<span class="nc" id="L1159">                                    throw new JSONException(&quot;parse unwrapped field error.&quot;, e);</span>
+<span class="fc" id="L1160">                                }</span>
+                            }
+<span class="pc bpc" id="L1162" title="1 of 2 branches missed.">                        } else if (fieldValueDeser instanceof MapDeserializer) {</span>
+<span class="fc" id="L1163">                            MapDeserializer javaBeanFieldValueDeserializer = (MapDeserializer) fieldValueDeser;</span>
+
+                            Map fieldObject;
+                            try {
+<span class="fc" id="L1167">                                fieldObject = (Map) fieldInfo.field.get(object);</span>
+<span class="pc bpc" id="L1168" title="1 of 2 branches missed.">                                if (fieldObject == null) {</span>
+<span class="nc" id="L1169">                                    fieldObject = javaBeanFieldValueDeserializer.createMap(fieldInfo.fieldType);</span>
+<span class="nc" id="L1170">                                    fieldDeser.setValue(object, fieldObject);</span>
+                                }
+
+<span class="fc" id="L1173">                                lexer.nextTokenWithColon();</span>
+<span class="fc" id="L1174">                                Object fieldValue = parser.parse(key);</span>
+<span class="fc" id="L1175">                                fieldObject.put(key, fieldValue);</span>
+<span class="nc" id="L1176">                            } catch (Exception e) {</span>
+<span class="nc" id="L1177">                                throw new JSONException(&quot;parse unwrapped field error.&quot;, e);</span>
+<span class="fc" id="L1178">                            }</span>
+<span class="fc" id="L1179">                            fieldIndex = i;</span>
+                        }
+<span class="pc bpc" id="L1181" title="1 of 2 branches missed.">                    } else if (fieldInfo.method.getParameterTypes().length == 2) {</span>
+<span class="fc" id="L1182">                        lexer.nextTokenWithColon();</span>
+<span class="fc" id="L1183">                        Object fieldValue = parser.parse(key);</span>
+                        try {
+<span class="fc" id="L1185">                            fieldInfo.method.invoke(object, key, fieldValue);</span>
+<span class="nc" id="L1186">                        } catch (Exception e) {</span>
+<span class="nc" id="L1187">                            throw new JSONException(&quot;parse unwrapped field error.&quot;, e);</span>
+<span class="fc" id="L1188">                        }</span>
+<span class="fc" id="L1189">                        fieldIndex = i;</span>
+                    }
+                }
+            }
+
+<span class="fc bfc" id="L1194" title="All 2 branches covered.">            if (fieldIndex != -1) {</span>
+<span class="pc bpc" id="L1195" title="1 of 2 branches missed.">                if (setFlags != null) {</span>
+<span class="fc" id="L1196">                    int flagIndex = fieldIndex / 32;</span>
+<span class="fc" id="L1197">                    int bitIndex = fieldIndex % 32;</span>
+<span class="fc" id="L1198">                    setFlags[flagIndex] |= (1 &lt;&lt; bitIndex);</span>
+                }
+<span class="fc" id="L1200">                return true;</span>
+            }
+            
+<span class="fc" id="L1203">            parser.parseExtra(object, key);</span>
+
+<span class="fc" id="L1205">            return false;</span>
+        }
+
+<span class="fc" id="L1208">        int fieldIndex = -1;</span>
+<span class="fc bfc" id="L1209" title="All 2 branches covered.">        for (int i = 0; i &lt; sortedFieldDeserializers.length; ++i) {</span>
+<span class="fc bfc" id="L1210" title="All 2 branches covered.">            if (sortedFieldDeserializers[i] == fieldDeserializer) {</span>
+<span class="fc" id="L1211">                fieldIndex = i;</span>
+<span class="fc" id="L1212">                break;</span>
+            }
+        }
+<span class="pc bpc" id="L1215" title="1 of 6 branches missed.">        if (fieldIndex != -1 &amp;&amp; setFlags != null &amp;&amp; key.startsWith(&quot;_&quot;)) {</span>
+<span class="pc bpc" id="L1216" title="1 of 2 branches missed.">            if (isSetFlag(fieldIndex, setFlags)) {</span>
+<span class="nc" id="L1217">                parser.parseExtra(object, key);</span>
+<span class="nc" id="L1218">                return false;</span>
+            }
+        }
+
+<span class="fc" id="L1222">        lexer.nextTokenWithColon(fieldDeserializer.getFastMatchToken());</span>
+
+<span class="fc" id="L1224">        fieldDeserializer.parseField(parser, object, objectType, fieldValues);</span>
+
+<span class="pc bpc" id="L1226" title="1 of 2 branches missed.">        if (setFlags != null) {</span>
+<span class="fc" id="L1227">            int flagIndex = fieldIndex / 32;</span>
+<span class="fc" id="L1228">            int bitIndex = fieldIndex % 32;</span>
+<span class="fc" id="L1229">            setFlags[flagIndex] |= (1 &lt;&lt; bitIndex);</span>
+        }
+
+<span class="fc" id="L1232">        return true;</span>
+    }
+
+    public FieldDeserializer smartMatch(String key) {
+<span class="fc" id="L1236">        return smartMatch(key, null);</span>
+    }
+
+    public FieldDeserializer smartMatch(String key, int[] setFlags) {
+<span class="fc bfc" id="L1240" title="All 2 branches covered.">        if (key == null) {</span>
+<span class="fc" id="L1241">            return null;</span>
+        }
+        
+<span class="fc" id="L1244">        FieldDeserializer fieldDeserializer = getFieldDeserializer(key, setFlags);</span>
+
+<span class="fc bfc" id="L1246" title="All 2 branches covered.">        if (fieldDeserializer == null) {</span>
+<span class="fc" id="L1247">            long smartKeyHash = TypeUtils.fnv1a_64_lower(key);</span>
+<span class="fc bfc" id="L1248" title="All 2 branches covered.">            if (this.smartMatchHashArray == null) {</span>
+<span class="fc" id="L1249">                long[] hashArray = new long[sortedFieldDeserializers.length];</span>
+<span class="fc bfc" id="L1250" title="All 2 branches covered.">                for (int i = 0; i &lt; sortedFieldDeserializers.length; i++) {</span>
+<span class="fc" id="L1251">                    hashArray[i] = TypeUtils.fnv1a_64_lower(sortedFieldDeserializers[i].fieldInfo.name);</span>
+                }
+<span class="fc" id="L1253">                Arrays.sort(hashArray);</span>
+<span class="fc" id="L1254">                this.smartMatchHashArray = hashArray;</span>
+            }
+
+            // smartMatchHashArrayMapping
+<span class="fc" id="L1258">            int pos = Arrays.binarySearch(smartMatchHashArray, smartKeyHash);</span>
+<span class="fc" id="L1259">            boolean is = false;</span>
+<span class="fc bfc" id="L1260" title="All 4 branches covered.">            if (pos &lt; 0 &amp;&amp; (is = key.startsWith(&quot;is&quot;))) {</span>
+<span class="fc" id="L1261">                smartKeyHash = TypeUtils.fnv1a_64_lower(key.substring(2));</span>
+<span class="fc" id="L1262">                pos = Arrays.binarySearch(smartMatchHashArray, smartKeyHash);</span>
+            }
+
+<span class="fc bfc" id="L1265" title="All 2 branches covered.">            if (pos &gt;= 0) {</span>
+<span class="fc bfc" id="L1266" title="All 2 branches covered.">                if (smartMatchHashArrayMapping == null) {</span>
+<span class="fc" id="L1267">                    short[] mapping = new short[smartMatchHashArray.length];</span>
+<span class="fc" id="L1268">                    Arrays.fill(mapping, (short) -1);</span>
+<span class="fc bfc" id="L1269" title="All 2 branches covered.">                    for (int i = 0; i &lt; sortedFieldDeserializers.length; i++) {</span>
+<span class="fc" id="L1270">                        int p = Arrays.binarySearch(smartMatchHashArray</span>
+<span class="fc" id="L1271">                                , TypeUtils.fnv1a_64_lower(sortedFieldDeserializers[i].fieldInfo.name));</span>
+<span class="pc bpc" id="L1272" title="1 of 2 branches missed.">                        if (p &gt;= 0) {</span>
+<span class="fc" id="L1273">                            mapping[p] = (short) i;</span>
+                        }
+                    }
+<span class="fc" id="L1276">                    smartMatchHashArrayMapping = mapping;</span>
+                }
+
+<span class="fc" id="L1279">                int deserIndex = smartMatchHashArrayMapping[pos];</span>
+<span class="pc bpc" id="L1280" title="1 of 2 branches missed.">                if (deserIndex != -1) {</span>
+<span class="fc bfc" id="L1281" title="All 2 branches covered.">                    if (!isSetFlag(deserIndex, setFlags)) {</span>
+<span class="fc" id="L1282">                        fieldDeserializer = sortedFieldDeserializers[deserIndex];</span>
+                    }
+                }
+            }
+
+<span class="fc bfc" id="L1287" title="All 2 branches covered.">            if (fieldDeserializer != null) {</span>
+<span class="fc" id="L1288">                FieldInfo fieldInfo = fieldDeserializer.fieldInfo;</span>
+<span class="fc bfc" id="L1289" title="All 2 branches covered.">                if ((fieldInfo.parserFeatures &amp; Feature.DisableFieldSmartMatch.mask) != 0) {</span>
+<span class="fc" id="L1290">                    return null;</span>
+                }
+
+<span class="fc" id="L1293">                Class fieldClass = fieldInfo.fieldClass;</span>
+<span class="pc bpc" id="L1294" title="1 of 6 branches missed.">                if (is &amp;&amp; (fieldClass != boolean.class &amp;&amp; fieldClass != Boolean.class)) {</span>
+<span class="fc" id="L1295">                    fieldDeserializer = null;</span>
+                }
+            }
+        }
+
+
+<span class="fc" id="L1301">        return fieldDeserializer;</span>
+    }
+
+    public int getFastMatchToken() {
+<span class="fc" id="L1305">        return JSONToken.LBRACE;</span>
+    }
+
+    private Object createFactoryInstance(ParserConfig config, Object value) //
+            throws IllegalArgumentException,
+            IllegalAccessException,
+            InvocationTargetException {
+<span class="fc" id="L1312">        return beanInfo.factoryMethod.invoke(null, value);</span>
+    }
+    
+    public Object createInstance(Map&lt;String, Object&gt; map, ParserConfig config) //
+                                                                               throws IllegalArgumentException,
+                                                                               IllegalAccessException,
+                                                                               InvocationTargetException {
+<span class="fc" id="L1319">        Object object = null;</span>
+        
+<span class="fc bfc" id="L1321" title="All 4 branches covered.">        if (beanInfo.creatorConstructor == null &amp;&amp; beanInfo.factoryMethod == null) {</span>
+<span class="fc" id="L1322">            object = createInstance(null, clazz);</span>
+            
+<span class="fc bfc" id="L1324" title="All 2 branches covered.">            for (Map.Entry&lt;String, Object&gt; entry : map.entrySet()) {</span>
+<span class="fc" id="L1325">                String key = entry.getKey();</span>
+<span class="fc" id="L1326">                Object value = entry.getValue();</span>
+
+<span class="fc" id="L1328">                FieldDeserializer fieldDeser = smartMatch(key);</span>
+<span class="fc bfc" id="L1329" title="All 2 branches covered.">                if (fieldDeser == null) {</span>
+<span class="fc" id="L1330">                    continue;</span>
+                }
+
+<span class="fc" id="L1333">                final FieldInfo fieldInfo = fieldDeser.fieldInfo;</span>
+<span class="fc" id="L1334">                Field field = fieldDeser.fieldInfo.field;</span>
+<span class="fc" id="L1335">                Type paramType = fieldInfo.fieldType;</span>
+
+<span class="fc bfc" id="L1337" title="All 2 branches covered.">                if (field != null) {</span>
+<span class="pc bpc" id="L1338" title="1 of 2 branches missed.">                    if (paramType == boolean.class) {</span>
+<span class="nc bnc" id="L1339" title="All 2 branches missed.">                        if (value == Boolean.FALSE) {</span>
+<span class="nc" id="L1340">                            field.setBoolean(object, false);</span>
+<span class="nc" id="L1341">                            continue;</span>
+                        }
+
+<span class="nc bnc" id="L1344" title="All 2 branches missed.">                        if (value == Boolean.TRUE) {</span>
+<span class="nc" id="L1345">                            field.setBoolean(object, true);</span>
+<span class="nc" id="L1346">                            continue;</span>
+                        }
+<span class="fc bfc" id="L1348" title="All 2 branches covered.">                    } else if (paramType == int.class) {</span>
+<span class="pc bpc" id="L1349" title="1 of 2 branches missed.">                        if (value instanceof Number) {</span>
+<span class="fc" id="L1350">                            field.setInt(object, ((Number) value).intValue());</span>
+<span class="fc" id="L1351">                            continue;</span>
+                        }
+<span class="fc bfc" id="L1353" title="All 2 branches covered.">                    } else if (paramType == long.class) {</span>
+<span class="pc bpc" id="L1354" title="1 of 2 branches missed.">                        if (value instanceof Number) {</span>
+<span class="fc" id="L1355">                            field.setLong(object, ((Number) value).longValue());</span>
+<span class="fc" id="L1356">                            continue;</span>
+                        }
+<span class="pc bpc" id="L1358" title="1 of 2 branches missed.">                    } else if (paramType == float.class) {</span>
+<span class="nc bnc" id="L1359" title="All 2 branches missed.">                        if (value instanceof Number) {</span>
+<span class="nc" id="L1360">                            field.setFloat(object, ((Number) value).floatValue());</span>
+<span class="nc" id="L1361">                            continue;</span>
+                        }
+<span class="fc bfc" id="L1363" title="All 2 branches covered.">                    } else if (paramType == double.class) {</span>
+<span class="pc bpc" id="L1364" title="1 of 2 branches missed.">                        if (value instanceof Number) {</span>
+<span class="fc" id="L1365">                            field.setDouble(object, ((Number) value).doubleValue());</span>
+<span class="fc" id="L1366">                            continue;</span>
+<span class="nc bnc" id="L1367" title="All 2 branches missed.">                        } else if (value instanceof String) {</span>
+<span class="nc" id="L1368">                            double doubleValue = Double.parseDouble((String) value);</span>
+<span class="nc" id="L1369">                            field.setDouble(object, doubleValue);</span>
+<span class="nc" id="L1370">                            continue;</span>
+                        }
+<span class="pc bpc" id="L1372" title="1 of 4 branches missed.">                    } else if (value != null &amp;&amp; paramType == value.getClass()) {</span>
+<span class="fc" id="L1373">                        field.set(object, value);</span>
+<span class="fc" id="L1374">                        continue;</span>
+                    }
+                }
+
+<span class="fc" id="L1378">                String format = fieldInfo.format;</span>
+<span class="pc bpc" id="L1379" title="1 of 4 branches missed.">                if (format != null &amp;&amp; paramType == java.util.Date.class) {</span>
+<span class="fc" id="L1380">                    value = TypeUtils.castToDate(value, format);</span>
+                } else {
+<span class="fc bfc" id="L1382" title="All 2 branches covered.">                    if (paramType instanceof ParameterizedType) {</span>
+<span class="fc" id="L1383">                        value = TypeUtils.cast(value, (ParameterizedType) paramType, config);</span>
+                    } else {
+<span class="fc" id="L1385">                        value = TypeUtils.cast(value, paramType, config);</span>
+                    }
+                }
+
+<span class="fc" id="L1389">                fieldDeser.setValue(object, value);</span>
+<span class="fc" id="L1390">            }</span>
+
+<span class="fc bfc" id="L1392" title="All 2 branches covered.">            if (beanInfo.buildMethod != null) {</span>
+                Object builtObj;
+                try {
+<span class="fc" id="L1395">                    builtObj = beanInfo.buildMethod.invoke(object);</span>
+<span class="nc" id="L1396">                } catch (Exception e) {</span>
+<span class="nc" id="L1397">                    throw new JSONException(&quot;build object error&quot;, e);</span>
+<span class="fc" id="L1398">                }</span>
+
+<span class="fc" id="L1400">                return builtObj;</span>
+            }
+
+<span class="fc" id="L1403">            return object;</span>
+        }
+
+        
+<span class="fc" id="L1407">        FieldInfo[] fieldInfoList = beanInfo.fields;</span>
+<span class="fc" id="L1408">        int size = fieldInfoList.length;</span>
+<span class="fc" id="L1409">        Object[] params = new Object[size];</span>
+<span class="fc" id="L1410">        Map&lt;String, Integer&gt; missFields = null;</span>
+<span class="fc bfc" id="L1411" title="All 2 branches covered.">        for (int i = 0; i &lt; size; ++i) {</span>
+<span class="fc" id="L1412">            FieldInfo fieldInfo = fieldInfoList[i];</span>
+<span class="fc" id="L1413">            Object param = map.get(fieldInfo.name);</span>
+
+<span class="fc bfc" id="L1415" title="All 2 branches covered.">            if (param == null) {</span>
+<span class="fc" id="L1416">                Class&lt;?&gt; fieldClass = fieldInfo.fieldClass;</span>
+<span class="fc bfc" id="L1417" title="All 2 branches covered.">                if (fieldClass == int.class) {</span>
+<span class="fc" id="L1418">                    param = 0;</span>
+<span class="pc bpc" id="L1419" title="1 of 2 branches missed.">                } else if (fieldClass == long.class) {</span>
+<span class="nc" id="L1420">                    param = 0L;</span>
+<span class="pc bpc" id="L1421" title="1 of 2 branches missed.">                } else if (fieldClass == short.class) {</span>
+<span class="nc" id="L1422">                    param = Short.valueOf((short) 0);</span>
+<span class="pc bpc" id="L1423" title="1 of 2 branches missed.">                } else if (fieldClass == byte.class) {</span>
+<span class="nc" id="L1424">                    param = Byte.valueOf((byte) 0);</span>
+<span class="pc bpc" id="L1425" title="1 of 2 branches missed.">                } else if (fieldClass == float.class) {</span>
+<span class="nc" id="L1426">                    param = Float.valueOf(0);</span>
+<span class="pc bpc" id="L1427" title="1 of 2 branches missed.">                } else if (fieldClass == double.class) {</span>
+<span class="nc" id="L1428">                    param = Double.valueOf(0);</span>
+<span class="pc bpc" id="L1429" title="1 of 2 branches missed.">                } else if (fieldClass == char.class) {</span>
+<span class="nc" id="L1430">                    param = '0';</span>
+<span class="pc bpc" id="L1431" title="1 of 2 branches missed.">                } else if (fieldClass == boolean.class) {</span>
+<span class="nc" id="L1432">                    param = false;</span>
+                }
+<span class="fc bfc" id="L1434" title="All 2 branches covered.">                if (missFields == null) {</span>
+<span class="fc" id="L1435">                    missFields = new HashMap&lt;String, Integer&gt;();</span>
+                }
+<span class="fc" id="L1437">                missFields.put(fieldInfo.name, i);</span>
+            }
+<span class="fc" id="L1439">            params[i] = param;</span>
+        }
+
+<span class="fc bfc" id="L1442" title="All 2 branches covered.">        if (missFields != null) {</span>
+<span class="fc bfc" id="L1443" title="All 2 branches covered.">            for (Map.Entry&lt;String, Object&gt; entry : map.entrySet()) {</span>
+<span class="fc" id="L1444">                String key = entry.getKey();</span>
+<span class="fc" id="L1445">                Object value = entry.getValue();</span>
+
+<span class="fc" id="L1447">                FieldDeserializer fieldDeser = smartMatch(key);</span>
+<span class="pc bpc" id="L1448" title="1 of 2 branches missed.">                if (fieldDeser != null) {</span>
+<span class="fc" id="L1449">                    Integer index = missFields.get(fieldDeser.fieldInfo.name);</span>
+<span class="fc bfc" id="L1450" title="All 2 branches covered.">                    if (index != null) {</span>
+<span class="fc" id="L1451">                        params[index] = value;</span>
+                    }
+                }
+<span class="fc" id="L1454">            }</span>
+        }
+
+<span class="fc bfc" id="L1457" title="All 2 branches covered.">        if (beanInfo.creatorConstructor != null) {</span>
+<span class="fc" id="L1458">            boolean hasNull = false;</span>
+<span class="pc bpc" id="L1459" title="1 of 2 branches missed.">            if (beanInfo.kotlin) {</span>
+<span class="nc bnc" id="L1460" title="All 2 branches missed.">                for (int i = 0; i &lt; params.length; i++) {</span>
+<span class="nc bnc" id="L1461" title="All 6 branches missed.">                    if (params[i] == null &amp;&amp; beanInfo.fields != null &amp;&amp; i &lt; beanInfo.fields.length) {</span>
+<span class="nc" id="L1462">                        FieldInfo fieldInfo = beanInfo.fields[i];</span>
+<span class="nc bnc" id="L1463" title="All 2 branches missed.">                        if (fieldInfo.fieldClass == String.class) {</span>
+<span class="nc" id="L1464">                            hasNull = true;</span>
+                        }
+                        break;
+                    }
+                }
+            }
+
+<span class="pc bpc" id="L1471" title="3 of 4 branches missed.">            if (hasNull &amp;&amp; beanInfo.kotlinDefaultConstructor != null) {</span>
+                try {
+<span class="nc" id="L1473">                    object = beanInfo.kotlinDefaultConstructor.newInstance();</span>
+
+<span class="nc bnc" id="L1475" title="All 2 branches missed.">                    for (int i = 0; i &lt; params.length; i++) {</span>
+<span class="nc" id="L1476">                        final Object param = params[i];</span>
+<span class="nc bnc" id="L1477" title="All 6 branches missed.">                        if (param != null &amp;&amp; beanInfo.fields != null &amp;&amp; i &lt; beanInfo.fields.length) {</span>
+<span class="nc" id="L1478">                            FieldInfo fieldInfo = beanInfo.fields[i];</span>
+<span class="nc" id="L1479">                            fieldInfo.set(object, param);</span>
+                        }
+                    }
+<span class="nc" id="L1482">                } catch (Exception e) {</span>
+<span class="nc" id="L1483">                    throw new JSONException(&quot;create instance error, &quot;</span>
+<span class="nc" id="L1484">                            + beanInfo.creatorConstructor.toGenericString(), e);</span>
+<span class="nc" id="L1485">                }</span>
+            } else {
+                try {
+<span class="fc" id="L1488">                    object = beanInfo.creatorConstructor.newInstance(params);</span>
+<span class="fc" id="L1489">                } catch (Exception e) {</span>
+<span class="fc" id="L1490">                    throw new JSONException(&quot;create instance error, &quot;</span>
+<span class="fc" id="L1491">                            + beanInfo.creatorConstructor.toGenericString(), e);</span>
+<span class="fc" id="L1492">                }</span>
+            }
+<span class="pc bpc" id="L1494" title="1 of 2 branches missed.">        } else if (beanInfo.factoryMethod != null) {</span>
+            try {
+<span class="nc" id="L1496">                object = beanInfo.factoryMethod.invoke(null, params);</span>
+<span class="fc" id="L1497">            } catch (Exception e) {</span>
+<span class="fc" id="L1498">                throw new JSONException(&quot;create factory method error, &quot; + beanInfo.factoryMethod.toString(), e);</span>
+<span class="nc" id="L1499">            }</span>
+        }
+        
+<span class="fc" id="L1502">        return object;</span>
+    }
+    
+    public Type getFieldType(int ordinal) {
+<span class="fc" id="L1506">        return sortedFieldDeserializers[ordinal].fieldInfo.fieldType;</span>
+    }
+
+    protected Object parseRest(DefaultJSONParser parser, Type type, Object fieldName, Object instance, int features) {
+<span class="nc" id="L1510">        return parseRest(parser, type, fieldName, instance, features, new int[0]);</span>
+    }
+
+    protected Object parseRest(DefaultJSONParser parser
+            , Type type
+            , Object fieldName
+            , Object instance
+            , int features
+            , int[] setFlags) {
+<span class="fc" id="L1519">        Object value = deserialze(parser, type, fieldName, instance, features, setFlags);</span>
+
+<span class="fc" id="L1521">        return value;</span>
+    }
+    
+    protected JavaBeanDeserializer getSeeAlso(ParserConfig config, JavaBeanInfo beanInfo, String typeName) {
+<span class="fc bfc" id="L1525" title="All 2 branches covered.">        if (beanInfo.jsonType == null) {</span>
+<span class="fc" id="L1526">            return null;</span>
+        }
+        
+<span class="fc bfc" id="L1529" title="All 2 branches covered.">        for (Class&lt;?&gt; seeAlsoClass : beanInfo.jsonType.seeAlso()) {</span>
+<span class="fc" id="L1530">            ObjectDeserializer seeAlsoDeser = config.getDeserializer(seeAlsoClass);</span>
+<span class="pc bpc" id="L1531" title="1 of 2 branches missed.">            if (seeAlsoDeser instanceof JavaBeanDeserializer) {</span>
+<span class="fc" id="L1532">                JavaBeanDeserializer seeAlsoJavaBeanDeser = (JavaBeanDeserializer) seeAlsoDeser;</span>
+
+<span class="fc" id="L1534">                JavaBeanInfo subBeanInfo = seeAlsoJavaBeanDeser.beanInfo;</span>
+<span class="fc bfc" id="L1535" title="All 2 branches covered.">                if (subBeanInfo.typeName.equals(typeName)) {</span>
+<span class="fc" id="L1536">                    return seeAlsoJavaBeanDeser;</span>
+                }
+                
+<span class="fc" id="L1539">                JavaBeanDeserializer subSeeAlso = getSeeAlso(config, subBeanInfo, typeName);</span>
+<span class="fc bfc" id="L1540" title="All 2 branches covered.">                if (subSeeAlso != null) {</span>
+<span class="fc" id="L1541">                    return subSeeAlso;</span>
+                }
+            }
+        }
+
+<span class="fc" id="L1546">        return null;</span>
+    }
+    
+    @SuppressWarnings({ &quot;unchecked&quot;, &quot;rawtypes&quot; })
+    protected static void parseArray(Collection collection, //
+                              ObjectDeserializer deser, //
+                              DefaultJSONParser parser, //
+                              Type type, //
+                              Object fieldName) {
+
+<span class="fc" id="L1556">        final JSONLexerBase lexer = (JSONLexerBase) parser.lexer;</span>
+<span class="fc" id="L1557">        int token = lexer.token();</span>
+<span class="fc bfc" id="L1558" title="All 2 branches covered.">        if (token == JSONToken.NULL) {</span>
+<span class="fc" id="L1559">            lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc" id="L1560">            token = lexer.token();</span>
+<span class="fc" id="L1561">            return;</span>
+        }
+
+<span class="pc bpc" id="L1564" title="1 of 2 branches missed.">        if (token != JSONToken.LBRACKET) {</span>
+<span class="nc" id="L1565">            parser.throwException(token);</span>
+        }
+<span class="fc" id="L1567">        char ch = lexer.getCurrent();</span>
+<span class="fc bfc" id="L1568" title="All 2 branches covered.">        if (ch == '[') {</span>
+<span class="fc" id="L1569">            lexer.next();</span>
+<span class="fc" id="L1570">            lexer.setToken(JSONToken.LBRACKET);</span>
+        } else {
+<span class="fc" id="L1572">            lexer.nextToken(JSONToken.LBRACKET);</span>
+        }
+        
+<span class="fc bfc" id="L1575" title="All 2 branches covered.">        if (lexer.token() == JSONToken.RBRACKET) {</span>
+<span class="fc" id="L1576">            lexer.nextToken();</span>
+<span class="fc" id="L1577">            return;</span>
+        }
+
+<span class="fc" id="L1580">        int index = 0;</span>
+        for (;;) {
+<span class="fc" id="L1582">            Object item = deser.deserialze(parser, type, index);</span>
+<span class="fc" id="L1583">            collection.add(item);</span>
+<span class="fc" id="L1584">            index++;</span>
+<span class="fc bfc" id="L1585" title="All 2 branches covered.">            if (lexer.token() == JSONToken.COMMA) {</span>
+<span class="fc" id="L1586">                ch = lexer.getCurrent();</span>
+<span class="pc bpc" id="L1587" title="1 of 2 branches missed.">                if (ch == '[') {</span>
+<span class="fc" id="L1588">                    lexer.next();</span>
+<span class="fc" id="L1589">                    lexer.setToken(JSONToken.LBRACKET);</span>
+                } else {
+<span class="nc" id="L1591">                    lexer.nextToken(JSONToken.LBRACKET);</span>
+                }
+            } else {
+                break;
+            }
+<span class="fc" id="L1596">        }</span>
+        
+<span class="fc" id="L1598">        token = lexer.token();</span>
+<span class="pc bpc" id="L1599" title="1 of 2 branches missed.">        if (token != JSONToken.RBRACKET) {</span>
+<span class="nc" id="L1600">            parser.throwException(token);</span>
+        }
+        
+<span class="fc" id="L1603">        ch = lexer.getCurrent();</span>
+<span class="fc bfc" id="L1604" title="All 2 branches covered.">        if (ch == ',') {</span>
+<span class="fc" id="L1605">            lexer.next();</span>
+<span class="fc" id="L1606">            lexer.setToken(JSONToken.COMMA);</span>
+        } else {
+<span class="fc" id="L1608">            lexer.nextToken(JSONToken.COMMA);</span>
+        }
+//        parser.accept(JSONToken.RBRACKET, JSONToken.COMMA);
+<span class="fc" id="L1611">    }</span>
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

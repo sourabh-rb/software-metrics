@@ -1,0 +1,1854 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ASMDeserializerFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">ASMDeserializerFactory.java</span></div><h1>ASMDeserializerFactory.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import static com.alibaba.fastjson.util.ASMUtils.desc;
+import static com.alibaba.fastjson.util.ASMUtils.type;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.alibaba.fastjson.asm.ClassWriter;
+import com.alibaba.fastjson.asm.FieldWriter;
+import com.alibaba.fastjson.asm.Label;
+import com.alibaba.fastjson.asm.MethodVisitor;
+import com.alibaba.fastjson.asm.MethodWriter;
+import com.alibaba.fastjson.asm.Opcodes;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.DefaultJSONParser.ResolveTask;
+import com.alibaba.fastjson.parser.Feature;
+import com.alibaba.fastjson.parser.JSONLexer;
+import com.alibaba.fastjson.parser.JSONLexerBase;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.parser.ParseContext;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.parser.SymbolTable;
+import com.alibaba.fastjson.util.ASMClassLoader;
+import com.alibaba.fastjson.util.FieldInfo;
+import com.alibaba.fastjson.util.JavaBeanInfo;
+import com.alibaba.fastjson.util.TypeUtils;
+
+public class ASMDeserializerFactory implements Opcodes {
+
+    public final ASMClassLoader classLoader;
+<span class="fc" id="L48">    protected final AtomicLong  seed              = new AtomicLong();</span>
+
+<span class="fc" id="L50">    final static String         DefaultJSONParser = type(DefaultJSONParser.class);</span>
+<span class="fc" id="L51">    final static String         JSONLexerBase     = type(JSONLexerBase.class);</span>
+
+<span class="fc" id="L53">    public ASMDeserializerFactory(ClassLoader parentClassLoader){</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        classLoader = parentClassLoader instanceof ASMClassLoader //</span>
+            ? (ASMClassLoader) parentClassLoader //
+            : new ASMClassLoader(parentClassLoader);
+<span class="fc" id="L57">    }</span>
+    
+    public ObjectDeserializer createJavaBeanDeserializer(ParserConfig config, JavaBeanInfo beanInfo) throws Exception {
+<span class="fc" id="L60">        Class&lt;?&gt; clazz = beanInfo.clazz;</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (clazz.isPrimitive()) {</span>
+<span class="fc" id="L62">            throw new IllegalArgumentException(&quot;not support type :&quot; + clazz.getName());</span>
+        }
+
+<span class="fc" id="L65">        String className = &quot;FastjsonASMDeserializer_&quot; + seed.incrementAndGet() + &quot;_&quot; + clazz.getSimpleName();</span>
+<span class="fc" id="L66">        String packageName = ASMDeserializerFactory.class.getPackage().getName();</span>
+<span class="fc" id="L67">        String classNameType = packageName.replace('.', '/') + &quot;/&quot; + className;</span>
+<span class="fc" id="L68">        String classNameFull = packageName + &quot;.&quot; + className;</span>
+
+<span class="fc" id="L70">        ClassWriter cw = new ClassWriter();</span>
+<span class="fc" id="L71">        cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, classNameType, type(JavaBeanDeserializer.class), null);</span>
+
+        
+
+<span class="fc" id="L75">        _init(cw, new Context(classNameType, config, beanInfo, 3));</span>
+<span class="fc" id="L76">        _createInstance(cw, new Context(classNameType, config, beanInfo, 3));</span>
+<span class="fc" id="L77">        _deserialze(cw, new Context(classNameType, config, beanInfo, 5));</span>
+
+<span class="fc" id="L79">        _deserialzeArrayMapping(cw, new Context(classNameType, config, beanInfo, 4));</span>
+<span class="fc" id="L80">        byte[] code = cw.toByteArray();</span>
+
+<span class="fc" id="L82">        Class&lt;?&gt; deserClass = classLoader.defineClassPublic(classNameFull, code, 0, code.length);</span>
+<span class="fc" id="L83">        Constructor&lt;?&gt; constructor = deserClass.getConstructor(ParserConfig.class, JavaBeanInfo.class);</span>
+<span class="fc" id="L84">        Object instance = constructor.newInstance(config, beanInfo);</span>
+
+<span class="fc" id="L86">        return (ObjectDeserializer) instance;</span>
+    }
+
+    private void _setFlag(MethodVisitor mw, Context context, int i) {
+<span class="fc" id="L90">        String varName = &quot;_asm_flag_&quot; + (i / 32);</span>
+
+<span class="fc" id="L92">        mw.visitVarInsn(ILOAD, context.var(varName));</span>
+<span class="fc" id="L93">        mw.visitLdcInsn(1 &lt;&lt; i);</span>
+<span class="fc" id="L94">        mw.visitInsn(IOR);</span>
+<span class="fc" id="L95">        mw.visitVarInsn(ISTORE, context.var(varName));</span>
+<span class="fc" id="L96">    }</span>
+
+    private void _isFlag(MethodVisitor mw, Context context, int i, Label label) {
+<span class="fc" id="L99">        mw.visitVarInsn(ILOAD, context.var(&quot;_asm_flag_&quot; + (i / 32)));</span>
+<span class="fc" id="L100">        mw.visitLdcInsn(1 &lt;&lt; i);</span>
+<span class="fc" id="L101">        mw.visitInsn(IAND);</span>
+
+<span class="fc" id="L103">        mw.visitJumpInsn(IFEQ, label);</span>
+<span class="fc" id="L104">    }</span>
+
+    private void _deserialzeArrayMapping(ClassWriter cw, Context context) {
+<span class="fc" id="L107">        MethodVisitor mw = new MethodWriter(cw, ACC_PUBLIC, &quot;deserialzeArrayMapping&quot;,</span>
+                                            &quot;(L&quot; + DefaultJSONParser + &quot;;Ljava/lang/reflect/Type;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;&quot;,
+                                            null, null);
+
+<span class="fc" id="L111">        defineVarLexer(context, mw);</span>
+
+<span class="fc" id="L113">        _createInstance(context, mw);</span>
+
+<span class="fc" id="L115">        FieldInfo[] sortedFieldInfoList = context.beanInfo.sortedFields;</span>
+<span class="fc" id="L116">        int fieldListSize = sortedFieldInfoList.length;</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        for (int i = 0; i &lt; fieldListSize; ++i) {</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">            final boolean last = (i == fieldListSize - 1);</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">            final char seperator = last ? ']' : ',';</span>
+
+<span class="fc" id="L121">            FieldInfo fieldInfo = sortedFieldInfoList[i];</span>
+<span class="fc" id="L122">            Class&lt;?&gt; fieldClass = fieldInfo.fieldClass;</span>
+<span class="fc" id="L123">            Type fieldType = fieldInfo.fieldType;</span>
+<span class="fc bfc" id="L124" title="All 6 branches covered.">            if (fieldClass == byte.class //</span>
+                || fieldClass == short.class //
+                || fieldClass == int.class) {
+<span class="fc" id="L127">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L128">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L129">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanInt&quot;, &quot;(C)I&quot;);</span>
+<span class="fc" id="L130">                mw.visitVarInsn(ISTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">            } else if (fieldClass == Byte.class) {</span>
+<span class="fc" id="L132">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L133">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L134">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanInt&quot;, &quot;(C)I&quot;);</span>
+<span class="fc" id="L135">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Byte&quot;, &quot;valueOf&quot;, &quot;(B)Ljava/lang/Byte;&quot;);</span>
+
+<span class="fc" id="L137">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L138">                Label valueNullEnd_ = new Label();</span>
+<span class="fc" id="L139">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L140">                mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L141">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.VALUE_NULL);</span>
+<span class="fc" id="L142">                mw.visitJumpInsn(IF_ICMPNE, valueNullEnd_);</span>
+<span class="fc" id="L143">                mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L144">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L145">                mw.visitLabel(valueNullEnd_);</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">            } else if (fieldClass == Short.class) {</span>
+<span class="fc" id="L147">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L148">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L149">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanInt&quot;, &quot;(C)I&quot;);</span>
+<span class="fc" id="L150">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Short&quot;, &quot;valueOf&quot;, &quot;(S)Ljava/lang/Short;&quot;);</span>
+
+<span class="fc" id="L152">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L153">                Label valueNullEnd_ = new Label();</span>
+<span class="fc" id="L154">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L155">                mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L156">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.VALUE_NULL);</span>
+<span class="fc" id="L157">                mw.visitJumpInsn(IF_ICMPNE, valueNullEnd_);</span>
+<span class="fc" id="L158">                mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L159">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L160">                mw.visitLabel(valueNullEnd_);</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">            } else if (fieldClass == Integer.class) {</span>
+<span class="fc" id="L162">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L163">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L164">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanInt&quot;, &quot;(C)I&quot;);</span>
+<span class="fc" id="L165">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Integer&quot;, &quot;valueOf&quot;, &quot;(I)Ljava/lang/Integer;&quot;);</span>
+
+<span class="fc" id="L167">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L168">                Label valueNullEnd_ = new Label();</span>
+<span class="fc" id="L169">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L170">                mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L171">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.VALUE_NULL);</span>
+<span class="fc" id="L172">                mw.visitJumpInsn(IF_ICMPNE, valueNullEnd_);</span>
+<span class="fc" id="L173">                mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L174">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L175">                mw.visitLabel(valueNullEnd_);</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">            } else if (fieldClass == long.class) {</span>
+<span class="fc" id="L177">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L178">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L179">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanLong&quot;, &quot;(C)J&quot;);</span>
+<span class="fc" id="L180">                mw.visitVarInsn(LSTORE, context.var(fieldInfo.name + &quot;_asm&quot;, 2));</span>
+
+<span class="fc bfc" id="L182" title="All 2 branches covered.">            } else if (fieldClass == Long.class) {</span>
+<span class="fc" id="L183">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L184">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L185">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanLong&quot;, &quot;(C)J&quot;);</span>
+<span class="fc" id="L186">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Long&quot;, &quot;valueOf&quot;, &quot;(J)Ljava/lang/Long;&quot;);</span>
+
+<span class="fc" id="L188">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L189">                Label valueNullEnd_ = new Label();</span>
+<span class="fc" id="L190">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L191">                mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L192">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.VALUE_NULL);</span>
+<span class="fc" id="L193">                mw.visitJumpInsn(IF_ICMPNE, valueNullEnd_);</span>
+<span class="fc" id="L194">                mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L195">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L196">                mw.visitLabel(valueNullEnd_);</span>
+<span class="fc bfc" id="L197" title="All 2 branches covered.">            } else if (fieldClass == boolean.class) {</span>
+<span class="fc" id="L198">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L199">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L200">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanBoolean&quot;, &quot;(C)Z&quot;);</span>
+<span class="fc" id="L201">                mw.visitVarInsn(ISTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">            } else if (fieldClass == float.class) {</span>
+<span class="fc" id="L203">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L204">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L205">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFloat&quot;, &quot;(C)F&quot;);</span>
+<span class="fc" id="L206">                mw.visitVarInsn(FSTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc bfc" id="L208" title="All 2 branches covered.">            } else if (fieldClass == Float.class) {</span>
+<span class="fc" id="L209">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L210">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L211">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFloat&quot;, &quot;(C)F&quot;);</span>
+<span class="fc" id="L212">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Float&quot;, &quot;valueOf&quot;, &quot;(F)Ljava/lang/Float;&quot;);</span>
+
+<span class="fc" id="L214">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L215">                Label valueNullEnd_ = new Label();</span>
+<span class="fc" id="L216">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L217">                mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L218">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.VALUE_NULL);</span>
+<span class="fc" id="L219">                mw.visitJumpInsn(IF_ICMPNE, valueNullEnd_);</span>
+<span class="fc" id="L220">                mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L221">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L222">                mw.visitLabel(valueNullEnd_);</span>
+
+<span class="fc bfc" id="L224" title="All 2 branches covered.">            } else if (fieldClass == double.class) {</span>
+<span class="fc" id="L225">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L226">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L227">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanDouble&quot;, &quot;(C)D&quot;);</span>
+<span class="fc" id="L228">                mw.visitVarInsn(DSTORE, context.var(fieldInfo.name + &quot;_asm&quot;, 2));</span>
+
+<span class="fc bfc" id="L230" title="All 2 branches covered.">            } else if (fieldClass == Double.class) {</span>
+<span class="fc" id="L231">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L232">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L233">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanDouble&quot;, &quot;(C)D&quot;);</span>
+<span class="fc" id="L234">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Double&quot;, &quot;valueOf&quot;, &quot;(D)Ljava/lang/Double;&quot;);</span>
+
+<span class="fc" id="L236">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L237">                Label valueNullEnd_ = new Label();</span>
+<span class="fc" id="L238">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L239">                mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L240">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.VALUE_NULL);</span>
+<span class="fc" id="L241">                mw.visitJumpInsn(IF_ICMPNE, valueNullEnd_);</span>
+<span class="fc" id="L242">                mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L243">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L244">                mw.visitLabel(valueNullEnd_);</span>
+
+<span class="fc bfc" id="L246" title="All 2 branches covered.">            } else if (fieldClass == char.class) {</span>
+<span class="fc" id="L247">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L248">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L249">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanString&quot;, &quot;(C)Ljava/lang/String;&quot;);</span>
+<span class="fc" id="L250">                mw.visitInsn(ICONST_0);</span>
+<span class="fc" id="L251">                mw.visitMethodInsn(INVOKEVIRTUAL, &quot;java/lang/String&quot;, &quot;charAt&quot;, &quot;(I)C&quot;);</span>
+<span class="fc" id="L252">                mw.visitVarInsn(ISTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">            } else if (fieldClass == String.class) {</span>
+<span class="fc" id="L254">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L255">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L256">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanString&quot;, &quot;(C)Ljava/lang/String;&quot;);</span>
+<span class="fc" id="L257">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc bfc" id="L259" title="All 2 branches covered.">            } else if (fieldClass == BigDecimal.class) {</span>
+<span class="fc" id="L260">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L261">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L262">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanDecimal&quot;, &quot;(C)Ljava/math/BigDecimal;&quot;);</span>
+<span class="fc" id="L263">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc bfc" id="L265" title="All 2 branches covered.">            } else if (fieldClass == java.util.Date.class) {</span>
+<span class="fc" id="L266">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L267">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L268">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanDate&quot;, &quot;(C)Ljava/util/Date;&quot;);</span>
+<span class="fc" id="L269">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc bfc" id="L271" title="All 2 branches covered.">            } else if (fieldClass == java.util.UUID.class) {</span>
+<span class="fc" id="L272">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L273">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L274">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanUUID&quot;, &quot;(C)Ljava/util/UUID;&quot;);</span>
+<span class="fc" id="L275">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc bfc" id="L277" title="All 2 branches covered.">            } else if (fieldClass.isEnum()) {</span>
+<span class="fc" id="L278">                Label enumNumIf_ = new Label();</span>
+<span class="fc" id="L279">                Label enumNumErr_ = new Label();</span>
+<span class="fc" id="L280">                Label enumStore_ = new Label();</span>
+<span class="fc" id="L281">                Label enumQuote_ = new Label();</span>
+
+<span class="fc" id="L283">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L284">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;getCurrent&quot;, &quot;()C&quot;);</span>
+<span class="fc" id="L285">                mw.visitInsn(DUP);</span>
+<span class="fc" id="L286">                mw.visitVarInsn(ISTORE, context.var(&quot;ch&quot;));</span>
+<span class="fc" id="L287">                mw.visitLdcInsn((int) 'n');</span>
+<span class="fc" id="L288">                mw.visitJumpInsn(IF_ICMPEQ, enumQuote_);</span>
+
+<span class="fc" id="L290">                mw.visitVarInsn(ILOAD, context.var(&quot;ch&quot;));</span>
+<span class="fc" id="L291">                mw.visitLdcInsn((int) '\&quot;');</span>
+<span class="fc" id="L292">                mw.visitJumpInsn(IF_ICMPNE, enumNumIf_);</span>
+
+<span class="fc" id="L294">                mw.visitLabel(enumQuote_);</span>
+<span class="fc" id="L295">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L296">                mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(fieldClass)));</span>
+<span class="fc" id="L297">                mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L298">                mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;getSymbolTable&quot;, &quot;()&quot; + desc(SymbolTable.class));</span>
+<span class="fc" id="L299">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L300">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanEnum&quot;,</span>
+<span class="fc" id="L301">                                   &quot;(Ljava/lang/Class;&quot; + desc(SymbolTable.class) + &quot;C)Ljava/lang/Enum;&quot;);</span>
+<span class="fc" id="L302">                mw.visitJumpInsn(GOTO, enumStore_);</span>
+
+                // (ch &gt;= '0' &amp;&amp; ch &lt;= '9') {
+<span class="fc" id="L305">                mw.visitLabel(enumNumIf_);</span>
+<span class="fc" id="L306">                mw.visitVarInsn(ILOAD, context.var(&quot;ch&quot;));</span>
+<span class="fc" id="L307">                mw.visitLdcInsn((int) '0');</span>
+<span class="fc" id="L308">                mw.visitJumpInsn(IF_ICMPLT, enumNumErr_);</span>
+
+<span class="fc" id="L310">                mw.visitVarInsn(ILOAD, context.var(&quot;ch&quot;));</span>
+<span class="fc" id="L311">                mw.visitLdcInsn((int) '9');</span>
+<span class="fc" id="L312">                mw.visitJumpInsn(IF_ICMPGT, enumNumErr_);</span>
+
+<span class="fc" id="L314">                _getFieldDeser(context, mw, fieldInfo);</span>
+<span class="fc" id="L315">                mw.visitTypeInsn(CHECKCAST, type(EnumDeserializer.class)); // cast</span>
+<span class="fc" id="L316">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L317">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L318">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanInt&quot;, &quot;(C)I&quot;);</span>
+<span class="fc" id="L319">                mw.visitMethodInsn(INVOKEVIRTUAL, type(EnumDeserializer.class), &quot;valueOf&quot;, &quot;(I)Ljava/lang/Enum;&quot;);</span>
+<span class="fc" id="L320">                mw.visitJumpInsn(GOTO, enumStore_);</span>
+
+<span class="fc" id="L322">                mw.visitLabel(enumNumErr_);</span>
+<span class="fc" id="L323">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L324">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L325">                mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L326">                mw.visitMethodInsn(INVOKEVIRTUAL, type(JavaBeanDeserializer.class), &quot;scanEnum&quot;,</span>
+                                   &quot;(L&quot; + JSONLexerBase + &quot;;C)Ljava/lang/Enum;&quot;);
+
+<span class="fc" id="L329">                mw.visitLabel(enumStore_);</span>
+<span class="fc" id="L330">                mw.visitTypeInsn(CHECKCAST, type(fieldClass)); // cast</span>
+<span class="fc" id="L331">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc bfc" id="L332" title="All 2 branches covered.">            } else if (Collection.class.isAssignableFrom(fieldClass)) {</span>
+                
+<span class="fc" id="L334">                Class&lt;?&gt; itemClass = TypeUtils.getCollectionItemClass(fieldType);</span>
+<span class="fc bfc" id="L335" title="All 2 branches covered.">                if (itemClass == String.class) {</span>
+<span class="pc bpc" id="L336" title="2 of 6 branches missed.">                    if (fieldClass == List.class || fieldClass == Collections.class || fieldClass == ArrayList.class) {</span>
+<span class="fc" id="L337">                        mw.visitTypeInsn(NEW, type(ArrayList.class));</span>
+<span class="fc" id="L338">                        mw.visitInsn(DUP);</span>
+<span class="fc" id="L339">                        mw.visitMethodInsn(INVOKESPECIAL, type(ArrayList.class), &quot;&lt;init&gt;&quot;, &quot;()V&quot;);</span>
+                    } else {
+<span class="fc" id="L341">                        mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(fieldClass)));</span>
+<span class="fc" id="L342">                        mw.visitMethodInsn(INVOKESTATIC, type(TypeUtils.class), &quot;createCollection&quot;,</span>
+                                           &quot;(Ljava/lang/Class;)Ljava/util/Collection;&quot;);
+                    }
+<span class="fc" id="L345">                    mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+                    
+<span class="fc" id="L347">                    mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L348">                    mw.visitVarInsn(ALOAD, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L349">                    mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="fc" id="L350">                    mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanStringArray&quot;, &quot;(Ljava/util/Collection;C)V&quot;);</span>
+                    
+<span class="fc" id="L352">                    Label valueNullEnd_ = new Label();</span>
+<span class="fc" id="L353">                    mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L354">                    mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L355">                    mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.VALUE_NULL);</span>
+<span class="fc" id="L356">                    mw.visitJumpInsn(IF_ICMPNE, valueNullEnd_);</span>
+<span class="fc" id="L357">                    mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L358">                    mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+                    
+<span class="fc" id="L360">                    mw.visitLabel(valueNullEnd_);</span>
+                    
+<span class="fc" id="L362">                } else {</span>
+<span class="fc" id="L363">                    Label notError_ = new Label();</span>
+<span class="fc" id="L364">                    mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L365">                    mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;token&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L366">                    mw.visitVarInsn(ISTORE, context.var(&quot;token&quot;));</span>
+
+<span class="fc" id="L368">                    mw.visitVarInsn(ILOAD, context.var(&quot;token&quot;));</span>
+<span class="fc bfc" id="L369" title="All 2 branches covered.">                    int token = i == 0 ? JSONToken.LBRACKET : JSONToken.COMMA;</span>
+<span class="fc" id="L370">                    mw.visitLdcInsn(token);</span>
+<span class="fc" id="L371">                    mw.visitJumpInsn(IF_ICMPEQ, notError_);</span>
+
+<span class="fc" id="L373">                    mw.visitVarInsn(ALOAD, 1); // DefaultJSONParser</span>
+<span class="fc" id="L374">                    mw.visitVarInsn(ILOAD, context.var(&quot;token&quot;));</span>
+<span class="fc" id="L375">                    mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;throwException&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L377">                    mw.visitLabel(notError_);</span>
+
+<span class="fc" id="L379">                    Label quickElse_ = new Label(), quickEnd_ = new Label();</span>
+<span class="fc" id="L380">                    mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L381">                    mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;getCurrent&quot;, &quot;()C&quot;);</span>
+<span class="fc" id="L382">                    mw.visitVarInsn(BIPUSH, '[');</span>
+<span class="fc" id="L383">                    mw.visitJumpInsn(IF_ICMPNE, quickElse_);</span>
+
+<span class="fc" id="L385">                    mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L386">                    mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;next&quot;, &quot;()C&quot;);</span>
+<span class="fc" id="L387">                    mw.visitInsn(POP);</span>
+<span class="fc" id="L388">                    mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L389">                    mw.visitLdcInsn(JSONToken.LBRACKET);</span>
+<span class="fc" id="L390">                    mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;setToken&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L391">                    mw.visitJumpInsn(GOTO, quickEnd_);</span>
+
+<span class="fc" id="L393">                    mw.visitLabel(quickElse_);</span>
+<span class="fc" id="L394">                    mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L395">                    mw.visitLdcInsn(JSONToken.LBRACKET);</span>
+<span class="fc" id="L396">                    mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;nextToken&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L397">                    mw.visitLabel(quickEnd_);</span>
+
+<span class="fc" id="L399">                    _newCollection(mw, fieldClass, i, false);</span>
+<span class="fc" id="L400">                    mw.visitInsn(DUP);</span>
+<span class="fc" id="L401">                    mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L402">                    _getCollectionFieldItemDeser(context, mw, fieldInfo, itemClass);</span>
+<span class="fc" id="L403">                    mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L404">                    mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(itemClass)));</span>
+<span class="fc" id="L405">                    mw.visitVarInsn(ALOAD, 3);</span>
+<span class="fc" id="L406">                    mw.visitMethodInsn(INVOKESTATIC, type(JavaBeanDeserializer.class),</span>
+                                       &quot;parseArray&quot;,
+                                       &quot;(Ljava/util/Collection;&quot; //
+<span class="fc" id="L409">                                                     + desc(ObjectDeserializer.class) //</span>
+                                                     + &quot;L&quot; + DefaultJSONParser + &quot;;&quot; //
+                                                     + &quot;Ljava/lang/reflect/Type;Ljava/lang/Object;)V&quot;);
+                }
+<span class="fc bfc" id="L413" title="All 2 branches covered.">            } else if (fieldClass.isArray()) {</span>
+<span class="fc" id="L414">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L415">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONToken.LBRACKET);</span>
+<span class="fc" id="L416">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;nextToken&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L418">                mw.visitVarInsn(ALOAD, Context.parser);</span>
+<span class="fc" id="L419">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L420">                mw.visitLdcInsn(i);</span>
+<span class="fc" id="L421">                mw.visitMethodInsn(INVOKEVIRTUAL, type(JavaBeanDeserializer.class), &quot;getFieldType&quot;,</span>
+                                   &quot;(I)Ljava/lang/reflect/Type;&quot;);
+<span class="fc" id="L423">                mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;parseObject&quot;,</span>
+                                   &quot;(Ljava/lang/reflect/Type;)Ljava/lang/Object;&quot;);
+
+<span class="fc" id="L426">                mw.visitTypeInsn(CHECKCAST, type(fieldClass)); // cast</span>
+<span class="fc" id="L427">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+            } else {
+<span class="fc" id="L429">                Label objElseIf_ = new Label();</span>
+<span class="fc" id="L430">                Label objEndIf_ = new Label();</span>
+
+<span class="pc bpc" id="L432" title="1 of 2 branches missed.">                if (fieldClass == java.util.Date.class) {</span>
+<span class="nc" id="L433">                    mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="nc" id="L434">                    mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;getCurrent&quot;, &quot;()C&quot;);</span>
+<span class="nc" id="L435">                    mw.visitLdcInsn((int) '1');</span>
+<span class="nc" id="L436">                    mw.visitJumpInsn(IF_ICMPNE, objElseIf_);</span>
+
+<span class="nc" id="L438">                    mw.visitTypeInsn(NEW, type(java.util.Date.class));</span>
+<span class="nc" id="L439">                    mw.visitInsn(DUP);</span>
+
+<span class="nc" id="L441">                    mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="nc" id="L442">                    mw.visitVarInsn(BIPUSH, seperator);</span>
+<span class="nc" id="L443">                    mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanLong&quot;, &quot;(C)J&quot;);</span>
+
+<span class="nc" id="L445">                    mw.visitMethodInsn(INVOKESPECIAL, type(java.util.Date.class), &quot;&lt;init&gt;&quot;, &quot;(J)V&quot;);</span>
+<span class="nc" id="L446">                    mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="nc" id="L448">                    mw.visitJumpInsn(GOTO, objEndIf_);</span>
+                }
+
+<span class="fc" id="L451">                mw.visitLabel(objElseIf_);</span>
+
+<span class="fc" id="L453">                _quickNextToken(context, mw, JSONToken.LBRACKET);</span>
+
+<span class="fc" id="L455">                _deserObject(context, mw, fieldInfo, fieldClass, i);</span>
+
+<span class="fc" id="L457">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L458">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;token&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L459">                mw.visitLdcInsn(JSONToken.RBRACKET);</span>
+<span class="fc" id="L460">                mw.visitJumpInsn(IF_ICMPEQ, objEndIf_);</span>
+//                mw.visitInsn(POP);
+//                mw.visitInsn(POP);
+
+<span class="fc" id="L464">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L465">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc bfc" id="L466" title="All 2 branches covered.">                if (!last) {</span>
+<span class="fc" id="L467">                    mw.visitLdcInsn(JSONToken.COMMA);</span>
+                } else {
+<span class="fc" id="L469">                    mw.visitLdcInsn(JSONToken.RBRACKET);</span>
+                }
+<span class="fc" id="L471">                mw.visitMethodInsn(INVOKESPECIAL, //</span>
+<span class="fc" id="L472">                                   type(JavaBeanDeserializer.class), //</span>
+<span class="fc" id="L473">                                   &quot;check&quot;, &quot;(&quot; + desc(JSONLexer.class) + &quot;I)V&quot;);</span>
+
+<span class="fc" id="L475">                mw.visitLabel(objEndIf_);</span>
+<span class="fc" id="L476">                continue;</span>
+            }
+        }
+
+<span class="fc" id="L480">        _batchSet(context, mw, false);</span>
+
+<span class="fc" id="L482">        Label quickElse_ = new Label(), quickElseIf_ = new Label(), quickElseIfEOI_ = new Label(),</span>
+<span class="fc" id="L483">                quickEnd_ = new Label();</span>
+<span class="fc" id="L484">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L485">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;getCurrent&quot;, &quot;()C&quot;);</span>
+<span class="fc" id="L486">        mw.visitInsn(DUP);</span>
+<span class="fc" id="L487">        mw.visitVarInsn(ISTORE, context.var(&quot;ch&quot;));</span>
+<span class="fc" id="L488">        mw.visitVarInsn(BIPUSH, ',');</span>
+<span class="fc" id="L489">        mw.visitJumpInsn(IF_ICMPNE, quickElseIf_);</span>
+
+<span class="fc" id="L491">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L492">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;next&quot;, &quot;()C&quot;);</span>
+<span class="fc" id="L493">        mw.visitInsn(POP);</span>
+<span class="fc" id="L494">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L495">        mw.visitLdcInsn(JSONToken.COMMA);</span>
+<span class="fc" id="L496">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;setToken&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L497">        mw.visitJumpInsn(GOTO, quickEnd_);</span>
+
+<span class="fc" id="L499">        mw.visitLabel(quickElseIf_);</span>
+<span class="fc" id="L500">        mw.visitVarInsn(ILOAD, context.var(&quot;ch&quot;));</span>
+<span class="fc" id="L501">        mw.visitVarInsn(BIPUSH, ']');</span>
+<span class="fc" id="L502">        mw.visitJumpInsn(IF_ICMPNE, quickElseIfEOI_);</span>
+
+<span class="fc" id="L504">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L505">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;next&quot;, &quot;()C&quot;);</span>
+<span class="fc" id="L506">        mw.visitInsn(POP);</span>
+<span class="fc" id="L507">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L508">        mw.visitLdcInsn(JSONToken.RBRACKET);</span>
+<span class="fc" id="L509">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;setToken&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L510">        mw.visitJumpInsn(GOTO, quickEnd_);</span>
+
+<span class="fc" id="L512">        mw.visitLabel(quickElseIfEOI_);</span>
+<span class="fc" id="L513">        mw.visitVarInsn(ILOAD, context.var(&quot;ch&quot;));</span>
+<span class="fc" id="L514">        mw.visitVarInsn(BIPUSH, (char) JSONLexer.EOI);</span>
+<span class="fc" id="L515">        mw.visitJumpInsn(IF_ICMPNE, quickElse_);</span>
+
+<span class="fc" id="L517">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L518">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;next&quot;, &quot;()C&quot;);</span>
+<span class="fc" id="L519">        mw.visitInsn(POP);</span>
+<span class="fc" id="L520">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L521">        mw.visitLdcInsn(JSONToken.EOF);</span>
+<span class="fc" id="L522">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;setToken&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L523">        mw.visitJumpInsn(GOTO, quickEnd_);</span>
+
+<span class="fc" id="L525">        mw.visitLabel(quickElse_);</span>
+<span class="fc" id="L526">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L527">        mw.visitLdcInsn(JSONToken.COMMA);</span>
+<span class="fc" id="L528">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;nextToken&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L530">        mw.visitLabel(quickEnd_);</span>
+
+<span class="fc" id="L532">        mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+<span class="fc" id="L533">        mw.visitInsn(ARETURN);</span>
+<span class="fc" id="L534">        mw.visitMaxs(5, context.variantIndex);</span>
+<span class="fc" id="L535">        mw.visitEnd();</span>
+<span class="fc" id="L536">    }</span>
+
+    private void _deserialze(ClassWriter cw, Context context) {
+<span class="fc bfc" id="L539" title="All 2 branches covered.">        if (context.fieldInfoList.length == 0) {</span>
+<span class="fc" id="L540">            return;</span>
+        }
+
+<span class="fc bfc" id="L543" title="All 2 branches covered.">        for (FieldInfo fieldInfo : context.fieldInfoList) {</span>
+<span class="fc" id="L544">            Class&lt;?&gt; fieldClass = fieldInfo.fieldClass;</span>
+<span class="fc" id="L545">            Type fieldType = fieldInfo.fieldType;</span>
+
+<span class="fc bfc" id="L547" title="All 2 branches covered.">            if (fieldClass == char.class) {</span>
+<span class="fc" id="L548">                return;</span>
+            }
+
+<span class="fc bfc" id="L551" title="All 2 branches covered.">            if (Collection.class.isAssignableFrom(fieldClass)) {</span>
+<span class="fc bfc" id="L552" title="All 2 branches covered.">                if (fieldType instanceof ParameterizedType) {</span>
+<span class="fc" id="L553">                    Type itemType = ((ParameterizedType) fieldType).getActualTypeArguments()[0];</span>
+<span class="fc bfc" id="L554" title="All 2 branches covered.">                    if (itemType instanceof Class) {</span>
+<span class="fc" id="L555">                        continue;</span>
+                    } else {
+<span class="fc" id="L557">                        return;</span>
+                    }
+                } else {
+<span class="fc" id="L560">                    return;</span>
+                }
+            }
+        }
+
+<span class="fc" id="L565">        JavaBeanInfo beanInfo = context.beanInfo;</span>
+<span class="fc" id="L566">        context.fieldInfoList = beanInfo.sortedFields;</span>
+
+<span class="fc" id="L568">        MethodVisitor mw = new MethodWriter(cw, ACC_PUBLIC, &quot;deserialze&quot;,</span>
+                                            &quot;(L&quot; + DefaultJSONParser + &quot;;Ljava/lang/reflect/Type;Ljava/lang/Object;I)Ljava/lang/Object;&quot;,
+                                            null, null);
+
+<span class="fc" id="L572">        Label reset_ = new Label();</span>
+<span class="fc" id="L573">        Label super_ = new Label();</span>
+<span class="fc" id="L574">        Label return_ = new Label();</span>
+<span class="fc" id="L575">        Label end_ = new Label();</span>
+
+<span class="fc" id="L577">        defineVarLexer(context, mw);</span>
+
+        {
+<span class="fc" id="L580">            Label next_ = new Label();</span>
+
+            // isSupportArrayToBean
+
+<span class="fc" id="L584">            mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L585">            mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;token&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L586">            mw.visitLdcInsn(JSONToken.LBRACKET);</span>
+<span class="fc" id="L587">            mw.visitJumpInsn(IF_ICMPNE, next_);</span>
+
+<span class="fc bfc" id="L589" title="All 2 branches covered.">            if ((beanInfo.parserFeatures &amp; Feature.SupportArrayToBean.mask) == 0) {</span>
+<span class="fc" id="L590">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L591">                mw.visitVarInsn(ILOAD, 4);</span>
+<span class="fc" id="L592">                mw.visitLdcInsn(Feature.SupportArrayToBean.mask);</span>
+<span class="fc" id="L593">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;isEnabled&quot;, &quot;(II)Z&quot;);</span>
+<span class="fc" id="L594">                mw.visitJumpInsn(IFEQ, next_);</span>
+            }
+
+<span class="fc" id="L597">            mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L598">            mw.visitVarInsn(ALOAD, Context.parser);</span>
+<span class="fc" id="L599">            mw.visitVarInsn(ALOAD, 2);</span>
+<span class="fc" id="L600">            mw.visitVarInsn(ALOAD, 3);</span>
+<span class="fc" id="L601">            mw.visitInsn(ACONST_NULL); //mw.visitVarInsn(ALOAD, 5);</span>
+<span class="fc" id="L602">            mw.visitMethodInsn(INVOKESPECIAL, //</span>
+<span class="fc" id="L603">                               context.className, //</span>
+                               &quot;deserialzeArrayMapping&quot;, //
+                               &quot;(L&quot; + DefaultJSONParser + &quot;;Ljava/lang/reflect/Type;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;&quot;);
+<span class="fc" id="L606">            mw.visitInsn(ARETURN);</span>
+
+<span class="fc" id="L608">            mw.visitLabel(next_);</span>
+            // deserialzeArrayMapping
+        }
+
+<span class="fc" id="L612">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L613">        mw.visitLdcInsn(Feature.SortFeidFastMatch.mask);</span>
+<span class="fc" id="L614">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;isEnabled&quot;, &quot;(I)Z&quot;);</span>
+
+<span class="fc" id="L616">        mw.visitJumpInsn(IFEQ, super_);</span>
+
+<span class="fc" id="L618">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L619">        mw.visitLdcInsn(context.clazz.getName());</span>
+<span class="fc" id="L620">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanType&quot;, &quot;(Ljava/lang/String;)I&quot;);</span>
+
+<span class="fc" id="L622">        mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.NOT_MATCH);</span>
+<span class="fc" id="L623">        mw.visitJumpInsn(IF_ICMPEQ, super_);</span>
+
+<span class="fc" id="L625">        mw.visitVarInsn(ALOAD, 1); // parser</span>
+<span class="fc" id="L626">        mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;getContext&quot;, &quot;()&quot; + desc(ParseContext.class));</span>
+<span class="fc" id="L627">        mw.visitVarInsn(ASTORE, context.var(&quot;mark_context&quot;));</span>
+
+        // ParseContext context = parser.getContext();
+<span class="fc" id="L630">        mw.visitInsn(ICONST_0);</span>
+<span class="fc" id="L631">        mw.visitVarInsn(ISTORE, context.var(&quot;matchedCount&quot;));</span>
+
+<span class="fc" id="L633">        _createInstance(context, mw);</span>
+
+        {
+<span class="fc" id="L636">            mw.visitVarInsn(ALOAD, 1); // parser</span>
+<span class="fc" id="L637">            mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;getContext&quot;, &quot;()&quot; + desc(ParseContext.class));</span>
+<span class="fc" id="L638">            mw.visitVarInsn(ASTORE, context.var(&quot;context&quot;));</span>
+
+<span class="fc" id="L640">            mw.visitVarInsn(ALOAD, 1); // parser</span>
+<span class="fc" id="L641">            mw.visitVarInsn(ALOAD, context.var(&quot;context&quot;));</span>
+<span class="fc" id="L642">            mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+<span class="fc" id="L643">            mw.visitVarInsn(ALOAD, 3); // fieldName</span>
+<span class="fc" id="L644">            mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;setContext&quot;, //</span>
+<span class="fc" id="L645">                               &quot;(&quot; + desc(ParseContext.class) + &quot;Ljava/lang/Object;Ljava/lang/Object;)&quot;</span>
+<span class="fc" id="L646">                                                                               + desc(ParseContext.class));</span>
+<span class="fc" id="L647">            mw.visitVarInsn(ASTORE, context.var(&quot;childContext&quot;));</span>
+        }
+
+<span class="fc" id="L650">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L651">        mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L652">        mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.END);</span>
+<span class="fc" id="L653">        mw.visitJumpInsn(IF_ICMPEQ, return_);</span>
+
+<span class="fc" id="L655">        mw.visitInsn(ICONST_0); // UNKOWN</span>
+<span class="fc" id="L656">        mw.visitIntInsn(ISTORE, context.var(&quot;matchStat&quot;));</span>
+
+<span class="fc" id="L658">        int fieldListSize = context.fieldInfoList.length;</span>
+<span class="fc bfc" id="L659" title="All 2 branches covered.">        for (int i = 0; i &lt; fieldListSize; i += 32) {</span>
+<span class="fc" id="L660">            mw.visitInsn(ICONST_0);</span>
+<span class="fc" id="L661">            mw.visitVarInsn(ISTORE, context.var(&quot;_asm_flag_&quot; + (i / 32)));</span>
+        }
+
+<span class="fc" id="L664">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L665">        mw.visitLdcInsn(Feature.InitStringFieldAsEmpty.mask);</span>
+<span class="fc" id="L666">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;isEnabled&quot;, &quot;(I)Z&quot;);</span>
+<span class="fc" id="L667">        mw.visitIntInsn(ISTORE, context.var(&quot;initStringFieldAsEmpty&quot;));</span>
+
+        // declare and init
+<span class="fc bfc" id="L670" title="All 2 branches covered.">        for (int i = 0; i &lt; fieldListSize; ++i) {</span>
+<span class="fc" id="L671">            FieldInfo fieldInfo = context.fieldInfoList[i];</span>
+<span class="fc" id="L672">            Class&lt;?&gt; fieldClass = fieldInfo.fieldClass;</span>
+
+<span class="fc bfc" id="L674" title="All 8 branches covered.">            if (fieldClass == boolean.class //</span>
+                || fieldClass == byte.class //
+                || fieldClass == short.class //
+                || fieldClass == int.class) {
+<span class="fc" id="L678">                mw.visitInsn(ICONST_0);</span>
+<span class="fc" id="L679">                mw.visitVarInsn(ISTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc bfc" id="L680" title="All 2 branches covered.">            } else if (fieldClass == long.class) {</span>
+<span class="fc" id="L681">                mw.visitInsn(LCONST_0);</span>
+<span class="fc" id="L682">                mw.visitVarInsn(LSTORE, context.var(fieldInfo.name + &quot;_asm&quot;, 2));</span>
+<span class="fc bfc" id="L683" title="All 2 branches covered.">            } else if (fieldClass == float.class) {</span>
+<span class="fc" id="L684">                mw.visitInsn(FCONST_0);</span>
+<span class="fc" id="L685">                mw.visitVarInsn(FSTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc bfc" id="L686" title="All 2 branches covered.">            } else if (fieldClass == double.class) {</span>
+<span class="fc" id="L687">                mw.visitInsn(DCONST_0);</span>
+<span class="fc" id="L688">                mw.visitVarInsn(DSTORE, context.var(fieldInfo.name + &quot;_asm&quot;, 2));</span>
+            } else {
+<span class="fc bfc" id="L690" title="All 2 branches covered.">                if (fieldClass == String.class) {</span>
+<span class="fc" id="L691">                    Label flagEnd_ = new Label();</span>
+<span class="fc" id="L692">                    Label flagElse_ = new Label();</span>
+<span class="fc" id="L693">                    mw.visitVarInsn(ILOAD, context.var(&quot;initStringFieldAsEmpty&quot;));</span>
+<span class="fc" id="L694">                    mw.visitJumpInsn(IFEQ, flagElse_);</span>
+<span class="fc" id="L695">                    _setFlag(mw, context, i);</span>
+<span class="fc" id="L696">                    mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L697">                    mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;stringDefaultValue&quot;, &quot;()Ljava/lang/String;&quot;);</span>
+<span class="fc" id="L698">                    mw.visitJumpInsn(GOTO, flagEnd_);</span>
+
+<span class="fc" id="L700">                    mw.visitLabel(flagElse_);</span>
+<span class="fc" id="L701">                    mw.visitInsn(ACONST_NULL);</span>
+
+<span class="fc" id="L703">                    mw.visitLabel(flagEnd_);</span>
+<span class="fc" id="L704">                } else {</span>
+<span class="fc" id="L705">                    mw.visitInsn(ACONST_NULL);</span>
+                }
+
+<span class="fc" id="L708">                mw.visitTypeInsn(CHECKCAST, type(fieldClass)); // cast</span>
+<span class="fc" id="L709">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+            }
+        }
+
+<span class="fc bfc" id="L713" title="All 2 branches covered.">        for (int i = 0; i &lt; fieldListSize; ++i) {</span>
+<span class="fc" id="L714">            FieldInfo fieldInfo = context.fieldInfoList[i];</span>
+<span class="fc" id="L715">            Class&lt;?&gt; fieldClass = fieldInfo.fieldClass;</span>
+<span class="fc" id="L716">            Type fieldType = fieldInfo.fieldType;</span>
+
+<span class="fc" id="L718">            Label notMatch_ = new Label();</span>
+
+<span class="fc bfc" id="L720" title="All 2 branches covered.">            if (fieldClass == boolean.class) {</span>
+<span class="fc" id="L721">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L722">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L723">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L724">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldBoolean&quot;, &quot;([C)Z&quot;);</span>
+<span class="fc" id="L725">                mw.visitVarInsn(ISTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc bfc" id="L726" title="All 2 branches covered.">            } else if (fieldClass == byte.class) {</span>
+<span class="fc" id="L727">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L728">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L729">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L730">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldInt&quot;, &quot;([C)I&quot;);</span>
+<span class="fc" id="L731">                mw.visitVarInsn(ISTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc bfc" id="L733" title="All 2 branches covered.">            } else if (fieldClass == Byte.class) {</span>
+<span class="fc" id="L734">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L735">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L736">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L737">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldInt&quot;, &quot;([C)I&quot;);</span>
+<span class="fc" id="L738">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Byte&quot;, &quot;valueOf&quot;, &quot;(B)Ljava/lang/Byte;&quot;);</span>
+
+<span class="fc" id="L740">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L741">                Label valueNullEnd_ = new Label();</span>
+<span class="fc" id="L742">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L743">                mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L744">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.VALUE_NULL);</span>
+<span class="fc" id="L745">                mw.visitJumpInsn(IF_ICMPNE, valueNullEnd_);</span>
+<span class="fc" id="L746">                mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L747">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L748">                mw.visitLabel(valueNullEnd_);</span>
+
+<span class="fc bfc" id="L750" title="All 2 branches covered.">            } else if (fieldClass == short.class) {</span>
+<span class="fc" id="L751">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L752">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L753">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L754">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldInt&quot;, &quot;([C)I&quot;);</span>
+<span class="fc" id="L755">                mw.visitVarInsn(ISTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc bfc" id="L757" title="All 2 branches covered.">            } else if (fieldClass == Short.class) {</span>
+<span class="fc" id="L758">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L759">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L760">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L761">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldInt&quot;, &quot;([C)I&quot;);</span>
+<span class="fc" id="L762">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Short&quot;, &quot;valueOf&quot;, &quot;(S)Ljava/lang/Short;&quot;);</span>
+
+<span class="fc" id="L764">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L765">                Label valueNullEnd_ = new Label();</span>
+<span class="fc" id="L766">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L767">                mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L768">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.VALUE_NULL);</span>
+<span class="fc" id="L769">                mw.visitJumpInsn(IF_ICMPNE, valueNullEnd_);</span>
+<span class="fc" id="L770">                mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L771">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L772">                mw.visitLabel(valueNullEnd_);</span>
+
+<span class="fc bfc" id="L774" title="All 2 branches covered.">            } else if (fieldClass == int.class) {</span>
+<span class="fc" id="L775">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L776">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L777">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L778">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldInt&quot;, &quot;([C)I&quot;);</span>
+<span class="fc" id="L779">                mw.visitVarInsn(ISTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc bfc" id="L781" title="All 2 branches covered.">            } else if (fieldClass == Integer.class) {</span>
+<span class="fc" id="L782">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L783">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L784">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L785">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldInt&quot;, &quot;([C)I&quot;);</span>
+<span class="fc" id="L786">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Integer&quot;, &quot;valueOf&quot;, &quot;(I)Ljava/lang/Integer;&quot;);</span>
+
+<span class="fc" id="L788">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L789">                Label valueNullEnd_ = new Label();</span>
+<span class="fc" id="L790">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L791">                mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L792">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.VALUE_NULL);</span>
+<span class="fc" id="L793">                mw.visitJumpInsn(IF_ICMPNE, valueNullEnd_);</span>
+<span class="fc" id="L794">                mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L795">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L796">                mw.visitLabel(valueNullEnd_);</span>
+
+<span class="fc bfc" id="L798" title="All 2 branches covered.">            } else if (fieldClass == long.class) {</span>
+<span class="fc" id="L799">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L800">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L801">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L802">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldLong&quot;, &quot;([C)J&quot;);</span>
+<span class="fc" id="L803">                mw.visitVarInsn(LSTORE, context.var(fieldInfo.name + &quot;_asm&quot;, 2));</span>
+
+<span class="fc bfc" id="L805" title="All 2 branches covered.">            } else if (fieldClass == Long.class) {</span>
+<span class="fc" id="L806">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L807">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L808">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L809">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldLong&quot;, &quot;([C)J&quot;);</span>
+<span class="fc" id="L810">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Long&quot;, &quot;valueOf&quot;, &quot;(J)Ljava/lang/Long;&quot;);</span>
+
+<span class="fc" id="L812">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L813">                Label valueNullEnd_ = new Label();</span>
+<span class="fc" id="L814">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L815">                mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L816">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.VALUE_NULL);</span>
+<span class="fc" id="L817">                mw.visitJumpInsn(IF_ICMPNE, valueNullEnd_);</span>
+<span class="fc" id="L818">                mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L819">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L820">                mw.visitLabel(valueNullEnd_);</span>
+
+<span class="fc bfc" id="L822" title="All 2 branches covered.">            } else if (fieldClass == float.class) {</span>
+<span class="fc" id="L823">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L824">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L825">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L826">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldFloat&quot;, &quot;([C)F&quot;);</span>
+<span class="fc" id="L827">                mw.visitVarInsn(FSTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc bfc" id="L829" title="All 2 branches covered.">            } else if (fieldClass == Float.class) {</span>
+<span class="fc" id="L830">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L831">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L832">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L833">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldFloat&quot;, &quot;([C)F&quot;);</span>
+<span class="fc" id="L834">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Float&quot;, &quot;valueOf&quot;, &quot;(F)Ljava/lang/Float;&quot;);</span>
+
+<span class="fc" id="L836">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L837">                Label valueNullEnd_ = new Label();</span>
+<span class="fc" id="L838">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L839">                mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L840">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.VALUE_NULL);</span>
+<span class="fc" id="L841">                mw.visitJumpInsn(IF_ICMPNE, valueNullEnd_);</span>
+<span class="fc" id="L842">                mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L843">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L844">                mw.visitLabel(valueNullEnd_);</span>
+<span class="fc bfc" id="L845" title="All 2 branches covered.">            } else if (fieldClass == double.class) {</span>
+<span class="fc" id="L846">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L847">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L848">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L849">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldDouble&quot;, &quot;([C)D&quot;);</span>
+<span class="fc" id="L850">                mw.visitVarInsn(DSTORE, context.var(fieldInfo.name + &quot;_asm&quot;, 2));</span>
+
+<span class="fc bfc" id="L852" title="All 2 branches covered.">            } else if (fieldClass == Double.class) {</span>
+<span class="fc" id="L853">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L854">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L855">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L856">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldDouble&quot;, &quot;([C)D&quot;);</span>
+<span class="fc" id="L857">                mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Double&quot;, &quot;valueOf&quot;, &quot;(D)Ljava/lang/Double;&quot;);</span>
+
+<span class="fc" id="L859">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L860">                Label valueNullEnd_ = new Label();</span>
+<span class="fc" id="L861">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L862">                mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L863">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.VALUE_NULL);</span>
+<span class="fc" id="L864">                mw.visitJumpInsn(IF_ICMPNE, valueNullEnd_);</span>
+<span class="fc" id="L865">                mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L866">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc" id="L868">                mw.visitLabel(valueNullEnd_);</span>
+<span class="fc bfc" id="L869" title="All 2 branches covered.">            } else if (fieldClass == String.class) {</span>
+<span class="fc" id="L870">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L871">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L872">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L873">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldString&quot;, &quot;([C)Ljava/lang/String;&quot;);</span>
+<span class="fc" id="L874">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc bfc" id="L876" title="All 2 branches covered.">            } else if (fieldClass == java.util.Date.class) {</span>
+<span class="fc" id="L877">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L878">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L879">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L880">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldDate&quot;, &quot;([C)Ljava/util/Date;&quot;);</span>
+<span class="fc" id="L881">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc bfc" id="L883" title="All 2 branches covered.">            } else if (fieldClass == java.util.UUID.class) {</span>
+<span class="fc" id="L884">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L885">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L886">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L887">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldUUID&quot;, &quot;([C)Ljava/util/UUID;&quot;);</span>
+<span class="fc" id="L888">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc bfc" id="L890" title="All 2 branches covered.">            } else if (fieldClass == BigDecimal.class) {</span>
+<span class="fc" id="L891">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L892">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L893">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L894">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldDecimal&quot;, &quot;([C)Ljava/math/BigDecimal;&quot;);</span>
+<span class="fc" id="L895">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc bfc" id="L896" title="All 2 branches covered.">            } else if (fieldClass == BigInteger.class) {</span>
+<span class="fc" id="L897">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L898">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L899">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L900">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldBigInteger&quot;, &quot;([C)Ljava/math/BigInteger;&quot;);</span>
+<span class="fc" id="L901">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc bfc" id="L902" title="All 2 branches covered.">            } else if (fieldClass == int[].class) {</span>
+<span class="fc" id="L903">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L904">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L905">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L906">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldIntArray&quot;, &quot;([C)[I&quot;);</span>
+<span class="fc" id="L907">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc bfc" id="L908" title="All 2 branches covered.">            } else if (fieldClass == float[].class) {</span>
+<span class="fc" id="L909">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L910">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L911">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L912">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldFloatArray&quot;, &quot;([C)[F&quot;);</span>
+<span class="fc" id="L913">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc bfc" id="L914" title="All 2 branches covered.">            } else if (fieldClass == float[][].class) {</span>
+<span class="fc" id="L915">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L916">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L917">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L918">                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldFloatArray2&quot;, &quot;([C)[[F&quot;);</span>
+<span class="fc" id="L919">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc bfc" id="L920" title="All 2 branches covered.">            } else if (fieldClass.isEnum()) {</span>
+<span class="fc" id="L921">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L922">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L923">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L924">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L925">                _getFieldDeser(context, mw, fieldInfo);</span>
+<span class="fc" id="L926">                mw.visitMethodInsn(INVOKEVIRTUAL, type(JavaBeanDeserializer.class), &quot;scanEnum&quot;</span>
+<span class="fc" id="L927">                        , &quot;(L&quot; + JSONLexerBase + &quot;;[C&quot; + desc(ObjectDeserializer.class) + &quot;)Ljava/lang/Enum;&quot;);</span>
+<span class="fc" id="L928">                mw.visitTypeInsn(CHECKCAST, type(fieldClass)); // cast</span>
+<span class="fc" id="L929">                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+//            } else if (fieldClass.isEnum()) {
+//                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));
+//                mw.visitVarInsn(ALOAD, 0);
+//                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);
+//                Label enumNull_ = new Label();
+//                mw.visitInsn(ACONST_NULL);
+//                mw.visitTypeInsn(CHECKCAST, type(fieldClass)); // cast
+//                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));
+//
+//                mw.visitVarInsn(ALOAD, 1);
+//
+//                mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;getSymbolTable&quot;, &quot;()&quot; + desc(SymbolTable.class));
+//
+//                mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldSymbol&quot;,
+//                        &quot;([C&quot; + desc(SymbolTable.class) + &quot;)Ljava/lang/String;&quot;);
+//                mw.visitInsn(DUP);
+//                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm_enumName&quot;));
+//
+//                mw.visitJumpInsn(IFNULL, enumNull_);
+//
+//                mw.visitVarInsn(ALOAD, context.var(fieldInfo.name + &quot;_asm_enumName&quot;));
+//                mw.visitMethodInsn(INVOKEVIRTUAL, type(String.class), &quot;length&quot;, &quot;()I&quot;);
+//                mw.visitJumpInsn(IFEQ, enumNull_);
+//
+//                mw.visitVarInsn(ALOAD, context.var(fieldInfo.name + &quot;_asm_enumName&quot;));
+//                mw.visitMethodInsn(INVOKESTATIC, type(fieldClass), &quot;valueOf&quot;,
+//                        &quot;(Ljava/lang/String;)&quot; + desc(fieldClass));
+//                mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));
+//                mw.visitLabel(enumNull_);
+<span class="fc bfc" id="L960" title="All 2 branches covered.">            } else if (Collection.class.isAssignableFrom(fieldClass)) {</span>
+<span class="fc" id="L961">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L962">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L963">                mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+
+<span class="fc" id="L965">                Class&lt;?&gt; itemClass = TypeUtils.getCollectionItemClass(fieldType);</span>
+
+<span class="fc bfc" id="L967" title="All 2 branches covered.">                if (itemClass == String.class) {</span>
+<span class="fc" id="L968">                    mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(fieldClass))); // cast</span>
+<span class="fc" id="L969">                    mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;scanFieldStringArray&quot;,</span>
+<span class="fc" id="L970">                                       &quot;([CLjava/lang/Class;)&quot; + desc(Collection.class));</span>
+<span class="fc" id="L971">                    mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+                } else {
+<span class="fc" id="L973">                    _deserialze_list_obj(context, mw, reset_, fieldInfo, fieldClass, itemClass, i);</span>
+
+<span class="fc bfc" id="L975" title="All 2 branches covered.">                    if (i == fieldListSize - 1) {</span>
+<span class="fc" id="L976">                        _deserialize_endCheck(context, mw, reset_);</span>
+                    }
+                    continue;
+                }
+<span class="fc" id="L980">            } else {</span>
+<span class="fc" id="L981">                _deserialze_obj(context, mw, reset_, fieldInfo, fieldClass, i);</span>
+
+<span class="fc bfc" id="L983" title="All 2 branches covered.">                if (i == fieldListSize - 1) {</span>
+<span class="fc" id="L984">                    _deserialize_endCheck(context, mw, reset_);</span>
+                }
+
+                continue;
+            }
+
+<span class="fc" id="L990">            mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L991">            mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L992">            Label flag_ = new Label();</span>
+            // mw.visitInsn(DUP);
+<span class="fc" id="L994">            mw.visitJumpInsn(IFLE, flag_);</span>
+<span class="fc" id="L995">            _setFlag(mw, context, i);</span>
+<span class="fc" id="L996">            mw.visitLabel(flag_);</span>
+
+<span class="fc" id="L998">            mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L999">            mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L1000">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1001">            mw.visitVarInsn(ISTORE, context.var(&quot;matchStat&quot;));</span>
+
+<span class="fc" id="L1003">            mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.NOT_MATCH);</span>
+<span class="fc" id="L1004">            mw.visitJumpInsn(IF_ICMPEQ, reset_);</span>
+
+<span class="fc" id="L1006">            mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1007">            mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L1008">            mw.visitJumpInsn(IFLE, notMatch_);</span>
+
+            // increment matchedCount
+<span class="fc" id="L1011">            mw.visitVarInsn(ILOAD, context.var(&quot;matchedCount&quot;));</span>
+<span class="fc" id="L1012">            mw.visitInsn(ICONST_1);</span>
+<span class="fc" id="L1013">            mw.visitInsn(IADD);</span>
+<span class="fc" id="L1014">            mw.visitVarInsn(ISTORE, context.var(&quot;matchedCount&quot;));</span>
+
+<span class="fc" id="L1016">            mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1017">            mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L1018">            mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.END);</span>
+<span class="fc" id="L1019">            mw.visitJumpInsn(IF_ICMPEQ, end_);</span>
+
+<span class="fc" id="L1021">            mw.visitLabel(notMatch_);</span>
+
+<span class="fc bfc" id="L1023" title="All 2 branches covered.">            if (i == fieldListSize - 1) {</span>
+<span class="fc" id="L1024">                mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1025">                mw.visitFieldInsn(GETFIELD, JSONLexerBase, &quot;matchStat&quot;, &quot;I&quot;);</span>
+<span class="fc" id="L1026">                mw.visitLdcInsn(com.alibaba.fastjson.parser.JSONLexerBase.END);</span>
+<span class="fc" id="L1027">                mw.visitJumpInsn(IF_ICMPNE, reset_);</span>
+            }
+        } // endFor
+
+<span class="fc" id="L1031">        mw.visitLabel(end_);</span>
+
+<span class="pc bpc" id="L1033" title="2 of 4 branches missed.">        if (!context.clazz.isInterface() &amp;&amp; !Modifier.isAbstract(context.clazz.getModifiers())) {</span>
+<span class="fc" id="L1034">            _batchSet(context, mw);</span>
+        }
+
+<span class="fc" id="L1037">        mw.visitLabel(return_);</span>
+
+<span class="fc" id="L1039">        _setContext(context, mw);</span>
+<span class="fc" id="L1040">        mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+
+<span class="fc" id="L1042">        Method buildMethod = context.beanInfo.buildMethod;</span>
+<span class="fc bfc" id="L1043" title="All 2 branches covered.">        if (buildMethod != null) {</span>
+<span class="fc" id="L1044">            mw.visitMethodInsn(INVOKEVIRTUAL, type(context.getInstClass()), buildMethod.getName(),</span>
+<span class="fc" id="L1045">                               &quot;()&quot; + desc(buildMethod.getReturnType()));</span>
+        }
+
+<span class="fc" id="L1048">        mw.visitInsn(ARETURN);</span>
+
+<span class="fc" id="L1050">        mw.visitLabel(reset_);</span>
+
+<span class="fc" id="L1052">        _batchSet(context, mw);</span>
+<span class="fc" id="L1053">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1054">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1055">        mw.visitVarInsn(ALOAD, 2);</span>
+<span class="fc" id="L1056">        mw.visitVarInsn(ALOAD, 3);</span>
+<span class="fc" id="L1057">        mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+<span class="fc" id="L1058">        mw.visitVarInsn(ILOAD, 4);</span>
+
+
+<span class="fc" id="L1061">        int flagSize = (fieldListSize / 32);</span>
+
+<span class="pc bpc" id="L1063" title="1 of 4 branches missed.">        if (fieldListSize != 0 &amp;&amp; (fieldListSize % 32) != 0) {</span>
+<span class="fc" id="L1064">            flagSize += 1;</span>
+        }
+
+<span class="fc bfc" id="L1067" title="All 2 branches covered.">        if (flagSize == 1) {</span>
+<span class="fc" id="L1068">            mw.visitInsn(ICONST_1);</span>
+        } else {
+<span class="fc" id="L1070">            mw.visitIntInsn(BIPUSH, flagSize);</span>
+        }
+<span class="fc" id="L1072">        mw.visitIntInsn(NEWARRAY, T_INT);</span>
+<span class="fc bfc" id="L1073" title="All 2 branches covered.">        for (int i = 0; i &lt; flagSize; ++i) {</span>
+<span class="fc" id="L1074">            mw.visitInsn(DUP);</span>
+<span class="fc bfc" id="L1075" title="All 2 branches covered.">            if (i == 0) {</span>
+<span class="fc" id="L1076">                mw.visitInsn(ICONST_0);</span>
+<span class="fc bfc" id="L1077" title="All 2 branches covered.">            } else if (i == 1) {</span>
+<span class="fc" id="L1078">                mw.visitInsn(ICONST_1);</span>
+            } else {
+<span class="fc" id="L1080">                mw.visitIntInsn(BIPUSH, i);</span>
+            }
+<span class="fc" id="L1082">            mw.visitVarInsn(ILOAD, context.var(&quot;_asm_flag_&quot; + i));</span>
+<span class="fc" id="L1083">            mw.visitInsn(IASTORE);</span>
+        }
+
+<span class="fc" id="L1086">        mw.visitMethodInsn(INVOKEVIRTUAL, type(JavaBeanDeserializer.class),</span>
+                           &quot;parseRest&quot;, &quot;(L&quot; + DefaultJSONParser
+                                        + &quot;;Ljava/lang/reflect/Type;Ljava/lang/Object;Ljava/lang/Object;I[I)Ljava/lang/Object;&quot;);
+<span class="fc" id="L1089">        mw.visitTypeInsn(CHECKCAST, type(context.clazz)); // cast</span>
+<span class="fc" id="L1090">        mw.visitInsn(ARETURN);</span>
+
+<span class="fc" id="L1092">        mw.visitLabel(super_);</span>
+<span class="fc" id="L1093">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1094">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1095">        mw.visitVarInsn(ALOAD, 2);</span>
+<span class="fc" id="L1096">        mw.visitVarInsn(ALOAD, 3);</span>
+<span class="fc" id="L1097">        mw.visitVarInsn(ILOAD, 4);</span>
+<span class="fc" id="L1098">        mw.visitMethodInsn(INVOKESPECIAL, type(JavaBeanDeserializer.class), //</span>
+                           &quot;deserialze&quot;, //
+                           &quot;(L&quot; + DefaultJSONParser + &quot;;Ljava/lang/reflect/Type;Ljava/lang/Object;I)Ljava/lang/Object;&quot;);
+<span class="fc" id="L1101">        mw.visitInsn(ARETURN);</span>
+
+<span class="fc" id="L1103">        mw.visitMaxs(10, context.variantIndex);</span>
+<span class="fc" id="L1104">        mw.visitEnd();</span>
+
+<span class="fc" id="L1106">    }</span>
+
+    private void defineVarLexer(Context context, MethodVisitor mw) {
+<span class="fc" id="L1109">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1110">        mw.visitFieldInsn(GETFIELD, DefaultJSONParser, &quot;lexer&quot;, desc(JSONLexer.class));</span>
+<span class="fc" id="L1111">        mw.visitTypeInsn(CHECKCAST, JSONLexerBase); // cast</span>
+<span class="fc" id="L1112">        mw.visitVarInsn(ASTORE, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1113">    }</span>
+
+    private void _createInstance(Context context, MethodVisitor mw) {
+<span class="fc" id="L1116">        JavaBeanInfo beanInfo = context.beanInfo;</span>
+<span class="fc" id="L1117">        Constructor&lt;?&gt; defaultConstructor = beanInfo.defaultConstructor;</span>
+<span class="fc bfc" id="L1118" title="All 2 branches covered.">        if (Modifier.isPublic(defaultConstructor.getModifiers())) {</span>
+<span class="fc" id="L1119">            mw.visitTypeInsn(NEW, type(context.getInstClass()));</span>
+<span class="fc" id="L1120">            mw.visitInsn(DUP);</span>
+
+<span class="fc" id="L1122">            mw.visitMethodInsn(INVOKESPECIAL, type(defaultConstructor.getDeclaringClass()), &quot;&lt;init&gt;&quot;, &quot;()V&quot;);</span>
+
+<span class="fc" id="L1124">            mw.visitVarInsn(ASTORE, context.var(&quot;instance&quot;));</span>
+        } else {
+<span class="fc" id="L1126">            mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1127">            mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1128">            mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1129">            mw.visitFieldInsn(GETFIELD, type(JavaBeanDeserializer.class), &quot;clazz&quot;, &quot;Ljava/lang/Class;&quot;);</span>
+<span class="fc" id="L1130">            mw.visitMethodInsn(INVOKESPECIAL, type(JavaBeanDeserializer.class), &quot;createInstance&quot;,</span>
+                               &quot;(L&quot; + DefaultJSONParser + &quot;;Ljava/lang/reflect/Type;)Ljava/lang/Object;&quot;);
+<span class="fc" id="L1132">            mw.visitTypeInsn(CHECKCAST, type(context.getInstClass())); // cast</span>
+<span class="fc" id="L1133">            mw.visitVarInsn(ASTORE, context.var(&quot;instance&quot;));</span>
+        }
+<span class="fc" id="L1135">    }</span>
+
+    private void _batchSet(Context context, MethodVisitor mw) {
+<span class="fc" id="L1138">        _batchSet(context, mw, true);</span>
+<span class="fc" id="L1139">    }</span>
+
+    private void _batchSet(Context context, MethodVisitor mw, boolean flag) {
+<span class="fc bfc" id="L1142" title="All 2 branches covered.">        for (int i = 0, size = context.fieldInfoList.length; i &lt; size; ++i) {</span>
+<span class="fc" id="L1143">            Label notSet_ = new Label();</span>
+
+<span class="fc bfc" id="L1145" title="All 2 branches covered.">            if (flag) {</span>
+<span class="fc" id="L1146">                _isFlag(mw, context, i, notSet_);</span>
+            }
+
+<span class="fc" id="L1149">            FieldInfo fieldInfo = context.fieldInfoList[i];</span>
+<span class="fc" id="L1150">            _loadAndSet(context, mw, fieldInfo);</span>
+
+<span class="fc bfc" id="L1152" title="All 2 branches covered.">            if (flag) {</span>
+<span class="fc" id="L1153">                mw.visitLabel(notSet_);</span>
+            }
+        }
+<span class="fc" id="L1156">    }</span>
+
+    private void _loadAndSet(Context context, MethodVisitor mw, FieldInfo fieldInfo) {
+<span class="fc" id="L1159">        Class&lt;?&gt; fieldClass = fieldInfo.fieldClass;</span>
+<span class="fc" id="L1160">        Type fieldType = fieldInfo.fieldType;</span>
+
+<span class="fc bfc" id="L1162" title="All 2 branches covered.">        if (fieldClass == boolean.class) {</span>
+<span class="fc" id="L1163">            mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+<span class="fc" id="L1164">            mw.visitVarInsn(ILOAD, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L1165">            _set(context, mw, fieldInfo);</span>
+<span class="fc bfc" id="L1166" title="All 8 branches covered.">        } else if (fieldClass == byte.class //</span>
+                   || fieldClass == short.class //
+                   || fieldClass == int.class //
+                   || fieldClass == char.class) {
+<span class="fc" id="L1170">            mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+<span class="fc" id="L1171">            mw.visitVarInsn(ILOAD, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L1172">            _set(context, mw, fieldInfo);</span>
+<span class="fc bfc" id="L1173" title="All 2 branches covered.">        } else if (fieldClass == long.class) {</span>
+<span class="fc" id="L1174">            mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+<span class="fc" id="L1175">            mw.visitVarInsn(LLOAD, context.var(fieldInfo.name + &quot;_asm&quot;, 2));</span>
+<span class="fc bfc" id="L1176" title="All 2 branches covered.">            if (fieldInfo.method != null) {</span>
+<span class="fc" id="L1177">                mw.visitMethodInsn(INVOKEVIRTUAL, type(context.getInstClass()), fieldInfo.method.getName(),</span>
+<span class="fc" id="L1178">                                   desc(fieldInfo.method));</span>
+<span class="fc bfc" id="L1179" title="All 2 branches covered.">                if (!fieldInfo.method.getReturnType().equals(Void.TYPE)) {</span>
+<span class="fc" id="L1180">                    mw.visitInsn(POP);</span>
+                }
+            } else {
+<span class="fc" id="L1183">                mw.visitFieldInsn(PUTFIELD, type(fieldInfo.declaringClass), fieldInfo.field.getName(),</span>
+<span class="fc" id="L1184">                                  desc(fieldInfo.fieldClass));</span>
+            }
+<span class="fc bfc" id="L1186" title="All 2 branches covered.">        } else if (fieldClass == float.class) {</span>
+<span class="fc" id="L1187">            mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+<span class="fc" id="L1188">            mw.visitVarInsn(FLOAD, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L1189">            _set(context, mw, fieldInfo);</span>
+<span class="fc bfc" id="L1190" title="All 2 branches covered.">        } else if (fieldClass == double.class) {</span>
+<span class="fc" id="L1191">            mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+<span class="fc" id="L1192">            mw.visitVarInsn(DLOAD, context.var(fieldInfo.name + &quot;_asm&quot;, 2));</span>
+<span class="fc" id="L1193">            _set(context, mw, fieldInfo);</span>
+<span class="fc bfc" id="L1194" title="All 2 branches covered.">        } else if (fieldClass == String.class) {</span>
+<span class="fc" id="L1195">            mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+<span class="fc" id="L1196">            mw.visitVarInsn(ALOAD, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L1197">            _set(context, mw, fieldInfo);</span>
+<span class="fc bfc" id="L1198" title="All 2 branches covered.">        } else if (fieldClass.isEnum()) {</span>
+<span class="fc" id="L1199">            mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+<span class="fc" id="L1200">            mw.visitVarInsn(ALOAD, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L1201">            _set(context, mw, fieldInfo);</span>
+<span class="fc bfc" id="L1202" title="All 2 branches covered.">        } else if (Collection.class.isAssignableFrom(fieldClass)) {</span>
+<span class="fc" id="L1203">            mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+<span class="fc" id="L1204">            Type itemType = TypeUtils.getCollectionItemClass(fieldType);</span>
+<span class="fc bfc" id="L1205" title="All 2 branches covered.">            if (itemType == String.class) {</span>
+<span class="fc" id="L1206">                mw.visitVarInsn(ALOAD, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L1207">                mw.visitTypeInsn(CHECKCAST, type(fieldClass)); // cast</span>
+            } else {
+<span class="fc" id="L1209">                mw.visitVarInsn(ALOAD, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+            }
+<span class="fc" id="L1211">            _set(context, mw, fieldInfo);</span>
+
+<span class="fc" id="L1213">        } else {</span>
+<span class="fc" id="L1214">            mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+<span class="fc" id="L1215">            mw.visitVarInsn(ALOAD, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L1216">            _set(context, mw, fieldInfo);</span>
+        }
+<span class="fc" id="L1218">    }</span>
+
+    private void _set(Context context, MethodVisitor mw, FieldInfo fieldInfo) {
+<span class="fc" id="L1221">        Method method = fieldInfo.method;</span>
+<span class="fc bfc" id="L1222" title="All 2 branches covered.">        if (method != null) {</span>
+<span class="fc" id="L1223">            Class&lt;?&gt; declaringClass = method.getDeclaringClass();</span>
+<span class="pc bpc" id="L1224" title="1 of 2 branches missed.">            mw.visitMethodInsn(declaringClass.isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL, type(fieldInfo.declaringClass), method.getName(), desc(method));</span>
+
+<span class="fc bfc" id="L1226" title="All 2 branches covered.">            if (!fieldInfo.method.getReturnType().equals(Void.TYPE)) {</span>
+<span class="fc" id="L1227">                mw.visitInsn(POP);</span>
+            }
+<span class="fc" id="L1229">        } else {</span>
+<span class="fc" id="L1230">            mw.visitFieldInsn(PUTFIELD, type(fieldInfo.declaringClass), fieldInfo.field.getName(),</span>
+<span class="fc" id="L1231">                              desc(fieldInfo.fieldClass));</span>
+        }
+<span class="fc" id="L1233">    }</span>
+
+    private void _setContext(Context context, MethodVisitor mw) {
+<span class="fc" id="L1236">        mw.visitVarInsn(ALOAD, 1); // parser</span>
+<span class="fc" id="L1237">        mw.visitVarInsn(ALOAD, context.var(&quot;context&quot;));</span>
+<span class="fc" id="L1238">        mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;setContext&quot;, &quot;(&quot; + desc(ParseContext.class) + &quot;)V&quot;);</span>
+
+<span class="fc" id="L1240">        Label endIf_ = new Label();</span>
+<span class="fc" id="L1241">        mw.visitVarInsn(ALOAD, context.var(&quot;childContext&quot;));</span>
+<span class="fc" id="L1242">        mw.visitJumpInsn(IFNULL, endIf_);</span>
+
+<span class="fc" id="L1244">        mw.visitVarInsn(ALOAD, context.var(&quot;childContext&quot;));</span>
+<span class="fc" id="L1245">        mw.visitVarInsn(ALOAD, context.var(&quot;instance&quot;));</span>
+<span class="fc" id="L1246">        mw.visitFieldInsn(PUTFIELD, type(ParseContext.class), &quot;object&quot;, &quot;Ljava/lang/Object;&quot;);</span>
+
+<span class="fc" id="L1248">        mw.visitLabel(endIf_);</span>
+<span class="fc" id="L1249">    }</span>
+
+    private void _deserialize_endCheck(Context context, MethodVisitor mw, Label reset_) {
+<span class="fc" id="L1252">        mw.visitIntInsn(ILOAD, context.var(&quot;matchedCount&quot;));</span>
+<span class="fc" id="L1253">        mw.visitJumpInsn(IFLE, reset_);</span>
+
+<span class="fc" id="L1255">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1256">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;token&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L1257">        mw.visitLdcInsn(JSONToken.RBRACE);</span>
+<span class="fc" id="L1258">        mw.visitJumpInsn(IF_ICMPNE, reset_);</span>
+
+        // mw.visitLabel(nextToken_);
+<span class="fc" id="L1261">        _quickNextTokenComma(context, mw);</span>
+<span class="fc" id="L1262">    }</span>
+
+    private void _deserialze_list_obj(Context context, MethodVisitor mw, Label reset_, FieldInfo fieldInfo,
+                                      Class&lt;?&gt; fieldClass, Class&lt;?&gt; itemType, int i) {
+<span class="fc" id="L1266">        Label _end_if = new Label();</span>
+
+<span class="fc" id="L1268">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;matchField&quot;, &quot;([C)Z&quot;);</span>
+<span class="fc" id="L1269">        mw.visitJumpInsn(IFEQ, _end_if);</span>
+
+<span class="fc" id="L1271">        _setFlag(mw, context, i);</span>
+
+<span class="fc" id="L1273">        Label valueNotNull_ = new Label();</span>
+<span class="fc" id="L1274">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1275">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;token&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L1276">        mw.visitLdcInsn(JSONToken.NULL);</span>
+<span class="fc" id="L1277">        mw.visitJumpInsn(IF_ICMPNE, valueNotNull_);</span>
+
+<span class="fc" id="L1279">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1280">        mw.visitLdcInsn(JSONToken.COMMA);</span>
+<span class="fc" id="L1281">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;nextToken&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L1282">        mw.visitJumpInsn(GOTO, _end_if);</span>
+        // loop_end_
+
+<span class="fc" id="L1285">        mw.visitLabel(valueNotNull_);</span>
+
+<span class="fc" id="L1287">        Label storeCollection_ = new Label(), endSet_ = new Label(), lbacketNormal_ = new Label();</span>
+<span class="fc" id="L1288">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1289">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;token&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L1290">        mw.visitLdcInsn(JSONToken.SET);</span>
+<span class="fc" id="L1291">        mw.visitJumpInsn(IF_ICMPNE, endSet_);</span>
+
+<span class="fc" id="L1293">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1294">        mw.visitLdcInsn(JSONToken.LBRACKET);</span>
+<span class="fc" id="L1295">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;nextToken&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L1297">        _newCollection(mw, fieldClass, i, true);</span>
+
+<span class="fc" id="L1299">        mw.visitJumpInsn(GOTO, storeCollection_);</span>
+
+<span class="fc" id="L1301">        mw.visitLabel(endSet_);</span>
+
+        // if (lexer.token() != JSONToken.LBRACKET) reset
+<span class="fc" id="L1304">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1305">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;token&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L1306">        mw.visitLdcInsn(JSONToken.LBRACKET);</span>
+<span class="fc" id="L1307">        mw.visitJumpInsn(IF_ICMPEQ, lbacketNormal_);</span>
+
+        // if (lexer.token() == JSONToken.LBRACE) reset
+<span class="fc" id="L1310">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1311">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;token&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L1312">        mw.visitLdcInsn(JSONToken.LBRACE);</span>
+<span class="fc" id="L1313">        mw.visitJumpInsn(IF_ICMPNE, reset_);</span>
+
+<span class="fc" id="L1315">        _newCollection(mw, fieldClass, i, false);</span>
+<span class="fc" id="L1316">        mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc" id="L1318">        _getCollectionFieldItemDeser(context, mw, fieldInfo, itemType);</span>
+<span class="fc" id="L1319">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1320">        mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(itemType)));</span>
+<span class="fc" id="L1321">        mw.visitInsn(ICONST_0);</span>
+<span class="fc" id="L1322">        mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Integer&quot;, &quot;valueOf&quot;, &quot;(I)Ljava/lang/Integer;&quot;);</span>
+<span class="fc" id="L1323">        mw.visitMethodInsn(INVOKEINTERFACE, type(ObjectDeserializer.class), &quot;deserialze&quot;,</span>
+                &quot;(L&quot; + DefaultJSONParser + &quot;;Ljava/lang/reflect/Type;Ljava/lang/Object;)Ljava/lang/Object;&quot;);
+<span class="fc" id="L1325">        mw.visitVarInsn(ASTORE, context.var(&quot;list_item_value&quot;));</span>
+
+<span class="fc" id="L1327">        mw.visitVarInsn(ALOAD, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L1328">        mw.visitVarInsn(ALOAD, context.var(&quot;list_item_value&quot;));</span>
+<span class="fc bfc" id="L1329" title="All 2 branches covered.">        if (fieldClass.isInterface()) {</span>
+<span class="fc" id="L1330">            mw.visitMethodInsn(INVOKEINTERFACE, type(fieldClass), &quot;add&quot;, &quot;(Ljava/lang/Object;)Z&quot;);</span>
+        } else {
+<span class="fc" id="L1332">            mw.visitMethodInsn(INVOKEVIRTUAL, type(fieldClass), &quot;add&quot;, &quot;(Ljava/lang/Object;)Z&quot;);</span>
+        }
+<span class="fc" id="L1334">        mw.visitInsn(POP);</span>
+
+<span class="fc" id="L1336">        mw.visitJumpInsn(GOTO, _end_if);</span>
+
+<span class="fc" id="L1338">        mw.visitLabel(lbacketNormal_);</span>
+
+<span class="fc" id="L1340">        _newCollection(mw, fieldClass, i, false);</span>
+
+<span class="fc" id="L1342">        mw.visitLabel(storeCollection_);</span>
+<span class="fc" id="L1343">        mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc" id="L1345">        boolean isPrimitive = ParserConfig.isPrimitive2(fieldInfo.fieldClass);</span>
+<span class="fc" id="L1346">        _getCollectionFieldItemDeser(context, mw, fieldInfo, itemType);</span>
+<span class="pc bpc" id="L1347" title="1 of 2 branches missed.">        if (isPrimitive) {</span>
+<span class="nc" id="L1348">            mw.visitMethodInsn(INVOKEINTERFACE, type(ObjectDeserializer.class), &quot;getFastMatchToken&quot;, &quot;()I&quot;);</span>
+<span class="nc" id="L1349">            mw.visitVarInsn(ISTORE, context.var(&quot;fastMatchToken&quot;));</span>
+
+<span class="nc" id="L1351">            mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="nc" id="L1352">            mw.visitVarInsn(ILOAD, context.var(&quot;fastMatchToken&quot;));</span>
+<span class="nc" id="L1353">            mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;nextToken&quot;, &quot;(I)V&quot;);</span>
+        } else {
+<span class="fc" id="L1355">            mw.visitInsn(POP);</span>
+<span class="fc" id="L1356">            mw.visitLdcInsn(JSONToken.LBRACE);</span>
+<span class="fc" id="L1357">            mw.visitVarInsn(ISTORE, context.var(&quot;fastMatchToken&quot;));</span>
+
+<span class="fc" id="L1359">            _quickNextToken(context, mw, JSONToken.LBRACE);</span>
+        }
+
+        { // setContext
+<span class="fc" id="L1363">            mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1364">            mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;getContext&quot;, &quot;()&quot; + desc(ParseContext.class));</span>
+<span class="fc" id="L1365">            mw.visitVarInsn(ASTORE, context.var(&quot;listContext&quot;));</span>
+
+<span class="fc" id="L1367">            mw.visitVarInsn(ALOAD, 1); // parser</span>
+<span class="fc" id="L1368">            mw.visitVarInsn(ALOAD, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L1369">            mw.visitLdcInsn(fieldInfo.name);</span>
+<span class="fc" id="L1370">            mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;setContext&quot;,</span>
+<span class="fc" id="L1371">                               &quot;(Ljava/lang/Object;Ljava/lang/Object;)&quot; + desc(ParseContext.class));</span>
+<span class="fc" id="L1372">            mw.visitInsn(POP);</span>
+        }
+
+<span class="fc" id="L1375">        Label loop_ = new Label();</span>
+<span class="fc" id="L1376">        Label loop_end_ = new Label();</span>
+
+        // for (;;) {
+<span class="fc" id="L1379">        mw.visitInsn(ICONST_0);</span>
+<span class="fc" id="L1380">        mw.visitVarInsn(ISTORE, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L1381">        mw.visitLabel(loop_);</span>
+
+<span class="fc" id="L1383">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1384">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;token&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L1385">        mw.visitLdcInsn(JSONToken.RBRACKET);</span>
+
+<span class="fc" id="L1387">        mw.visitJumpInsn(IF_ICMPEQ, loop_end_);</span>
+
+        // Object value = itemDeserializer.deserialze(parser, null);
+        // array.add(value);
+
+<span class="fc" id="L1392">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1393">        mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_list_item_deser__&quot;,</span>
+<span class="fc" id="L1394">                          desc(ObjectDeserializer.class));</span>
+<span class="fc" id="L1395">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1396">        mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(itemType)));</span>
+<span class="fc" id="L1397">        mw.visitVarInsn(ILOAD, context.var(&quot;i&quot;));</span>
+<span class="fc" id="L1398">        mw.visitMethodInsn(INVOKESTATIC, &quot;java/lang/Integer&quot;, &quot;valueOf&quot;, &quot;(I)Ljava/lang/Integer;&quot;);</span>
+<span class="fc" id="L1399">        mw.visitMethodInsn(INVOKEINTERFACE, type(ObjectDeserializer.class), &quot;deserialze&quot;,</span>
+                           &quot;(L&quot; + DefaultJSONParser + &quot;;Ljava/lang/reflect/Type;Ljava/lang/Object;)Ljava/lang/Object;&quot;);
+<span class="fc" id="L1401">        mw.visitVarInsn(ASTORE, context.var(&quot;list_item_value&quot;));</span>
+
+<span class="fc" id="L1403">        mw.visitIincInsn(context.var(&quot;i&quot;), 1);</span>
+
+<span class="fc" id="L1405">        mw.visitVarInsn(ALOAD, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L1406">        mw.visitVarInsn(ALOAD, context.var(&quot;list_item_value&quot;));</span>
+<span class="fc bfc" id="L1407" title="All 2 branches covered.">        if (fieldClass.isInterface()) {</span>
+<span class="fc" id="L1408">            mw.visitMethodInsn(INVOKEINTERFACE, type(fieldClass), &quot;add&quot;, &quot;(Ljava/lang/Object;)Z&quot;);</span>
+        } else {
+<span class="fc" id="L1410">            mw.visitMethodInsn(INVOKEVIRTUAL, type(fieldClass), &quot;add&quot;, &quot;(Ljava/lang/Object;)Z&quot;);</span>
+        }
+<span class="fc" id="L1412">        mw.visitInsn(POP);</span>
+
+<span class="fc" id="L1414">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1415">        mw.visitVarInsn(ALOAD, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+<span class="fc" id="L1416">        mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;checkListResolve&quot;, &quot;(Ljava/util/Collection;)V&quot;);</span>
+
+<span class="fc" id="L1418">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1419">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;token&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L1420">        mw.visitLdcInsn(JSONToken.COMMA);</span>
+<span class="fc" id="L1421">        mw.visitJumpInsn(IF_ICMPNE, loop_);</span>
+
+<span class="pc bpc" id="L1423" title="1 of 2 branches missed.">        if (isPrimitive) {</span>
+<span class="nc" id="L1424">            mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="nc" id="L1425">            mw.visitVarInsn(ILOAD, context.var(&quot;fastMatchToken&quot;));</span>
+<span class="nc" id="L1426">            mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;nextToken&quot;, &quot;(I)V&quot;);</span>
+        } else {
+<span class="fc" id="L1428">            _quickNextToken(context, mw, JSONToken.LBRACE);</span>
+        }
+        
+<span class="fc" id="L1431">        mw.visitJumpInsn(GOTO, loop_);</span>
+
+<span class="fc" id="L1433">        mw.visitLabel(loop_end_);</span>
+
+        // mw.visitVarInsn(ASTORE, context.var(&quot;context&quot;));
+        // parser.setContext(context);
+        { // setContext
+<span class="fc" id="L1438">            mw.visitVarInsn(ALOAD, 1); // parser</span>
+<span class="fc" id="L1439">            mw.visitVarInsn(ALOAD, context.var(&quot;listContext&quot;));</span>
+<span class="fc" id="L1440">            mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;setContext&quot;, &quot;(&quot; + desc(ParseContext.class) + &quot;)V&quot;);</span>
+        }
+
+<span class="fc" id="L1443">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1444">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;token&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L1445">        mw.visitLdcInsn(JSONToken.RBRACKET);</span>
+<span class="fc" id="L1446">        mw.visitJumpInsn(IF_ICMPNE, reset_);</span>
+
+<span class="fc" id="L1448">        _quickNextTokenComma(context, mw);</span>
+        // lexer.nextToken(JSONToken.COMMA);
+
+<span class="fc" id="L1451">        mw.visitLabel(_end_if);</span>
+<span class="fc" id="L1452">    }</span>
+
+    private void _quickNextToken(Context context, MethodVisitor mw, int token) {
+<span class="fc" id="L1455">        Label quickElse_ = new Label(), quickEnd_ = new Label();</span>
+<span class="fc" id="L1456">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1457">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;getCurrent&quot;, &quot;()C&quot;);</span>
+<span class="fc bfc" id="L1458" title="All 2 branches covered.">        if (token == JSONToken.LBRACE) {</span>
+<span class="fc" id="L1459">            mw.visitVarInsn(BIPUSH, '{');</span>
+<span class="pc bpc" id="L1460" title="1 of 2 branches missed.">        } else if (token == JSONToken.LBRACKET) {</span>
+<span class="fc" id="L1461">            mw.visitVarInsn(BIPUSH, '[');</span>
+        } else {
+<span class="nc" id="L1463">            throw new IllegalStateException();</span>
+        }
+
+<span class="fc" id="L1466">        mw.visitJumpInsn(IF_ICMPNE, quickElse_);</span>
+
+<span class="fc" id="L1468">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1469">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;next&quot;, &quot;()C&quot;);</span>
+<span class="fc" id="L1470">        mw.visitInsn(POP);</span>
+<span class="fc" id="L1471">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1472">        mw.visitLdcInsn(token);</span>
+<span class="fc" id="L1473">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;setToken&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L1474">        mw.visitJumpInsn(GOTO, quickEnd_);</span>
+
+<span class="fc" id="L1476">        mw.visitLabel(quickElse_);</span>
+<span class="fc" id="L1477">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1478">        mw.visitLdcInsn(token);</span>
+<span class="fc" id="L1479">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;nextToken&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L1481">        mw.visitLabel(quickEnd_);</span>
+<span class="fc" id="L1482">    }</span>
+    
+    private void _quickNextTokenComma(Context context, MethodVisitor mw) {
+<span class="fc" id="L1485">        Label quickElse_ = new Label(), quickElseIf0_ = new Label(), quickElseIf1_ = new Label(), quickElseIf2_ = new Label(), quickEnd_ = new Label();</span>
+<span class="fc" id="L1486">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1487">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;getCurrent&quot;, &quot;()C&quot;);</span>
+<span class="fc" id="L1488">        mw.visitInsn(DUP);</span>
+<span class="fc" id="L1489">        mw.visitVarInsn(ISTORE, context.var(&quot;ch&quot;));</span>
+<span class="fc" id="L1490">        mw.visitVarInsn(BIPUSH, ',');</span>
+<span class="fc" id="L1491">        mw.visitJumpInsn(IF_ICMPNE, quickElseIf0_);</span>
+
+<span class="fc" id="L1493">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1494">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;next&quot;, &quot;()C&quot;);</span>
+<span class="fc" id="L1495">        mw.visitInsn(POP);</span>
+<span class="fc" id="L1496">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1497">        mw.visitLdcInsn(JSONToken.COMMA);</span>
+<span class="fc" id="L1498">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;setToken&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L1499">        mw.visitJumpInsn(GOTO, quickEnd_);</span>
+        
+<span class="fc" id="L1501">        mw.visitLabel(quickElseIf0_);</span>
+<span class="fc" id="L1502">        mw.visitVarInsn(ILOAD, context.var(&quot;ch&quot;));</span>
+<span class="fc" id="L1503">        mw.visitVarInsn(BIPUSH, '}');</span>
+<span class="fc" id="L1504">        mw.visitJumpInsn(IF_ICMPNE, quickElseIf1_);</span>
+
+<span class="fc" id="L1506">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1507">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;next&quot;, &quot;()C&quot;);</span>
+<span class="fc" id="L1508">        mw.visitInsn(POP);</span>
+<span class="fc" id="L1509">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1510">        mw.visitLdcInsn(JSONToken.RBRACE);</span>
+<span class="fc" id="L1511">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;setToken&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L1512">        mw.visitJumpInsn(GOTO, quickEnd_);</span>
+        
+<span class="fc" id="L1514">        mw.visitLabel(quickElseIf1_);</span>
+<span class="fc" id="L1515">        mw.visitVarInsn(ILOAD, context.var(&quot;ch&quot;));</span>
+<span class="fc" id="L1516">        mw.visitVarInsn(BIPUSH, ']');</span>
+<span class="fc" id="L1517">        mw.visitJumpInsn(IF_ICMPNE, quickElseIf2_);</span>
+
+<span class="fc" id="L1519">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1520">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;next&quot;, &quot;()C&quot;);</span>
+<span class="fc" id="L1521">        mw.visitInsn(POP);</span>
+<span class="fc" id="L1522">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1523">        mw.visitLdcInsn(JSONToken.RBRACKET);</span>
+<span class="fc" id="L1524">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;setToken&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L1525">        mw.visitJumpInsn(GOTO, quickEnd_);</span>
+        
+<span class="fc" id="L1527">        mw.visitLabel(quickElseIf2_);</span>
+<span class="fc" id="L1528">        mw.visitVarInsn(ILOAD, context.var(&quot;ch&quot;));</span>
+<span class="fc" id="L1529">        mw.visitVarInsn(BIPUSH, JSONLexer.EOI);</span>
+<span class="fc" id="L1530">        mw.visitJumpInsn(IF_ICMPNE, quickElse_);</span>
+
+<span class="fc" id="L1532">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1533">        mw.visitLdcInsn(JSONToken.EOF);</span>
+<span class="fc" id="L1534">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;setToken&quot;, &quot;(I)V&quot;);</span>
+<span class="fc" id="L1535">        mw.visitJumpInsn(GOTO, quickEnd_);</span>
+
+<span class="fc" id="L1537">        mw.visitLabel(quickElse_);</span>
+<span class="fc" id="L1538">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1539">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;nextToken&quot;, &quot;()V&quot;);</span>
+
+<span class="fc" id="L1541">        mw.visitLabel(quickEnd_);</span>
+<span class="fc" id="L1542">    }</span>
+    
+    private void _getCollectionFieldItemDeser(Context context, MethodVisitor mw, FieldInfo fieldInfo,
+                                              Class&lt;?&gt; itemType) {
+<span class="fc" id="L1546">        Label notNull_ = new Label();</span>
+<span class="fc" id="L1547">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1548">        mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_list_item_deser__&quot;,</span>
+<span class="fc" id="L1549">                          desc(ObjectDeserializer.class));</span>
+<span class="fc" id="L1550">        mw.visitJumpInsn(IFNONNULL, notNull_);</span>
+
+<span class="fc" id="L1552">        mw.visitVarInsn(ALOAD, 0);</span>
+
+<span class="fc" id="L1554">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1555">        mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;getConfig&quot;, &quot;()&quot; + desc(ParserConfig.class));</span>
+<span class="fc" id="L1556">        mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(itemType)));</span>
+<span class="fc" id="L1557">        mw.visitMethodInsn(INVOKEVIRTUAL, type(ParserConfig.class), &quot;getDeserializer&quot;,</span>
+<span class="fc" id="L1558">                           &quot;(Ljava/lang/reflect/Type;)&quot; + desc(ObjectDeserializer.class));</span>
+
+<span class="fc" id="L1560">        mw.visitFieldInsn(PUTFIELD, context.className, fieldInfo.name + &quot;_asm_list_item_deser__&quot;,</span>
+<span class="fc" id="L1561">                          desc(ObjectDeserializer.class));</span>
+
+<span class="fc" id="L1563">        mw.visitLabel(notNull_);</span>
+<span class="fc" id="L1564">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1565">        mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_list_item_deser__&quot;,</span>
+<span class="fc" id="L1566">                          desc(ObjectDeserializer.class));</span>
+<span class="fc" id="L1567">    }</span>
+
+    private void _newCollection(MethodVisitor mw, Class&lt;?&gt; fieldClass, int i, boolean set) {
+<span class="fc bfc" id="L1570" title="All 4 branches covered.">        if (fieldClass.isAssignableFrom(ArrayList.class) &amp;&amp; !set) {</span>
+<span class="fc" id="L1571">            mw.visitTypeInsn(NEW, &quot;java/util/ArrayList&quot;);</span>
+<span class="fc" id="L1572">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1573">            mw.visitMethodInsn(INVOKESPECIAL, &quot;java/util/ArrayList&quot;, &quot;&lt;init&gt;&quot;, &quot;()V&quot;);</span>
+<span class="fc bfc" id="L1574" title="All 4 branches covered.">        } else if (fieldClass.isAssignableFrom(LinkedList.class) &amp;&amp; !set) {</span>
+<span class="fc" id="L1575">            mw.visitTypeInsn(NEW, type(LinkedList.class));</span>
+<span class="fc" id="L1576">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1577">            mw.visitMethodInsn(INVOKESPECIAL, type(LinkedList.class), &quot;&lt;init&gt;&quot;, &quot;()V&quot;);</span>
+<span class="fc bfc" id="L1578" title="All 2 branches covered.">        } else if (fieldClass.isAssignableFrom(HashSet.class)) {</span>
+<span class="fc" id="L1579">            mw.visitTypeInsn(NEW, type(HashSet.class));</span>
+<span class="fc" id="L1580">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1581">            mw.visitMethodInsn(INVOKESPECIAL, type(HashSet.class), &quot;&lt;init&gt;&quot;, &quot;()V&quot;);</span>
+<span class="fc bfc" id="L1582" title="All 2 branches covered.">        } else if (fieldClass.isAssignableFrom(TreeSet.class)) {</span>
+<span class="fc" id="L1583">            mw.visitTypeInsn(NEW, type(TreeSet.class));</span>
+<span class="fc" id="L1584">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1585">            mw.visitMethodInsn(INVOKESPECIAL, type(TreeSet.class), &quot;&lt;init&gt;&quot;, &quot;()V&quot;);</span>
+<span class="fc bfc" id="L1586" title="All 2 branches covered.">        } else if (fieldClass.isAssignableFrom(LinkedHashSet.class)) {</span>
+<span class="fc" id="L1587">            mw.visitTypeInsn(NEW, type(LinkedHashSet.class));</span>
+<span class="fc" id="L1588">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1589">            mw.visitMethodInsn(INVOKESPECIAL, type(LinkedHashSet.class), &quot;&lt;init&gt;&quot;, &quot;()V&quot;);</span>
+<span class="fc bfc" id="L1590" title="All 2 branches covered.">        } else if (set) {</span>
+<span class="fc" id="L1591">            mw.visitTypeInsn(NEW, type(HashSet.class));</span>
+<span class="fc" id="L1592">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1593">            mw.visitMethodInsn(INVOKESPECIAL, type(HashSet.class), &quot;&lt;init&gt;&quot;, &quot;()V&quot;);</span>
+        } else {
+<span class="fc" id="L1595">            mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1596">            mw.visitLdcInsn(i);</span>
+<span class="fc" id="L1597">            mw.visitMethodInsn(INVOKEVIRTUAL, type(JavaBeanDeserializer.class), &quot;getFieldType&quot;,</span>
+                               &quot;(I)Ljava/lang/reflect/Type;&quot;);
+<span class="fc" id="L1599">            mw.visitMethodInsn(INVOKESTATIC, type(TypeUtils.class), &quot;createCollection&quot;,</span>
+                               &quot;(Ljava/lang/reflect/Type;)Ljava/util/Collection;&quot;);
+        }
+<span class="fc" id="L1602">        mw.visitTypeInsn(CHECKCAST, type(fieldClass)); // cast</span>
+<span class="fc" id="L1603">    }</span>
+
+    private void _deserialze_obj(Context context, MethodVisitor mw, Label reset_, FieldInfo fieldInfo,
+                                 Class&lt;?&gt; fieldClass, int i) {
+<span class="fc" id="L1607">        Label matched_ = new Label();</span>
+<span class="fc" id="L1608">        Label _end_if = new Label();</span>
+
+<span class="fc" id="L1610">        mw.visitVarInsn(ALOAD, context.var(&quot;lexer&quot;));</span>
+<span class="fc" id="L1611">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1612">        mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L1613">        mw.visitMethodInsn(INVOKEVIRTUAL, JSONLexerBase, &quot;matchField&quot;, &quot;([C)Z&quot;);</span>
+<span class="fc" id="L1614">        mw.visitJumpInsn(IFNE, matched_);</span>
+<span class="fc" id="L1615">        mw.visitInsn(ACONST_NULL);</span>
+<span class="fc" id="L1616">        mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+
+<span class="fc" id="L1618">        mw.visitJumpInsn(GOTO, _end_if);</span>
+
+<span class="fc" id="L1620">        mw.visitLabel(matched_);</span>
+
+<span class="fc" id="L1622">        _setFlag(mw, context, i);</span>
+
+        // increment matchedCount
+<span class="fc" id="L1625">        mw.visitVarInsn(ILOAD, context.var(&quot;matchedCount&quot;));</span>
+<span class="fc" id="L1626">        mw.visitInsn(ICONST_1);</span>
+<span class="fc" id="L1627">        mw.visitInsn(IADD);</span>
+<span class="fc" id="L1628">        mw.visitVarInsn(ISTORE, context.var(&quot;matchedCount&quot;));</span>
+
+<span class="fc" id="L1630">        _deserObject(context, mw, fieldInfo, fieldClass, i);</span>
+
+<span class="fc" id="L1632">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1633">        mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;getResolveStatus&quot;, &quot;()I&quot;);</span>
+<span class="fc" id="L1634">        mw.visitLdcInsn(com.alibaba.fastjson.parser.DefaultJSONParser.NeedToResolve);</span>
+<span class="fc" id="L1635">        mw.visitJumpInsn(IF_ICMPNE, _end_if);</span>
+
+<span class="fc" id="L1637">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1638">        mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;getLastResolveTask&quot;, &quot;()&quot; + desc(ResolveTask.class));</span>
+<span class="fc" id="L1639">        mw.visitVarInsn(ASTORE, context.var(&quot;resolveTask&quot;));</span>
+
+<span class="fc" id="L1641">        mw.visitVarInsn(ALOAD, context.var(&quot;resolveTask&quot;));</span>
+<span class="fc" id="L1642">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1643">        mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;getContext&quot;, &quot;()&quot; + desc(ParseContext.class));</span>
+<span class="fc" id="L1644">        mw.visitFieldInsn(PUTFIELD, type(ResolveTask.class), &quot;ownerContext&quot;, desc(ParseContext.class));</span>
+
+<span class="fc" id="L1646">        mw.visitVarInsn(ALOAD, context.var(&quot;resolveTask&quot;));</span>
+<span class="fc" id="L1647">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1648">        mw.visitLdcInsn(fieldInfo.name);</span>
+<span class="fc" id="L1649">        mw.visitMethodInsn(INVOKEVIRTUAL, type(JavaBeanDeserializer.class), &quot;getFieldDeserializer&quot;,</span>
+<span class="fc" id="L1650">                           &quot;(Ljava/lang/String;)&quot; + desc(FieldDeserializer.class));</span>
+<span class="fc" id="L1651">        mw.visitFieldInsn(PUTFIELD, type(ResolveTask.class), &quot;fieldDeserializer&quot;, desc(FieldDeserializer.class));</span>
+
+<span class="fc" id="L1653">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1654">        mw.visitLdcInsn(com.alibaba.fastjson.parser.DefaultJSONParser.NONE);</span>
+<span class="fc" id="L1655">        mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;setResolveStatus&quot;, &quot;(I)V&quot;);</span>
+
+<span class="fc" id="L1657">        mw.visitLabel(_end_if);</span>
+
+<span class="fc" id="L1659">    }</span>
+
+    private void _deserObject(Context context, MethodVisitor mw, FieldInfo fieldInfo, Class&lt;?&gt; fieldClass, int i) {
+<span class="fc" id="L1662">        _getFieldDeser(context, mw, fieldInfo);</span>
+
+<span class="fc" id="L1664">        Label instanceOfElse_ = new Label(), instanceOfEnd_ = new Label();</span>
+<span class="fc bfc" id="L1665" title="All 2 branches covered.">        if ((fieldInfo.parserFeatures &amp; Feature.SupportArrayToBean.mask) != 0) {</span>
+<span class="fc" id="L1666">            mw.visitInsn(DUP);</span>
+<span class="fc" id="L1667">            mw.visitTypeInsn(INSTANCEOF, type(JavaBeanDeserializer.class));</span>
+<span class="fc" id="L1668">            mw.visitJumpInsn(IFEQ, instanceOfElse_);</span>
+            
+<span class="fc" id="L1670">            mw.visitTypeInsn(CHECKCAST, type(JavaBeanDeserializer.class)); // cast</span>
+<span class="fc" id="L1671">            mw.visitVarInsn(ALOAD, 1);</span>
+<span class="pc bpc" id="L1672" title="1 of 2 branches missed.">            if (fieldInfo.fieldType instanceof Class) {</span>
+<span class="fc" id="L1673">                mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(fieldInfo.fieldClass)));</span>
+            } else {
+<span class="nc" id="L1675">                mw.visitVarInsn(ALOAD, 0);</span>
+<span class="nc" id="L1676">                mw.visitLdcInsn(i);</span>
+<span class="nc" id="L1677">                mw.visitMethodInsn(INVOKEVIRTUAL, type(JavaBeanDeserializer.class), &quot;getFieldType&quot;,</span>
+                                   &quot;(I)Ljava/lang/reflect/Type;&quot;);
+            }
+<span class="fc" id="L1680">            mw.visitLdcInsn(fieldInfo.name);</span>
+<span class="fc" id="L1681">            mw.visitLdcInsn(fieldInfo.parserFeatures);</span>
+<span class="fc" id="L1682">            mw.visitMethodInsn(INVOKEVIRTUAL, type(JavaBeanDeserializer.class), &quot;deserialze&quot;,</span>
+                               &quot;(L&quot; + DefaultJSONParser + &quot;;Ljava/lang/reflect/Type;Ljava/lang/Object;I)Ljava/lang/Object;&quot;);
+<span class="fc" id="L1684">            mw.visitTypeInsn(CHECKCAST, type(fieldClass)); // cast</span>
+<span class="fc" id="L1685">            mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+            
+<span class="fc" id="L1687">            mw.visitJumpInsn(GOTO, instanceOfEnd_);</span>
+            
+<span class="fc" id="L1689">            mw.visitLabel(instanceOfElse_);</span>
+        }
+
+<span class="fc" id="L1692">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc bfc" id="L1693" title="All 2 branches covered.">        if (fieldInfo.fieldType instanceof Class) {</span>
+<span class="fc" id="L1694">            mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(fieldInfo.fieldClass)));</span>
+        } else {
+<span class="fc" id="L1696">            mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1697">            mw.visitLdcInsn(i);</span>
+<span class="fc" id="L1698">            mw.visitMethodInsn(INVOKEVIRTUAL, type(JavaBeanDeserializer.class), &quot;getFieldType&quot;,</span>
+                               &quot;(I)Ljava/lang/reflect/Type;&quot;);
+        }
+<span class="fc" id="L1701">        mw.visitLdcInsn(fieldInfo.name);</span>
+<span class="fc" id="L1702">        mw.visitMethodInsn(INVOKEINTERFACE, type(ObjectDeserializer.class), &quot;deserialze&quot;,</span>
+                           &quot;(L&quot; + DefaultJSONParser + &quot;;Ljava/lang/reflect/Type;Ljava/lang/Object;)Ljava/lang/Object;&quot;);
+<span class="fc" id="L1704">        mw.visitTypeInsn(CHECKCAST, type(fieldClass)); // cast</span>
+<span class="fc" id="L1705">        mw.visitVarInsn(ASTORE, context.var(fieldInfo.name + &quot;_asm&quot;));</span>
+        
+<span class="fc" id="L1707">        mw.visitLabel(instanceOfEnd_);</span>
+<span class="fc" id="L1708">    }</span>
+
+    private void _getFieldDeser(Context context, MethodVisitor mw, FieldInfo fieldInfo) {
+<span class="fc" id="L1711">        Label notNull_ = new Label();</span>
+<span class="fc" id="L1712">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1713">        mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_deser__&quot;, desc(ObjectDeserializer.class));</span>
+<span class="fc" id="L1714">        mw.visitJumpInsn(IFNONNULL, notNull_);</span>
+
+<span class="fc" id="L1716">        mw.visitVarInsn(ALOAD, 0);</span>
+
+<span class="fc" id="L1718">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1719">        mw.visitMethodInsn(INVOKEVIRTUAL, DefaultJSONParser, &quot;getConfig&quot;, &quot;()&quot; + desc(ParserConfig.class));</span>
+<span class="fc" id="L1720">        mw.visitLdcInsn(com.alibaba.fastjson.asm.Type.getType(desc(fieldInfo.fieldClass)));</span>
+<span class="fc" id="L1721">        mw.visitMethodInsn(INVOKEVIRTUAL, type(ParserConfig.class), &quot;getDeserializer&quot;,</span>
+<span class="fc" id="L1722">                           &quot;(Ljava/lang/reflect/Type;)&quot; + desc(ObjectDeserializer.class));</span>
+
+<span class="fc" id="L1724">        mw.visitFieldInsn(PUTFIELD, context.className, fieldInfo.name + &quot;_asm_deser__&quot;, desc(ObjectDeserializer.class));</span>
+
+<span class="fc" id="L1726">        mw.visitLabel(notNull_);</span>
+
+<span class="fc" id="L1728">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1729">        mw.visitFieldInsn(GETFIELD, context.className, fieldInfo.name + &quot;_asm_deser__&quot;, desc(ObjectDeserializer.class));</span>
+<span class="fc" id="L1730">    }</span>
+
+    static class Context {
+
+        static final int                   parser       = 1;
+        static final int                   type         = 2;
+        static final int                   fieldName    = 3;
+
+<span class="fc" id="L1738">        private int                        variantIndex = -1;</span>
+<span class="fc" id="L1739">        private final Map&lt;String, Integer&gt; variants     = new HashMap&lt;String, Integer&gt;();</span>
+
+        private final Class&lt;?&gt;             clazz;
+        private final JavaBeanInfo         beanInfo;
+        private final String               className;
+        private FieldInfo[]                fieldInfoList;
+
+<span class="fc" id="L1746">        public Context(String className, ParserConfig config, JavaBeanInfo beanInfo, int initVariantIndex){</span>
+<span class="fc" id="L1747">            this.className = className;</span>
+<span class="fc" id="L1748">            this.clazz = beanInfo.clazz;</span>
+<span class="fc" id="L1749">            this.variantIndex = initVariantIndex;</span>
+<span class="fc" id="L1750">            this.beanInfo = beanInfo;</span>
+<span class="fc" id="L1751">            fieldInfoList = beanInfo.fields;</span>
+<span class="fc" id="L1752">        }</span>
+
+        public Class&lt;?&gt; getInstClass() {
+<span class="fc" id="L1755">            Class&lt;?&gt; instClass = beanInfo.builderClass;</span>
+<span class="fc bfc" id="L1756" title="All 2 branches covered.">            if (instClass == null) {</span>
+<span class="fc" id="L1757">                instClass = clazz;</span>
+            }
+
+<span class="fc" id="L1760">            return instClass;</span>
+        }
+
+        public int var(String name, int increment) {
+<span class="fc" id="L1764">            Integer i = variants.get(name);</span>
+<span class="fc bfc" id="L1765" title="All 2 branches covered.">            if (i == null) {</span>
+<span class="fc" id="L1766">                variants.put(name, variantIndex);</span>
+<span class="fc" id="L1767">                variantIndex += increment;</span>
+            }
+<span class="fc" id="L1769">            i = variants.get(name);</span>
+<span class="fc" id="L1770">            return i.intValue();</span>
+        }
+
+        public int var(String name) {
+<span class="fc" id="L1774">            Integer i = variants.get(name);</span>
+<span class="fc bfc" id="L1775" title="All 2 branches covered.">            if (i == null) {</span>
+<span class="fc" id="L1776">                variants.put(name, variantIndex++);</span>
+            }
+<span class="fc" id="L1778">            i = variants.get(name);</span>
+<span class="fc" id="L1779">            return i.intValue();</span>
+        }
+    }
+
+    private void _init(ClassWriter cw, Context context) {
+<span class="fc bfc" id="L1784" title="All 2 branches covered.">        for (int i = 0, size = context.fieldInfoList.length; i &lt; size; ++i) {</span>
+<span class="fc" id="L1785">            FieldInfo fieldInfo = context.fieldInfoList[i];</span>
+
+<span class="fc" id="L1787">            FieldWriter fw = new FieldWriter(cw, ACC_PUBLIC, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+<span class="fc" id="L1788">            fw.visitEnd();</span>
+        }
+
+<span class="fc bfc" id="L1791" title="All 2 branches covered.">        for (int i = 0, size = context.fieldInfoList.length; i &lt; size; ++i) {</span>
+<span class="fc" id="L1792">            FieldInfo fieldInfo = context.fieldInfoList[i];</span>
+<span class="fc" id="L1793">            Class&lt;?&gt; fieldClass = fieldInfo.fieldClass;</span>
+
+<span class="fc bfc" id="L1795" title="All 2 branches covered.">            if (fieldClass.isPrimitive()) {</span>
+<span class="fc" id="L1796">                continue;</span>
+            }
+
+<span class="fc bfc" id="L1799" title="All 2 branches covered.">            if (Collection.class.isAssignableFrom(fieldClass)) {</span>
+<span class="fc" id="L1800">                FieldWriter fw = new FieldWriter(cw, ACC_PUBLIC, fieldInfo.name + &quot;_asm_list_item_deser__&quot;,</span>
+<span class="fc" id="L1801">                                                 desc(ObjectDeserializer.class));</span>
+<span class="fc" id="L1802">                fw.visitEnd();</span>
+<span class="fc" id="L1803">            } else {</span>
+<span class="fc" id="L1804">                FieldWriter fw = new FieldWriter(cw, ACC_PUBLIC, fieldInfo.name + &quot;_asm_deser__&quot;,</span>
+<span class="fc" id="L1805">                                                 desc(ObjectDeserializer.class));</span>
+<span class="fc" id="L1806">                fw.visitEnd();</span>
+            }
+        }
+
+<span class="fc" id="L1810">        MethodVisitor mw = new MethodWriter(cw, ACC_PUBLIC, &quot;&lt;init&gt;&quot;,</span>
+<span class="fc" id="L1811">                                            &quot;(&quot; + desc(ParserConfig.class) + desc(JavaBeanInfo.class) + &quot;)V&quot;, null, null);</span>
+<span class="fc" id="L1812">        mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1813">        mw.visitVarInsn(ALOAD, 1);</span>
+<span class="fc" id="L1814">        mw.visitVarInsn(ALOAD, 2);</span>
+<span class="fc" id="L1815">        mw.visitMethodInsn(INVOKESPECIAL, type(JavaBeanDeserializer.class), &quot;&lt;init&gt;&quot;,</span>
+<span class="fc" id="L1816">                           &quot;(&quot; + desc(ParserConfig.class) + desc(JavaBeanInfo.class) + &quot;)V&quot;);</span>
+
+        // init fieldNamePrefix
+<span class="fc bfc" id="L1819" title="All 2 branches covered.">        for (int i = 0, size = context.fieldInfoList.length; i &lt; size; ++i) {</span>
+<span class="fc" id="L1820">            FieldInfo fieldInfo = context.fieldInfoList[i];</span>
+
+<span class="fc" id="L1822">            mw.visitVarInsn(ALOAD, 0);</span>
+<span class="fc" id="L1823">            mw.visitLdcInsn(&quot;\&quot;&quot; + fieldInfo.name + &quot;\&quot;:&quot;); // public char[] toCharArray()</span>
+<span class="fc" id="L1824">            mw.visitMethodInsn(INVOKEVIRTUAL, &quot;java/lang/String&quot;, &quot;toCharArray&quot;, &quot;()[C&quot;);</span>
+<span class="fc" id="L1825">            mw.visitFieldInsn(PUTFIELD, context.className, fieldInfo.name + &quot;_asm_prefix__&quot;, &quot;[C&quot;);</span>
+
+        }
+
+<span class="fc" id="L1829">        mw.visitInsn(RETURN);</span>
+<span class="fc" id="L1830">        mw.visitMaxs(4, 4);</span>
+<span class="fc" id="L1831">        mw.visitEnd();</span>
+<span class="fc" id="L1832">    }</span>
+
+    private void _createInstance(ClassWriter cw, Context context) {
+<span class="fc" id="L1835">        Constructor&lt;?&gt; defaultConstructor = context.beanInfo.defaultConstructor;</span>
+<span class="fc bfc" id="L1836" title="All 2 branches covered.">        if (!Modifier.isPublic(defaultConstructor.getModifiers())) {</span>
+<span class="fc" id="L1837">            return;</span>
+        }
+        
+<span class="fc" id="L1840">        MethodVisitor mw = new MethodWriter(cw, ACC_PUBLIC, &quot;createInstance&quot;,</span>
+                                            &quot;(L&quot; + DefaultJSONParser + &quot;;Ljava/lang/reflect/Type;)Ljava/lang/Object;&quot;,
+                                            null, null);
+
+<span class="fc" id="L1844">        mw.visitTypeInsn(NEW, type(context.getInstClass()));</span>
+<span class="fc" id="L1845">        mw.visitInsn(DUP);</span>
+<span class="fc" id="L1846">        mw.visitMethodInsn(INVOKESPECIAL, type(context.getInstClass()), &quot;&lt;init&gt;&quot;, &quot;()V&quot;);</span>
+
+<span class="fc" id="L1848">        mw.visitInsn(ARETURN);</span>
+<span class="fc" id="L1849">        mw.visitMaxs(3, 3);</span>
+<span class="fc" id="L1850">        mw.visitEnd();</span>
+<span class="fc" id="L1851">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

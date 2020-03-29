@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FastJsonJsonView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.support.spring</a> &gt; <span class="el_source">FastJsonJsonView.java</span></div><h1>FastJsonJsonView.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.support.spring;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONPObject;
+import com.alibaba.fastjson.serializer.SerializeFilter;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.fastjson.support.config.FastJsonConfig;
+import com.alibaba.fastjson.util.IOUtils;
+import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.view.AbstractView;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.Charset;
+import java.util.*;
+import java.util.regex.Pattern;
+
+/**
+ * Fastjson for Spring MVC View.
+ *
+ * @author libinsong1204@gmail.com
+ * @author VictorZeng
+ * @see AbstractView
+ * @since 1.2.9
+ */
+
+public class FastJsonJsonView extends AbstractView {
+
+
+    /**
+     * default content type
+     */
+    public static final String DEFAULT_CONTENT_TYPE = &quot;application/json;charset=UTF-8&quot;;
+
+    /**
+     * Default content type for JSONP: &quot;application/javascript&quot;.
+     */
+    public static final String DEFAULT_JSONP_CONTENT_TYPE = &quot;application/javascript&quot;;
+
+    /**
+     * Pattern for validating jsonp callback parameter values.
+     */
+<span class="fc" id="L47">    private static final Pattern CALLBACK_PARAM_PATTERN = Pattern.compile(&quot;[0-9A-Za-z_\\.]*&quot;);</span>
+
+<span class="fc" id="L49">    @Deprecated</span>
+<span class="fc" id="L50">    protected Charset charset = Charset.forName(&quot;UTF-8&quot;);</span>
+
+<span class="fc" id="L52">    @Deprecated</span>
+    protected SerializerFeature[] features = new SerializerFeature[0];
+
+<span class="fc" id="L55">    @Deprecated</span>
+    protected SerializeFilter[] filters = new SerializeFilter[0];
+
+    @Deprecated
+    protected String dateFormat;
+
+    /**
+     * renderedAttributes
+     */
+    private Set&lt;String&gt; renderedAttributes;
+
+    /**
+     * disableCaching
+     */
+<span class="fc" id="L69">    private boolean disableCaching = true;</span>
+
+    /**
+     * updateContentLength
+     */
+<span class="fc" id="L74">    private boolean updateContentLength = true;</span>
+
+    /**
+     * extractValueFromSingleKeyModel
+     */
+<span class="fc" id="L79">    private boolean extractValueFromSingleKeyModel = false;</span>
+
+    /**
+     * with fastJson config
+     */
+<span class="fc" id="L84">    private FastJsonConfig fastJsonConfig = new FastJsonConfig();</span>
+
+    /**
+     * jsonp parameter name
+     */
+<span class="fc" id="L89">    private String[] jsonpParameterNames = {&quot;jsonp&quot;, &quot;callback&quot;};</span>
+
+    /**
+     * Set default param.
+     */
+<span class="fc" id="L94">    public FastJsonJsonView() {</span>
+
+<span class="fc" id="L96">        setContentType(DEFAULT_CONTENT_TYPE);</span>
+<span class="fc" id="L97">        setExposePathVariables(false);</span>
+<span class="fc" id="L98">    }</span>
+
+    /**
+     * @return the fastJsonConfig.
+     * @since 1.2.11
+     */
+    public FastJsonConfig getFastJsonConfig() {
+<span class="fc" id="L105">        return fastJsonConfig;</span>
+    }
+
+    /**
+     * @param fastJsonConfig the fastJsonConfig to set.
+     * @since 1.2.11
+     */
+    public void setFastJsonConfig(FastJsonConfig fastJsonConfig) {
+<span class="fc" id="L113">        this.fastJsonConfig = fastJsonConfig;</span>
+<span class="fc" id="L114">    }</span>
+
+    @Deprecated
+    public void setSerializerFeature(SerializerFeature... features) {
+<span class="fc" id="L118">        this.fastJsonConfig.setSerializerFeatures(features);</span>
+<span class="fc" id="L119">    }</span>
+
+    @Deprecated
+    public Charset getCharset() {
+<span class="fc" id="L123">        return this.fastJsonConfig.getCharset();</span>
+    }
+
+    @Deprecated
+    public void setCharset(Charset charset) {
+<span class="fc" id="L128">        this.fastJsonConfig.setCharset(charset);</span>
+<span class="fc" id="L129">    }</span>
+
+    @Deprecated
+    public String getDateFormat() {
+<span class="fc" id="L133">        return this.fastJsonConfig.getDateFormat();</span>
+    }
+
+    @Deprecated
+    public void setDateFormat(String dateFormat) {
+<span class="fc" id="L138">        this.fastJsonConfig.setDateFormat(dateFormat);</span>
+<span class="fc" id="L139">    }</span>
+
+    @Deprecated
+    public SerializerFeature[] getFeatures() {
+<span class="fc" id="L143">        return this.fastJsonConfig.getSerializerFeatures();</span>
+    }
+
+    @Deprecated
+    public void setFeatures(SerializerFeature... features) {
+<span class="fc" id="L148">        this.fastJsonConfig.setSerializerFeatures(features);</span>
+<span class="fc" id="L149">    }</span>
+
+    @Deprecated
+    public SerializeFilter[] getFilters() {
+<span class="fc" id="L153">        return this.fastJsonConfig.getSerializeFilters();</span>
+    }
+
+    @Deprecated
+    public void setFilters(SerializeFilter... filters) {
+<span class="fc" id="L158">        this.fastJsonConfig.setSerializeFilters(filters);</span>
+<span class="fc" id="L159">    }</span>
+
+    /**
+     * Set renderedAttributes.
+     *
+     * @param renderedAttributes renderedAttributes
+     */
+    public void setRenderedAttributes(Set&lt;String&gt; renderedAttributes) {
+<span class="fc" id="L167">        this.renderedAttributes = renderedAttributes;</span>
+<span class="fc" id="L168">    }</span>
+
+    /**
+     * Check extractValueFromSingleKeyModel.
+     *
+     * @return extractValueFromSingleKeyModel
+     */
+    public boolean isExtractValueFromSingleKeyModel() {
+<span class="fc" id="L176">        return extractValueFromSingleKeyModel;</span>
+    }
+
+    /**
+     * Set extractValueFromSingleKeyModel.
+     *
+     * @param extractValueFromSingleKeyModel
+     */
+    public void setExtractValueFromSingleKeyModel( 
+            boolean extractValueFromSingleKeyModel) {
+<span class="fc" id="L186">        this.extractValueFromSingleKeyModel = extractValueFromSingleKeyModel;</span>
+<span class="fc" id="L187">    }</span>
+
+    /**
+     * Set JSONP request parameter names. Each time a request has one of those
+     * parameters, the resulting JSON will be wrapped into a function named as
+     * specified by the JSONP request parameter value.
+     * &lt;p&gt;The parameter names configured by default are &quot;jsonp&quot; and &quot;callback&quot;.
+     * @since 4.1
+     * @see &lt;a href=&quot;http://en.wikipedia.org/wiki/JSONP&quot;&gt;JSONP Wikipedia article&lt;/a&gt;
+     */
+    public void setJsonpParameterNames(Set&lt;String&gt; jsonpParameterNames) {
+<span class="nc" id="L198">        Assert.notEmpty(jsonpParameterNames, &quot;jsonpParameterName cannot be empty&quot;);</span>
+<span class="nc" id="L199">        this.jsonpParameterNames = jsonpParameterNames.toArray(new String[jsonpParameterNames.size()]);</span>
+<span class="nc" id="L200">    }</span>
+
+
+    private String getJsonpParameterValue(HttpServletRequest request) {
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">        if (this.jsonpParameterNames != null) {</span>
+<span class="fc bfc" id="L205" title="All 2 branches covered.">            for (String name : this.jsonpParameterNames) {</span>
+<span class="fc" id="L206">                String value = request.getParameter(name);</span>
+
+<span class="fc bfc" id="L208" title="All 2 branches covered.">                if (IOUtils.isValidJsonpQueryParam(value)) {</span>
+<span class="fc" id="L209">                    return value;</span>
+                }
+
+<span class="pc bpc" id="L212" title="1 of 2 branches missed.">                if (logger.isDebugEnabled()) {</span>
+<span class="nc" id="L213">                    logger.debug(&quot;Ignoring invalid jsonp parameter value: &quot; + value);</span>
+                }
+            }
+        }
+<span class="fc" id="L217">        return null;</span>
+    }
+
+
+
+    @Override
+    protected void renderMergedOutputModel(Map&lt;String, Object&gt; model, //
+                                           HttpServletRequest request, //
+                                           HttpServletResponse response) throws Exception {
+<span class="fc" id="L226">        Object value = filterModel(model);</span>
+<span class="fc" id="L227">        String jsonpParameterValue = getJsonpParameterValue(request);</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">        if(jsonpParameterValue != null) {</span>
+<span class="fc" id="L229">            JSONPObject jsonpObject = new JSONPObject(jsonpParameterValue);</span>
+<span class="fc" id="L230">            jsonpObject.addParameter(value);</span>
+<span class="fc" id="L231">            value = jsonpObject;</span>
+        }
+
+<span class="fc" id="L234">        ByteArrayOutputStream outnew = new ByteArrayOutputStream();</span>
+
+<span class="fc" id="L236">        int len = JSON.writeJSONString(outnew, //</span>
+<span class="fc" id="L237">                fastJsonConfig.getCharset(), //</span>
+                value, //
+<span class="fc" id="L239">                fastJsonConfig.getSerializeConfig(), //</span>
+<span class="fc" id="L240">                fastJsonConfig.getSerializeFilters(), //</span>
+<span class="fc" id="L241">                fastJsonConfig.getDateFormat(), //</span>
+                JSON.DEFAULT_GENERATE_FEATURE, //
+<span class="fc" id="L243">                fastJsonConfig.getSerializerFeatures());</span>
+
+<span class="fc bfc" id="L245" title="All 2 branches covered.">        if (this.updateContentLength) {</span>
+            // Write content length (determined via byte array).
+<span class="fc" id="L247">            response.setContentLength(len);</span>
+        }
+
+        // Flush byte array to servlet output stream.
+<span class="fc" id="L251">        ServletOutputStream out = response.getOutputStream();</span>
+<span class="fc" id="L252">        outnew.writeTo(out);</span>
+<span class="fc" id="L253">        outnew.close();</span>
+<span class="fc" id="L254">        out.flush();</span>
+<span class="fc" id="L255">    }</span>
+
+    @Override
+    protected void prepareResponse(HttpServletRequest request, //
+                                   HttpServletResponse response) {
+
+<span class="fc" id="L261">        setResponseContentType(request, response);</span>
+<span class="fc" id="L262">        response.setCharacterEncoding(fastJsonConfig.getCharset().name());</span>
+<span class="fc bfc" id="L263" title="All 2 branches covered.">        if (this.disableCaching) {</span>
+<span class="fc" id="L264">            response.addHeader(&quot;Pragma&quot;, &quot;no-cache&quot;);</span>
+<span class="fc" id="L265">            response.addHeader(&quot;Cache-Control&quot;, &quot;no-cache, no-store, max-age=0&quot;);</span>
+<span class="fc" id="L266">            response.addDateHeader(&quot;Expires&quot;, 1L);</span>
+        }
+<span class="fc" id="L268">    }</span>
+
+    /**
+     * Disables caching of the generated JSON.
+     * &lt;p&gt;
+     * Default is {@code true}, which will prevent the client from caching the
+     * generated JSON.
+     */
+    public void setDisableCaching(boolean disableCaching) {
+<span class="fc" id="L277">        this.disableCaching = disableCaching;</span>
+<span class="fc" id="L278">    }</span>
+
+    /**
+     * Whether to update the 'Content-Length' header of the response. When set
+     * to {@code true}, the response is buffered in order to determine the
+     * content length and set the 'Content-Length' header of the response.
+     * &lt;p&gt;
+     * The default setting is {@code false}.
+     */
+    public void setUpdateContentLength(boolean updateContentLength) {
+<span class="fc" id="L288">        this.updateContentLength = updateContentLength;</span>
+<span class="fc" id="L289">    }</span>
+
+    /**
+     * Filters out undesired attributes from the given model. The return value
+     * can be either another {@link Map}, or a single value object.
+     * &lt;p&gt;
+     * Default implementation removes {@link BindingResult} instances and
+     * entries not included in the {@link #setRenderedAttributes(Set)
+     * renderedAttributes} property.
+     *
+     * @param model the model, as passed on to {@link #renderMergedOutputModel}
+     * @return the object to be rendered
+     */
+    protected Object filterModel(Map&lt;String, Object&gt; model) {
+<span class="fc" id="L303">        Map&lt;String, Object&gt; result = new HashMap&lt;String, Object&gt;(model.size());</span>
+<span class="fc bfc" id="L304" title="All 2 branches covered.">        Set&lt;String&gt; renderedAttributes = !CollectionUtils.isEmpty(this.renderedAttributes) ? //</span>
+                this.renderedAttributes //
+<span class="fc" id="L306">                : model.keySet();</span>
+
+<span class="fc bfc" id="L308" title="All 2 branches covered.">        for (Map.Entry&lt;String, Object&gt; entry : model.entrySet()) {</span>
+<span class="fc bfc" id="L309" title="All 2 branches covered.">            if (!(entry.getValue() instanceof BindingResult)</span>
+<span class="pc bpc" id="L310" title="1 of 2 branches missed.">                    &amp;&amp; renderedAttributes.contains(entry.getKey())) {</span>
+<span class="fc" id="L311">                result.put(entry.getKey(), entry.getValue());</span>
+            }
+<span class="fc" id="L313">        }</span>
+<span class="fc bfc" id="L314" title="All 2 branches covered.">        if (extractValueFromSingleKeyModel) {</span>
+<span class="pc bpc" id="L315" title="1 of 2 branches missed.">            if (result.size() == 1) {</span>
+<span class="pc bpc" id="L316" title="1 of 2 branches missed.">                for (Map.Entry&lt;String, Object&gt; entry : result.entrySet()) {</span>
+<span class="fc" id="L317">                    return entry.getValue();</span>
+                }
+            }
+        }
+<span class="fc" id="L321">        return result;</span>
+    }
+
+    @Override
+    protected void setResponseContentType(HttpServletRequest request, HttpServletResponse response) {
+<span class="fc bfc" id="L326" title="All 2 branches covered.">        if (getJsonpParameterValue(request) != null) {</span>
+<span class="fc" id="L327">            response.setContentType(DEFAULT_JSONP_CONTENT_TYPE);</span>
+        }
+        else {
+<span class="fc" id="L330">            super.setResponseContentType(request, response);</span>
+        }
+<span class="fc" id="L332">    }</span>
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

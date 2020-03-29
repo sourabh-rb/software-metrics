@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ThrowableDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">ThrowableDeserializer.java</span></div><h1>ThrowableDeserializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.Feature;
+import com.alibaba.fastjson.parser.JSONLexer;
+import com.alibaba.fastjson.parser.JSONToken;
+import com.alibaba.fastjson.parser.ParserConfig;
+
+public class ThrowableDeserializer extends JavaBeanDeserializer {
+
+    public ThrowableDeserializer(ParserConfig mapping, Class&lt;?&gt; clazz){
+<span class="fc" id="L19">        super(mapping, clazz, clazz);</span>
+<span class="fc" id="L20">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type type, Object fieldName) {
+<span class="fc" id="L24">        JSONLexer lexer = parser.lexer;</span>
+        
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        if (lexer.token() == JSONToken.NULL) {</span>
+<span class="fc" id="L27">            lexer.nextToken();</span>
+<span class="fc" id="L28">            return null;</span>
+        }
+
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        if (parser.getResolveStatus() == DefaultJSONParser.TypeNameRedirect) {</span>
+<span class="fc" id="L32">            parser.setResolveStatus(DefaultJSONParser.NONE);</span>
+        } else {
+<span class="fc bfc" id="L34" title="All 2 branches covered.">            if (lexer.token() != JSONToken.LBRACE) {</span>
+<span class="fc" id="L35">                throw new JSONException(&quot;syntax error&quot;);</span>
+            }
+        }
+
+<span class="fc" id="L39">        Throwable cause = null;</span>
+<span class="fc" id="L40">        Class&lt;?&gt; exClass = null;</span>
+        
+<span class="pc bpc" id="L42" title="1 of 4 branches missed.">        if (type != null &amp;&amp; type instanceof Class) {</span>
+<span class="fc" id="L43">        	Class&lt;?&gt; clazz = (Class&lt;?&gt;) type;</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        	if (Throwable.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L45">        		exClass = clazz;</span>
+        	}
+        }
+        
+<span class="fc" id="L49">        String message = null;</span>
+<span class="fc" id="L50">        StackTraceElement[] stackTrace = null;</span>
+<span class="fc" id="L51">        Map&lt;String, Object&gt; otherValues = null;</span>
+
+
+        for (;;) {
+            // lexer.scanSymbol
+<span class="fc" id="L56">            String key = lexer.scanSymbol(parser.getSymbolTable());</span>
+
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            if (key == null) {</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">                if (lexer.token() == JSONToken.RBRACE) {</span>
+<span class="fc" id="L60">                    lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc" id="L61">                    break;</span>
+                }
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">                if (lexer.token() == JSONToken.COMMA) {</span>
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">                    if (lexer.isEnabled(Feature.AllowArbitraryCommas)) {</span>
+<span class="fc" id="L65">                        continue;</span>
+                    }
+                }
+            }
+
+<span class="fc" id="L70">            lexer.nextTokenWithColon(JSONToken.LITERAL_STRING);</span>
+
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            if (JSON.DEFAULT_TYPE_KEY.equals(key)) {</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">                if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L74">                    String exClassName = lexer.stringVal();</span>
+<span class="fc" id="L75">                    exClass = parser.getConfig().checkAutoType(exClassName, Throwable.class, lexer.getFeatures());</span>
+<span class="fc" id="L76">                } else {</span>
+<span class="fc" id="L77">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+<span class="fc" id="L79">                lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">            } else if (&quot;message&quot;.equals(key)) {</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">                if (lexer.token() == JSONToken.NULL) {</span>
+<span class="fc" id="L82">                    message = null;</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                } else if (lexer.token() == JSONToken.LITERAL_STRING) {</span>
+<span class="fc" id="L84">                    message = lexer.stringVal();</span>
+                } else {
+<span class="fc" id="L86">                    throw new JSONException(&quot;syntax error&quot;);</span>
+                }
+<span class="fc" id="L88">                lexer.nextToken();</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">            } else if (&quot;cause&quot;.equals(key)) {</span>
+<span class="fc" id="L90">                cause = deserialze(parser, null, &quot;cause&quot;);</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            } else if (&quot;stackTrace&quot;.equals(key)) {</span>
+<span class="fc" id="L92">                stackTrace = parser.parseObject(StackTraceElement[].class);</span>
+            } else {
+<span class="fc bfc" id="L94" title="All 2 branches covered.">                if (otherValues == null) {</span>
+<span class="fc" id="L95">                    otherValues = new HashMap&lt;String, Object&gt;();</span>
+                }
+<span class="fc" id="L97">                otherValues.put(key, parser.parse());</span>
+            }
+
+<span class="fc bfc" id="L100" title="All 2 branches covered.">            if (lexer.token() == JSONToken.RBRACE) {</span>
+<span class="fc" id="L101">                lexer.nextToken(JSONToken.COMMA);</span>
+<span class="fc" id="L102">                break;</span>
+            }
+<span class="fc" id="L104">        }</span>
+
+<span class="fc" id="L106">        Throwable ex = null;</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (exClass == null) {</span>
+<span class="fc" id="L108">            ex = new Exception(message, cause);</span>
+        } else {
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">            if (!Throwable.class.isAssignableFrom(exClass)) {</span>
+<span class="nc" id="L111">                throw new JSONException(&quot;type not match, not Throwable. &quot; + exClass.getName());</span>
+            }
+
+            try {
+<span class="fc" id="L115">                ex = createException(message, cause, exClass);</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">                if (ex == null) {</span>
+<span class="fc" id="L117">                    ex = new Exception(message, cause);</span>
+                }
+<span class="fc" id="L119">            } catch (Exception e) {</span>
+<span class="fc" id="L120">                throw new JSONException(&quot;create instance error&quot;, e);</span>
+<span class="fc" id="L121">            }</span>
+        }
+
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if (stackTrace != null) {</span>
+<span class="fc" id="L125">            ex.setStackTrace(stackTrace);</span>
+        }
+
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        if (otherValues != null) {</span>
+<span class="fc" id="L129">            JavaBeanDeserializer exBeanDeser = null;</span>
+
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">            if (exClass != null) {</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">                if (exClass == clazz) {</span>
+<span class="fc" id="L133">                    exBeanDeser = this;</span>
+                } else {
+<span class="fc" id="L135">                    ObjectDeserializer exDeser = parser.getConfig().getDeserializer(exClass);</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">                    if (exDeser instanceof JavaBeanDeserializer) {</span>
+<span class="fc" id="L137">                        exBeanDeser = (JavaBeanDeserializer) exDeser;</span>
+                    }
+                }
+            }
+
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">            if (exBeanDeser != null) {</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">                for (Map.Entry&lt;String, Object&gt; entry : otherValues.entrySet()) {</span>
+<span class="fc" id="L144">                    String key = entry.getKey();</span>
+<span class="fc" id="L145">                    Object value = entry.getValue();</span>
+
+<span class="fc" id="L147">                    FieldDeserializer fieldDeserializer = exBeanDeser.getFieldDeserializer(key);</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">                    if (fieldDeserializer != null) {</span>
+<span class="fc" id="L149">                        fieldDeserializer.setValue(ex, value);</span>
+                    }
+<span class="fc" id="L151">                }</span>
+            }
+        }
+
+<span class="fc" id="L155">        return (T) ex;</span>
+    }
+
+    private Throwable createException(String message, Throwable cause, Class&lt;?&gt; exClass) throws Exception {
+<span class="fc" id="L159">        Constructor&lt;?&gt; defaultConstructor = null;</span>
+<span class="fc" id="L160">        Constructor&lt;?&gt; messageConstructor = null;</span>
+<span class="fc" id="L161">        Constructor&lt;?&gt; causeConstructor = null;</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        for (Constructor&lt;?&gt; constructor : exClass.getConstructors()) {</span>
+<span class="fc" id="L163">        	Class&lt;?&gt;[] types = constructor.getParameterTypes();</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">            if (types.length == 0) {</span>
+<span class="fc" id="L165">                defaultConstructor = constructor;</span>
+<span class="fc" id="L166">                continue;</span>
+            }
+
+<span class="fc bfc" id="L169" title="All 4 branches covered.">            if (types.length == 1 &amp;&amp; types[0] == String.class) {</span>
+<span class="fc" id="L170">                messageConstructor = constructor;</span>
+<span class="fc" id="L171">                continue;</span>
+            }
+
+<span class="pc bpc" id="L174" title="1 of 6 branches missed.">            if (types.length == 2 &amp;&amp; types[0] == String.class &amp;&amp; types[1] == Throwable.class) {</span>
+<span class="fc" id="L175">                causeConstructor = constructor;</span>
+<span class="fc" id="L176">                continue;</span>
+            }
+        }
+
+<span class="fc bfc" id="L180" title="All 2 branches covered.">        if (causeConstructor != null) {</span>
+<span class="fc" id="L181">            return (Throwable) causeConstructor.newInstance(message, cause);</span>
+        }
+
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (messageConstructor != null) {</span>
+<span class="fc" id="L185">            return (Throwable) messageConstructor.newInstance(message);</span>
+        }
+
+<span class="fc bfc" id="L188" title="All 2 branches covered.">        if (defaultConstructor != null) {</span>
+<span class="fc" id="L189">            return (Throwable) defaultConstructor.newInstance();</span>
+        }
+
+<span class="fc" id="L192">        return null;</span>
+    }
+
+    public int getFastMatchToken() {
+<span class="fc" id="L196">        return JSONToken.LBRACE;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

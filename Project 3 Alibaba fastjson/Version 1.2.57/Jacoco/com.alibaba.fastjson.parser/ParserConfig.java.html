@@ -1,0 +1,1197 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ParserConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser</a> &gt; <span class="el_source">ParserConfig.java</span></div><h1>ParserConfig.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2017 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.parser;
+
+import java.io.*;
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.security.AccessControlException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerArray;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
+
+import com.alibaba.fastjson.*;
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.annotation.JSONType;
+import com.alibaba.fastjson.asm.ClassReader;
+import com.alibaba.fastjson.asm.TypeCollector;
+import com.alibaba.fastjson.parser.deserializer.*;
+import com.alibaba.fastjson.serializer.*;
+import com.alibaba.fastjson.util.*;
+import com.alibaba.fastjson.util.IdentityHashMap;
+import com.alibaba.fastjson.util.ServiceLoader;
+
+import javax.xml.datatype.XMLGregorianCalendar;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+public class ParserConfig {
+
+    public static final String    DENY_PROPERTY             = &quot;fastjson.parser.deny&quot;;
+    public static final String    AUTOTYPE_ACCEPT           = &quot;fastjson.parser.autoTypeAccept&quot;;
+    public static final String    AUTOTYPE_SUPPORT_PROPERTY = &quot;fastjson.parser.autoTypeSupport&quot;;
+
+    public static  final String[] DENYS;
+    private static final String[] AUTO_TYPE_ACCEPT_LIST;
+    public static  final boolean  AUTO_SUPPORT;
+
+    static  {
+        {
+<span class="fc" id="L72">            String property = IOUtils.getStringProperty(DENY_PROPERTY);</span>
+<span class="fc" id="L73">            DENYS = splitItemsFormProperty(property);</span>
+        }
+        {
+<span class="fc" id="L76">            String property = IOUtils.getStringProperty(AUTOTYPE_SUPPORT_PROPERTY);</span>
+<span class="fc" id="L77">            AUTO_SUPPORT = &quot;true&quot;.equals(property);</span>
+        }
+        {
+<span class="fc" id="L80">            String property = IOUtils.getStringProperty(AUTOTYPE_ACCEPT);</span>
+<span class="fc" id="L81">            String[] items = splitItemsFormProperty(property);</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">            if (items == null) {</span>
+<span class="fc" id="L83">                items = new String[0];</span>
+            }
+<span class="fc" id="L85">            AUTO_TYPE_ACCEPT_LIST = items;</span>
+        }
+    }
+
+    public static ParserConfig getGlobalInstance() {
+<span class="fc" id="L90">        return global;</span>
+    }
+<span class="fc" id="L92">    public static ParserConfig                              global                = new ParserConfig();</span>
+
+<span class="fc" id="L94">    private final IdentityHashMap&lt;Type, ObjectDeserializer&gt; deserializers         = new IdentityHashMap&lt;Type, ObjectDeserializer&gt;();</span>
+<span class="fc" id="L95">    private final ConcurrentMap&lt;String,Class&lt;?&gt;&gt;            typeMapping           = new ConcurrentHashMap&lt;String,Class&lt;?&gt;&gt;(16, 0.75f, 1);</span>
+
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">    private boolean                                         asmEnable             = !ASMUtils.IS_ANDROID;</span>
+
+<span class="fc" id="L99">    public final SymbolTable                                symbolTable           = new SymbolTable(4096);</span>
+    
+    public PropertyNamingStrategy                           propertyNamingStrategy;
+
+    protected ClassLoader                                   defaultClassLoader;
+
+    protected ASMDeserializerFactory                        asmFactory;
+
+<span class="fc" id="L107">    private static boolean                                  awtError              = false;</span>
+<span class="fc" id="L108">    private static boolean                                  jdk8Error             = false;</span>
+<span class="fc" id="L109">    private static boolean                                  jodaError             = false;</span>
+<span class="fc" id="L110">    private static boolean                                  guavaError            = false;</span>
+
+<span class="fc" id="L112">    private boolean                                         autoTypeSupport       = AUTO_SUPPORT;</span>
+    private long[]                                          denyHashCodes;
+    private long[]                                          acceptHashCodes;
+
+
+    public final boolean                                    fieldBased;
+<span class="fc" id="L118">    private boolean                                         jacksonCompatible     = false;</span>
+
+<span class="fc" id="L120">    public boolean                                          compatibleWithJavaBean = TypeUtils.compatibleWithJavaBean;</span>
+
+    {
+<span class="fc" id="L123">        denyHashCodes = new long[]{</span>
+                -8720046426850100497L,
+                -8165637398350707645L,
+                -8109300701639721088L,
+                -8083514888460375884L,
+                -7966123100503199569L,
+                -7921218830998286408L,
+                -7768608037458185275L,
+                -7766605818834748097L,
+                -6835437086156813536L,
+                -6179589609550493385L,
+                -5194641081268104286L,
+                -4837536971810737970L,
+                -4082057040235125754L,
+                -3935185854875733362L,
+                -2753427844400776271L,
+                -2364987994247679115L,
+                -2262244760619952081L,
+                -1872417015366588117L,
+                -1589194880214235129L,
+                -254670111376247151L,
+                -190281065685395680L,
+                33238344207745342L,
+                313864100207897507L,
+                1073634739308289776L,
+                1203232727967308606L,
+                1459860845934817624L,
+                1502845958873959152L,
+                3547627781654598988L,
+                3730752432285826863L,
+                3794316665763266033L,
+                4147696707147271408L,
+                4904007817188630457L,
+                5347909877633654828L,
+                5450448828334921485L,
+                5688200883751798389L,
+                5751393439502795295L,
+                5944107969236155580L,
+                6742705432718011780L,
+                7017492163108594270L,
+                7179336928365889465L,
+                7442624256860549330L,
+                8389032537095247355L,
+                8409640769019589119L,
+                8838294710098435315L
+        };
+
+<span class="fc" id="L170">        long[] hashCodes = new long[AUTO_TYPE_ACCEPT_LIST.length + 1];</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">        for (int i = 0; i &lt; AUTO_TYPE_ACCEPT_LIST.length; i++) {</span>
+<span class="nc" id="L172">            hashCodes[i] = TypeUtils.fnv1a_64(AUTO_TYPE_ACCEPT_LIST[i]);</span>
+        }
+<span class="fc" id="L174">        hashCodes[hashCodes.length - 1] = -6293031534589903644L;</span>
+
+<span class="fc" id="L176">        Arrays.sort(hashCodes);</span>
+<span class="fc" id="L177">        acceptHashCodes = hashCodes;</span>
+    }
+
+    public ParserConfig(){
+<span class="fc" id="L181">        this(false);</span>
+<span class="fc" id="L182">    }</span>
+
+    public ParserConfig(boolean fieldBase){
+<span class="fc" id="L185">        this(null, null, fieldBase);</span>
+<span class="fc" id="L186">    }</span>
+
+    public ParserConfig(ClassLoader parentClassLoader){
+<span class="fc" id="L189">        this(null, parentClassLoader, false);</span>
+<span class="fc" id="L190">    }</span>
+
+    public ParserConfig(ASMDeserializerFactory asmFactory){
+<span class="nc" id="L193">        this(asmFactory, null, false);</span>
+<span class="nc" id="L194">    }</span>
+
+<span class="fc" id="L196">    private ParserConfig(ASMDeserializerFactory asmFactory, ClassLoader parentClassLoader, boolean fieldBased){</span>
+<span class="fc" id="L197">        this.fieldBased = fieldBased;</span>
+<span class="pc bpc" id="L198" title="2 of 4 branches missed.">        if (asmFactory == null &amp;&amp; !ASMUtils.IS_ANDROID) {</span>
+            try {
+<span class="fc bfc" id="L200" title="All 2 branches covered.">                if (parentClassLoader == null) {</span>
+<span class="fc" id="L201">                    asmFactory = new ASMDeserializerFactory(new ASMClassLoader());</span>
+                } else {
+<span class="fc" id="L203">                    asmFactory = new ASMDeserializerFactory(parentClassLoader);</span>
+                }
+<span class="nc" id="L205">            } catch (ExceptionInInitializerError error) {</span>
+                // skip
+<span class="nc" id="L207">            } catch (AccessControlException error) {</span>
+                // skip
+<span class="nc" id="L209">            } catch (NoClassDefFoundError error) {</span>
+                // skip
+<span class="pc" id="L211">            }</span>
+        }
+
+<span class="fc" id="L214">        this.asmFactory = asmFactory;</span>
+
+<span class="pc bpc" id="L216" title="1 of 2 branches missed.">        if (asmFactory == null) {</span>
+<span class="nc" id="L217">            asmEnable = false;</span>
+        }
+
+<span class="fc" id="L220">        initDeserializers();</span>
+
+<span class="fc" id="L222">        addItemsToDeny(DENYS);</span>
+<span class="fc" id="L223">        addItemsToAccept(AUTO_TYPE_ACCEPT_LIST);</span>
+
+<span class="fc" id="L225">    }</span>
+
+    private void initDeserializers() {
+<span class="fc" id="L228">        deserializers.put(SimpleDateFormat.class, MiscCodec.instance);</span>
+<span class="fc" id="L229">        deserializers.put(java.sql.Timestamp.class, SqlDateDeserializer.instance_timestamp);</span>
+<span class="fc" id="L230">        deserializers.put(java.sql.Date.class, SqlDateDeserializer.instance);</span>
+<span class="fc" id="L231">        deserializers.put(java.sql.Time.class, TimeDeserializer.instance);</span>
+<span class="fc" id="L232">        deserializers.put(java.util.Date.class, DateCodec.instance);</span>
+<span class="fc" id="L233">        deserializers.put(Calendar.class, CalendarCodec.instance);</span>
+<span class="fc" id="L234">        deserializers.put(XMLGregorianCalendar.class, CalendarCodec.instance);</span>
+
+<span class="fc" id="L236">        deserializers.put(JSONObject.class, MapDeserializer.instance);</span>
+<span class="fc" id="L237">        deserializers.put(JSONArray.class, CollectionCodec.instance);</span>
+
+<span class="fc" id="L239">        deserializers.put(Map.class, MapDeserializer.instance);</span>
+<span class="fc" id="L240">        deserializers.put(HashMap.class, MapDeserializer.instance);</span>
+<span class="fc" id="L241">        deserializers.put(LinkedHashMap.class, MapDeserializer.instance);</span>
+<span class="fc" id="L242">        deserializers.put(TreeMap.class, MapDeserializer.instance);</span>
+<span class="fc" id="L243">        deserializers.put(ConcurrentMap.class, MapDeserializer.instance);</span>
+<span class="fc" id="L244">        deserializers.put(ConcurrentHashMap.class, MapDeserializer.instance);</span>
+
+<span class="fc" id="L246">        deserializers.put(Collection.class, CollectionCodec.instance);</span>
+<span class="fc" id="L247">        deserializers.put(List.class, CollectionCodec.instance);</span>
+<span class="fc" id="L248">        deserializers.put(ArrayList.class, CollectionCodec.instance);</span>
+
+<span class="fc" id="L250">        deserializers.put(Object.class, JavaObjectDeserializer.instance);</span>
+<span class="fc" id="L251">        deserializers.put(String.class, StringCodec.instance);</span>
+<span class="fc" id="L252">        deserializers.put(StringBuffer.class, StringCodec.instance);</span>
+<span class="fc" id="L253">        deserializers.put(StringBuilder.class, StringCodec.instance);</span>
+<span class="fc" id="L254">        deserializers.put(char.class, CharacterCodec.instance);</span>
+<span class="fc" id="L255">        deserializers.put(Character.class, CharacterCodec.instance);</span>
+<span class="fc" id="L256">        deserializers.put(byte.class, NumberDeserializer.instance);</span>
+<span class="fc" id="L257">        deserializers.put(Byte.class, NumberDeserializer.instance);</span>
+<span class="fc" id="L258">        deserializers.put(short.class, NumberDeserializer.instance);</span>
+<span class="fc" id="L259">        deserializers.put(Short.class, NumberDeserializer.instance);</span>
+<span class="fc" id="L260">        deserializers.put(int.class, IntegerCodec.instance);</span>
+<span class="fc" id="L261">        deserializers.put(Integer.class, IntegerCodec.instance);</span>
+<span class="fc" id="L262">        deserializers.put(long.class, LongCodec.instance);</span>
+<span class="fc" id="L263">        deserializers.put(Long.class, LongCodec.instance);</span>
+<span class="fc" id="L264">        deserializers.put(BigInteger.class, BigIntegerCodec.instance);</span>
+<span class="fc" id="L265">        deserializers.put(BigDecimal.class, BigDecimalCodec.instance);</span>
+<span class="fc" id="L266">        deserializers.put(float.class, FloatCodec.instance);</span>
+<span class="fc" id="L267">        deserializers.put(Float.class, FloatCodec.instance);</span>
+<span class="fc" id="L268">        deserializers.put(double.class, NumberDeserializer.instance);</span>
+<span class="fc" id="L269">        deserializers.put(Double.class, NumberDeserializer.instance);</span>
+<span class="fc" id="L270">        deserializers.put(boolean.class, BooleanCodec.instance);</span>
+<span class="fc" id="L271">        deserializers.put(Boolean.class, BooleanCodec.instance);</span>
+<span class="fc" id="L272">        deserializers.put(Class.class, MiscCodec.instance);</span>
+<span class="fc" id="L273">        deserializers.put(char[].class, new CharArrayCodec());</span>
+
+<span class="fc" id="L275">        deserializers.put(AtomicBoolean.class, BooleanCodec.instance);</span>
+<span class="fc" id="L276">        deserializers.put(AtomicInteger.class, IntegerCodec.instance);</span>
+<span class="fc" id="L277">        deserializers.put(AtomicLong.class, LongCodec.instance);</span>
+<span class="fc" id="L278">        deserializers.put(AtomicReference.class, ReferenceCodec.instance);</span>
+
+<span class="fc" id="L280">        deserializers.put(WeakReference.class, ReferenceCodec.instance);</span>
+<span class="fc" id="L281">        deserializers.put(SoftReference.class, ReferenceCodec.instance);</span>
+
+<span class="fc" id="L283">        deserializers.put(UUID.class, MiscCodec.instance);</span>
+<span class="fc" id="L284">        deserializers.put(TimeZone.class, MiscCodec.instance);</span>
+<span class="fc" id="L285">        deserializers.put(Locale.class, MiscCodec.instance);</span>
+<span class="fc" id="L286">        deserializers.put(Currency.class, MiscCodec.instance);</span>
+
+<span class="fc" id="L288">        deserializers.put(Inet4Address.class, MiscCodec.instance);</span>
+<span class="fc" id="L289">        deserializers.put(Inet6Address.class, MiscCodec.instance);</span>
+<span class="fc" id="L290">        deserializers.put(InetSocketAddress.class, MiscCodec.instance);</span>
+<span class="fc" id="L291">        deserializers.put(File.class, MiscCodec.instance);</span>
+<span class="fc" id="L292">        deserializers.put(URI.class, MiscCodec.instance);</span>
+<span class="fc" id="L293">        deserializers.put(URL.class, MiscCodec.instance);</span>
+<span class="fc" id="L294">        deserializers.put(Pattern.class, MiscCodec.instance);</span>
+<span class="fc" id="L295">        deserializers.put(Charset.class, MiscCodec.instance);</span>
+<span class="fc" id="L296">        deserializers.put(JSONPath.class, MiscCodec.instance);</span>
+<span class="fc" id="L297">        deserializers.put(Number.class, NumberDeserializer.instance);</span>
+<span class="fc" id="L298">        deserializers.put(AtomicIntegerArray.class, AtomicCodec.instance);</span>
+<span class="fc" id="L299">        deserializers.put(AtomicLongArray.class, AtomicCodec.instance);</span>
+<span class="fc" id="L300">        deserializers.put(StackTraceElement.class, StackTraceElementDeserializer.instance);</span>
+
+<span class="fc" id="L302">        deserializers.put(Serializable.class, JavaObjectDeserializer.instance);</span>
+<span class="fc" id="L303">        deserializers.put(Cloneable.class, JavaObjectDeserializer.instance);</span>
+<span class="fc" id="L304">        deserializers.put(Comparable.class, JavaObjectDeserializer.instance);</span>
+<span class="fc" id="L305">        deserializers.put(Closeable.class, JavaObjectDeserializer.instance);</span>
+
+<span class="fc" id="L307">        deserializers.put(JSONPObject.class, new JSONPDeserializer());</span>
+<span class="fc" id="L308">    }</span>
+    
+    private static String[] splitItemsFormProperty(final String property ){
+<span class="fc bfc" id="L311" title="All 4 branches covered.">        if (property != null &amp;&amp; property.length() &gt; 0) {</span>
+<span class="fc" id="L312">            return property.split(&quot;,&quot;);</span>
+        }
+<span class="fc" id="L314">        return null;</span>
+    }
+
+    public void configFromPropety(Properties properties) {
+        {
+<span class="fc" id="L319">            String property = properties.getProperty(DENY_PROPERTY);</span>
+<span class="fc" id="L320">            String[] items = splitItemsFormProperty(property);</span>
+<span class="fc" id="L321">            addItemsToDeny(items);</span>
+        }
+        {
+<span class="fc" id="L324">            String property = properties.getProperty(AUTOTYPE_ACCEPT);</span>
+<span class="fc" id="L325">            String[] items = splitItemsFormProperty(property);</span>
+<span class="fc" id="L326">            addItemsToAccept(items);</span>
+        }
+        {
+<span class="fc" id="L329">            String property = properties.getProperty(AUTOTYPE_SUPPORT_PROPERTY);</span>
+<span class="pc bpc" id="L330" title="1 of 2 branches missed.">            if (&quot;true&quot;.equals(property)) {</span>
+<span class="nc" id="L331">                this.autoTypeSupport = true;</span>
+<span class="fc bfc" id="L332" title="All 2 branches covered.">            } else if (&quot;false&quot;.equals(property)) {</span>
+<span class="fc" id="L333">                this.autoTypeSupport = false;</span>
+            }
+        }
+<span class="fc" id="L336">    }</span>
+    
+    private void addItemsToDeny(final String[] items){
+<span class="fc bfc" id="L339" title="All 2 branches covered.">        if (items == null){</span>
+<span class="fc" id="L340">            return;</span>
+        }
+
+<span class="fc bfc" id="L343" title="All 2 branches covered.">        for (int i = 0; i &lt; items.length; ++i) {</span>
+<span class="fc" id="L344">            String item = items[i];</span>
+<span class="fc" id="L345">            this.addDeny(item);</span>
+        }
+<span class="fc" id="L347">    }</span>
+
+    private void addItemsToAccept(final String[] items){
+<span class="fc bfc" id="L350" title="All 2 branches covered.">        if (items == null){</span>
+<span class="fc" id="L351">            return;</span>
+        }
+
+<span class="fc bfc" id="L354" title="All 2 branches covered.">        for (int i = 0; i &lt; items.length; ++i) {</span>
+<span class="fc" id="L355">            String item = items[i];</span>
+<span class="fc" id="L356">            this.addAccept(item);</span>
+        }
+<span class="fc" id="L358">    }</span>
+
+    public boolean isAutoTypeSupport() {
+<span class="fc" id="L361">        return autoTypeSupport;</span>
+    }
+
+    public void setAutoTypeSupport(boolean autoTypeSupport) {
+<span class="fc" id="L365">        this.autoTypeSupport = autoTypeSupport;</span>
+<span class="fc" id="L366">    }</span>
+
+    public boolean isAsmEnable() {
+<span class="fc" id="L369">        return asmEnable;</span>
+    }
+
+    public void setAsmEnable(boolean asmEnable) {
+<span class="fc" id="L373">        this.asmEnable = asmEnable;</span>
+<span class="fc" id="L374">    }</span>
+
+    /**
+     * @deprecated
+     */
+    public IdentityHashMap&lt;Type, ObjectDeserializer&gt; getDerializers() {
+<span class="nc" id="L380">        return deserializers;</span>
+    }
+
+    public IdentityHashMap&lt;Type, ObjectDeserializer&gt; getDeserializers() {
+<span class="fc" id="L384">        return deserializers;</span>
+    }
+
+    public ObjectDeserializer getDeserializer(Type type) {
+<span class="fc" id="L388">        ObjectDeserializer derializer = this.deserializers.get(type);</span>
+<span class="fc bfc" id="L389" title="All 2 branches covered.">        if (derializer != null) {</span>
+<span class="fc" id="L390">            return derializer;</span>
+        }
+
+<span class="fc bfc" id="L393" title="All 2 branches covered.">        if (type instanceof Class&lt;?&gt;) {</span>
+<span class="fc" id="L394">            return getDeserializer((Class&lt;?&gt;) type, type);</span>
+        }
+
+<span class="fc bfc" id="L397" title="All 2 branches covered.">        if (type instanceof ParameterizedType) {</span>
+<span class="fc" id="L398">            Type rawType = ((ParameterizedType) type).getRawType();</span>
+<span class="pc bpc" id="L399" title="1 of 2 branches missed.">            if (rawType instanceof Class&lt;?&gt;) {</span>
+<span class="fc" id="L400">                return getDeserializer((Class&lt;?&gt;) rawType, type);</span>
+            } else {
+<span class="nc" id="L402">                return getDeserializer(rawType);</span>
+            }
+        }
+
+<span class="fc bfc" id="L406" title="All 2 branches covered.">        if (type instanceof WildcardType) {</span>
+<span class="fc" id="L407">            WildcardType wildcardType = (WildcardType) type;</span>
+<span class="fc" id="L408">            Type[] upperBounds = wildcardType.getUpperBounds();</span>
+<span class="pc bpc" id="L409" title="1 of 2 branches missed.">            if (upperBounds.length == 1) {</span>
+<span class="fc" id="L410">                Type upperBoundType = upperBounds[0];</span>
+<span class="fc" id="L411">                return getDeserializer(upperBoundType);</span>
+            }
+        }
+
+<span class="fc" id="L415">        return JavaObjectDeserializer.instance;</span>
+    }
+
+    public ObjectDeserializer getDeserializer(Class&lt;?&gt; clazz, Type type) {
+<span class="fc" id="L419">        ObjectDeserializer derializer = deserializers.get(type);</span>
+<span class="fc bfc" id="L420" title="All 2 branches covered.">        if (derializer != null) {</span>
+<span class="fc" id="L421">            return derializer;</span>
+        }
+
+<span class="pc bpc" id="L424" title="1 of 2 branches missed.">        if (type == null) {</span>
+<span class="nc" id="L425">            type = clazz;</span>
+        }
+
+<span class="fc" id="L428">        derializer = deserializers.get(type);</span>
+<span class="pc bpc" id="L429" title="1 of 2 branches missed.">        if (derializer != null) {</span>
+<span class="nc" id="L430">            return derializer;</span>
+        }
+
+        {
+<span class="fc" id="L434">            JSONType annotation = TypeUtils.getAnnotation(clazz,JSONType.class);</span>
+<span class="fc bfc" id="L435" title="All 2 branches covered.">            if (annotation != null) {</span>
+<span class="fc" id="L436">                Class&lt;?&gt; mappingTo = annotation.mappingTo();</span>
+<span class="fc bfc" id="L437" title="All 2 branches covered.">                if (mappingTo != Void.class) {</span>
+<span class="fc" id="L438">                    return getDeserializer(mappingTo, mappingTo);</span>
+                }
+            }
+        }
+
+<span class="fc bfc" id="L443" title="All 6 branches covered.">        if (type instanceof WildcardType || type instanceof TypeVariable || type instanceof ParameterizedType) {</span>
+<span class="fc" id="L444">            derializer = deserializers.get(clazz);</span>
+        }
+
+<span class="fc bfc" id="L447" title="All 2 branches covered.">        if (derializer != null) {</span>
+<span class="fc" id="L448">            return derializer;</span>
+        }
+
+<span class="fc" id="L451">        String className = clazz.getName();</span>
+<span class="fc" id="L452">        className = className.replace('$', '.');</span>
+
+<span class="fc bfc" id="L454" title="All 2 branches covered.">        if (className.startsWith(&quot;java.awt.&quot;) //</span>
+<span class="pc bpc" id="L455" title="1 of 2 branches missed.">            &amp;&amp; AwtCodec.support(clazz)) {</span>
+<span class="pc bpc" id="L456" title="1 of 2 branches missed.">            if (!awtError) {</span>
+<span class="fc" id="L457">                String[] names = new String[] {</span>
+                        &quot;java.awt.Point&quot;,
+                        &quot;java.awt.Font&quot;,
+                        &quot;java.awt.Rectangle&quot;,
+                        &quot;java.awt.Color&quot;
+                };
+
+                try {
+<span class="pc bpc" id="L465" title="1 of 2 branches missed.">                    for (String name : names) {</span>
+<span class="fc bfc" id="L466" title="All 2 branches covered.">                        if (name.equals(className)) {</span>
+<span class="fc" id="L467">                            deserializers.put(Class.forName(name), derializer = AwtCodec.instance);</span>
+<span class="fc" id="L468">                            return derializer;</span>
+                        }
+                    }
+<span class="nc" id="L471">                } catch (Throwable e) {</span>
+                    // skip
+<span class="nc" id="L473">                    awtError = true;</span>
+<span class="nc" id="L474">                }</span>
+
+<span class="nc" id="L476">                derializer = AwtCodec.instance;</span>
+            }
+        }
+
+<span class="pc bpc" id="L480" title="1 of 2 branches missed.">        if (!jdk8Error) {</span>
+            try {
+<span class="fc bfc" id="L482" title="All 2 branches covered.">                if (className.startsWith(&quot;java.time.&quot;)) {</span>
+<span class="fc" id="L483">                    String[] names = new String[] {</span>
+                            &quot;java.time.LocalDateTime&quot;,
+                            &quot;java.time.LocalDate&quot;,
+                            &quot;java.time.LocalTime&quot;,
+                            &quot;java.time.ZonedDateTime&quot;,
+                            &quot;java.time.OffsetDateTime&quot;,
+                            &quot;java.time.OffsetTime&quot;,
+                            &quot;java.time.ZoneOffset&quot;,
+                            &quot;java.time.ZoneRegion&quot;,
+                            &quot;java.time.ZoneId&quot;,
+                            &quot;java.time.Period&quot;,
+                            &quot;java.time.Duration&quot;,
+                            &quot;java.time.Instant&quot;
+                    };
+
+<span class="pc bpc" id="L498" title="1 of 2 branches missed.">                    for (String name : names) {</span>
+<span class="fc bfc" id="L499" title="All 2 branches covered.">                        if (name.equals(className)) {</span>
+<span class="fc" id="L500">                            deserializers.put(Class.forName(name), derializer = Jdk8DateCodec.instance);</span>
+<span class="fc" id="L501">                            return derializer;</span>
+                        }
+                    }
+<span class="pc bfc" id="L504" title="All 2 branches covered.">                } else if (className.startsWith(&quot;java.util.Optional&quot;)) {</span>
+<span class="fc" id="L505">                    String[] names = new String[] {</span>
+                            &quot;java.util.Optional&quot;,
+                            &quot;java.util.OptionalDouble&quot;,
+                            &quot;java.util.OptionalInt&quot;,
+                            &quot;java.util.OptionalLong&quot;
+                    };
+<span class="pc bpc" id="L511" title="1 of 2 branches missed.">                    for (String name : names) {</span>
+<span class="fc bfc" id="L512" title="All 2 branches covered.">                        if (name.equals(className)) {</span>
+<span class="fc" id="L513">                            deserializers.put(Class.forName(name), derializer = OptionalCodec.instance);</span>
+<span class="fc" id="L514">                            return derializer;</span>
+                        }
+                    }
+                }
+<span class="nc" id="L518">            } catch (Throwable e) {</span>
+                // skip
+<span class="nc" id="L520">                jdk8Error = true;</span>
+<span class="fc" id="L521">            }</span>
+        }
+
+<span class="pc bpc" id="L524" title="1 of 2 branches missed.">        if (!jodaError) {</span>
+            try {
+<span class="fc bfc" id="L526" title="All 2 branches covered.">                if (className.startsWith(&quot;org.joda.time.&quot;)) {</span>
+<span class="fc" id="L527">                    String[] names = new String[] {</span>
+                            &quot;org.joda.time.DateTime&quot;,
+                            &quot;org.joda.time.LocalDate&quot;,
+                            &quot;org.joda.time.LocalDateTime&quot;,
+                            &quot;org.joda.time.LocalTime&quot;,
+                            &quot;org.joda.time.Instant&quot;,
+                            &quot;org.joda.time.Period&quot;,
+                            &quot;org.joda.time.Duration&quot;,
+                            &quot;org.joda.time.DateTimeZone&quot;,
+                            &quot;org.joda.time.format.DateTimeFormatter&quot;
+                    };
+
+<span class="pc bpc" id="L539" title="1 of 2 branches missed.">                    for (String name : names) {</span>
+<span class="fc bfc" id="L540" title="All 2 branches covered.">                        if (name.equals(className)) {</span>
+<span class="fc" id="L541">                            deserializers.put(Class.forName(name), derializer = JodaCodec.instance);</span>
+<span class="fc" id="L542">                            return derializer;</span>
+                        }
+                    }
+                }
+<span class="nc" id="L546">            } catch (Throwable e) {</span>
+                // skip
+<span class="nc" id="L548">                jodaError = true;</span>
+<span class="fc" id="L549">            }</span>
+        }
+
+<span class="pc bpc" id="L552" title="1 of 2 branches missed.">        if ((!guavaError) //</span>
+<span class="fc bfc" id="L553" title="All 2 branches covered.">                &amp;&amp; className.startsWith(&quot;com.google.common.collect.&quot;)) {</span>
+            try {
+<span class="fc" id="L555">                String[] names = new String[] {</span>
+                        &quot;com.google.common.collect.HashMultimap&quot;,
+                        &quot;com.google.common.collect.LinkedListMultimap&quot;,
+                        &quot;com.google.common.collect.LinkedHashMultimap&quot;,
+                        &quot;com.google.common.collect.ArrayListMultimap&quot;,
+                        &quot;com.google.common.collect.TreeMultimap&quot;
+                };
+
+<span class="pc bpc" id="L563" title="1 of 2 branches missed.">                for (String name : names) {</span>
+<span class="fc bfc" id="L564" title="All 2 branches covered.">                    if (name.equals(className)) {</span>
+<span class="fc" id="L565">                        deserializers.put(Class.forName(name), derializer = GuavaCodec.instance);</span>
+<span class="fc" id="L566">                        return derializer;</span>
+                    }
+                }
+<span class="nc" id="L569">            } catch (ClassNotFoundException e) {</span>
+                // skip
+<span class="nc" id="L571">                guavaError = true;</span>
+<span class="nc" id="L572">            }</span>
+        }
+
+<span class="fc bfc" id="L575" title="All 2 branches covered.">        if (className.equals(&quot;java.nio.ByteBuffer&quot;)) {</span>
+<span class="fc" id="L576">            deserializers.put(clazz, derializer = ByteBufferCodec.instance);</span>
+        }
+
+<span class="fc bfc" id="L579" title="All 2 branches covered.">        if (className.equals(&quot;java.nio.file.Path&quot;)) {</span>
+<span class="fc" id="L580">            deserializers.put(clazz, derializer = MiscCodec.instance);</span>
+        }
+
+<span class="fc bfc" id="L583" title="All 2 branches covered.">        if (clazz == Map.Entry.class) {</span>
+<span class="fc" id="L584">            deserializers.put(clazz, derializer = MiscCodec.instance);</span>
+        }
+
+<span class="fc" id="L587">        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();</span>
+        try {
+<span class="pc bpc" id="L589" title="1 of 2 branches missed.">            for (AutowiredObjectDeserializer autowired : ServiceLoader.load(AutowiredObjectDeserializer.class,</span>
+                                                                            classLoader)) {
+<span class="nc bnc" id="L591" title="All 2 branches missed.">                for (Type forType : autowired.getAutowiredFor()) {</span>
+<span class="nc" id="L592">                    deserializers.put(forType, autowired);</span>
+<span class="nc" id="L593">                }</span>
+<span class="nc" id="L594">            }</span>
+<span class="nc" id="L595">        } catch (Exception ex) {</span>
+            // skip
+<span class="fc" id="L597">        }</span>
+
+<span class="fc bfc" id="L599" title="All 2 branches covered.">        if (derializer == null) {</span>
+<span class="fc" id="L600">            derializer = deserializers.get(type);</span>
+        }
+
+<span class="fc bfc" id="L603" title="All 2 branches covered.">        if (derializer != null) {</span>
+<span class="fc" id="L604">            return derializer;</span>
+        }
+
+<span class="fc bfc" id="L607" title="All 2 branches covered.">        if (clazz.isEnum()) {</span>
+<span class="fc bfc" id="L608" title="All 2 branches covered.">            if (jacksonCompatible) {</span>
+<span class="fc" id="L609">                Method[] methods = clazz.getMethods();</span>
+<span class="pc bpc" id="L610" title="1 of 2 branches missed.">                for (Method method : methods) {</span>
+<span class="fc bfc" id="L611" title="All 2 branches covered.">                    if (TypeUtils.isJacksonCreator(method)) {</span>
+<span class="fc" id="L612">                        derializer = createJavaBeanDeserializer(clazz, type);</span>
+<span class="fc" id="L613">                        putDeserializer(type, derializer);</span>
+<span class="fc" id="L614">                        return derializer;</span>
+                    }
+                }
+            }
+
+<span class="fc" id="L619">            Class&lt;?&gt; deserClass = null;</span>
+<span class="fc" id="L620">            JSONType jsonType = clazz.getAnnotation(JSONType.class);</span>
+<span class="fc bfc" id="L621" title="All 2 branches covered.">            if (jsonType != null) {</span>
+<span class="fc" id="L622">                deserClass = jsonType.deserializer();</span>
+                try {
+<span class="fc" id="L624">                    derializer = (ObjectDeserializer) deserClass.newInstance();</span>
+<span class="fc" id="L625">                    deserializers.put(clazz, derializer);</span>
+<span class="fc" id="L626">                    return derializer;</span>
+<span class="nc" id="L627">                } catch (Throwable error) {</span>
+                    // skip
+                }
+            }
+
+<span class="fc" id="L632">            derializer = new EnumDeserializer(clazz);</span>
+<span class="fc bfc" id="L633" title="All 2 branches covered.">        } else if (clazz.isArray()) {</span>
+<span class="fc" id="L634">            derializer = ObjectArrayCodec.instance;</span>
+<span class="pc bpc" id="L635" title="3 of 10 branches missed.">        } else if (clazz == Set.class || clazz == HashSet.class || clazz == Collection.class || clazz == List.class</span>
+                   || clazz == ArrayList.class) {
+<span class="fc" id="L637">            derializer = CollectionCodec.instance;</span>
+<span class="fc bfc" id="L638" title="All 2 branches covered.">        } else if (Collection.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L639">            derializer = CollectionCodec.instance;</span>
+<span class="fc bfc" id="L640" title="All 2 branches covered.">        } else if (Map.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L641">            derializer = MapDeserializer.instance;</span>
+<span class="fc bfc" id="L642" title="All 2 branches covered.">        } else if (Throwable.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L643">            derializer = new ThrowableDeserializer(this, clazz);</span>
+<span class="fc bfc" id="L644" title="All 2 branches covered.">        } else if (PropertyProcessable.class.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L645">            derializer = new PropertyProcessableDeserializer((Class&lt;PropertyProcessable&gt;) clazz);</span>
+<span class="fc bfc" id="L646" title="All 2 branches covered.">        } else if (clazz == InetAddress.class) {</span>
+<span class="fc" id="L647">            derializer = MiscCodec.instance;</span>
+        } else {
+<span class="fc" id="L649">            derializer = createJavaBeanDeserializer(clazz, type);</span>
+        }
+
+<span class="fc" id="L652">        putDeserializer(type, derializer);</span>
+
+<span class="fc" id="L654">        return derializer;</span>
+    }
+
+    /**
+     *
+     * @since 1.2.25
+     */
+    public void initJavaBeanDeserializers(Class&lt;?&gt;... classes) {
+<span class="pc bpc" id="L662" title="1 of 2 branches missed.">        if (classes == null) {</span>
+<span class="nc" id="L663">            return;</span>
+        }
+
+<span class="fc bfc" id="L666" title="All 2 branches covered.">        for (Class&lt;?&gt; type : classes) {</span>
+<span class="pc bpc" id="L667" title="1 of 2 branches missed.">            if (type == null) {</span>
+<span class="nc" id="L668">                continue;</span>
+            }
+<span class="fc" id="L670">            ObjectDeserializer deserializer = createJavaBeanDeserializer(type, type);</span>
+<span class="fc" id="L671">            putDeserializer(type, deserializer);</span>
+        }
+<span class="fc" id="L673">    }</span>
+
+    public ObjectDeserializer createJavaBeanDeserializer(Class&lt;?&gt; clazz, Type type) {
+<span class="fc bfc" id="L676" title="All 2 branches covered.">        boolean asmEnable = this.asmEnable &amp; !this.fieldBased;</span>
+<span class="fc bfc" id="L677" title="All 2 branches covered.">        if (asmEnable) {</span>
+<span class="fc" id="L678">            JSONType jsonType = TypeUtils.getAnnotation(clazz,JSONType.class);</span>
+
+<span class="fc bfc" id="L680" title="All 2 branches covered.">            if (jsonType != null) {</span>
+<span class="fc" id="L681">                Class&lt;?&gt; deserializerClass = jsonType.deserializer();</span>
+<span class="fc bfc" id="L682" title="All 2 branches covered.">                if (deserializerClass != Void.class) {</span>
+                    try {
+<span class="fc" id="L684">                        Object deseralizer = deserializerClass.newInstance();</span>
+<span class="pc bpc" id="L685" title="1 of 2 branches missed.">                        if (deseralizer instanceof ObjectDeserializer) {</span>
+<span class="fc" id="L686">                            return (ObjectDeserializer) deseralizer;</span>
+                        }
+<span class="nc" id="L688">                    } catch (Throwable e) {</span>
+                        // skip
+<span class="nc" id="L690">                    }</span>
+                }
+                
+<span class="fc" id="L693">                asmEnable = jsonType.asm();</span>
+            }
+
+<span class="fc bfc" id="L696" title="All 2 branches covered.">            if (asmEnable) {</span>
+<span class="fc" id="L697">                Class&lt;?&gt; superClass = JavaBeanInfo.getBuilderClass(clazz, jsonType);</span>
+<span class="fc bfc" id="L698" title="All 2 branches covered.">                if (superClass == null) {</span>
+<span class="fc" id="L699">                    superClass = clazz;</span>
+                }
+
+                for (;;) {
+<span class="fc bfc" id="L703" title="All 2 branches covered.">                    if (!Modifier.isPublic(superClass.getModifiers())) {</span>
+<span class="fc" id="L704">                        asmEnable = false;</span>
+<span class="fc" id="L705">                        break;</span>
+                    }
+
+<span class="fc" id="L708">                    superClass = superClass.getSuperclass();</span>
+<span class="fc bfc" id="L709" title="All 4 branches covered.">                    if (superClass == Object.class || superClass == null) {</span>
+<span class="fc" id="L710">                        break;</span>
+                    }
+                }
+            }
+        }
+
+<span class="fc bfc" id="L716" title="All 2 branches covered.">        if (clazz.getTypeParameters().length != 0) {</span>
+<span class="fc" id="L717">            asmEnable = false;</span>
+        }
+
+<span class="pc bpc" id="L720" title="1 of 6 branches missed.">        if (asmEnable &amp;&amp; asmFactory != null &amp;&amp; asmFactory.classLoader.isExternalClass(clazz)) {</span>
+<span class="fc" id="L721">            asmEnable = false;</span>
+        }
+
+<span class="fc bfc" id="L724" title="All 2 branches covered.">        if (asmEnable) {</span>
+<span class="fc" id="L725">            asmEnable = ASMUtils.checkName(clazz.getSimpleName());</span>
+        }
+
+<span class="fc bfc" id="L728" title="All 2 branches covered.">        if (asmEnable) {</span>
+<span class="fc bfc" id="L729" title="All 2 branches covered.">            if (clazz.isInterface()) {</span>
+<span class="fc" id="L730">                asmEnable = false;</span>
+            }
+<span class="fc" id="L732">            JavaBeanInfo beanInfo = JavaBeanInfo.build(clazz</span>
+                    , type
+                    , propertyNamingStrategy
+                    ,false
+                    , TypeUtils.compatibleWithJavaBean
+                    , jacksonCompatible
+            );
+
+<span class="fc bfc" id="L740" title="All 4 branches covered.">            if (asmEnable &amp;&amp; beanInfo.fields.length &gt; 200) {</span>
+<span class="fc" id="L741">                asmEnable = false;</span>
+            }
+
+<span class="fc" id="L744">            Constructor&lt;?&gt; defaultConstructor = beanInfo.defaultConstructor;</span>
+<span class="pc bpc" id="L745" title="1 of 6 branches missed.">            if (asmEnable &amp;&amp; defaultConstructor == null &amp;&amp; !clazz.isInterface()) {</span>
+<span class="fc" id="L746">                asmEnable = false;</span>
+            }
+
+<span class="fc bfc" id="L749" title="All 2 branches covered.">            for (FieldInfo fieldInfo : beanInfo.fields) {</span>
+<span class="fc bfc" id="L750" title="All 2 branches covered.">                if (fieldInfo.getOnly) {</span>
+<span class="fc" id="L751">                    asmEnable = false;</span>
+<span class="fc" id="L752">                    break;</span>
+                }
+
+<span class="fc" id="L755">                Class&lt;?&gt; fieldClass = fieldInfo.fieldClass;</span>
+<span class="fc bfc" id="L756" title="All 2 branches covered.">                if (!Modifier.isPublic(fieldClass.getModifiers())) {</span>
+<span class="fc" id="L757">                    asmEnable = false;</span>
+<span class="fc" id="L758">                    break;</span>
+                }
+
+<span class="fc bfc" id="L761" title="All 4 branches covered.">                if (fieldClass.isMemberClass() &amp;&amp; !Modifier.isStatic(fieldClass.getModifiers())) {</span>
+<span class="fc" id="L762">                    asmEnable = false;</span>
+<span class="fc" id="L763">                    break;</span>
+                }
+
+<span class="fc bfc" id="L766" title="All 2 branches covered.">                if (fieldInfo.getMember() != null //</span>
+<span class="fc bfc" id="L767" title="All 2 branches covered.">                    &amp;&amp; !ASMUtils.checkName(fieldInfo.getMember().getName())) {</span>
+<span class="fc" id="L768">                    asmEnable = false;</span>
+<span class="fc" id="L769">                    break;</span>
+                }
+
+<span class="fc" id="L772">                JSONField annotation = fieldInfo.getAnnotation();</span>
+<span class="fc bfc" id="L773" title="All 2 branches covered.">                if (annotation != null //</span>
+<span class="fc bfc" id="L774" title="All 2 branches covered.">                    &amp;&amp; ((!ASMUtils.checkName(annotation.name())) //</span>
+<span class="fc bfc" id="L775" title="All 2 branches covered.">                        || annotation.format().length() != 0 //</span>
+<span class="fc bfc" id="L776" title="All 2 branches covered.">                        || annotation.deserializeUsing() != Void.class //</span>
+<span class="fc bfc" id="L777" title="All 4 branches covered.">                        || annotation.unwrapped())</span>
+<span class="fc bfc" id="L778" title="All 2 branches covered.">                        || (fieldInfo.method != null &amp;&amp; fieldInfo.method.getParameterTypes().length &gt; 1)) {</span>
+<span class="fc" id="L779">                    asmEnable = false;</span>
+<span class="fc" id="L780">                    break;</span>
+                }
+
+<span class="fc bfc" id="L783" title="All 2 branches covered.">                if (fieldClass.isEnum()) { // EnumDeserializer</span>
+<span class="fc" id="L784">                    ObjectDeserializer fieldDeser = this.getDeserializer(fieldClass);</span>
+<span class="fc bfc" id="L785" title="All 2 branches covered.">                    if (!(fieldDeser instanceof EnumDeserializer)) {</span>
+<span class="fc" id="L786">                        asmEnable = false;</span>
+<span class="fc" id="L787">                        break;</span>
+                    }
+                }
+            }
+        }
+
+<span class="fc bfc" id="L793" title="All 2 branches covered.">        if (asmEnable) {</span>
+<span class="fc bfc" id="L794" title="All 4 branches covered.">            if (clazz.isMemberClass() &amp;&amp; !Modifier.isStatic(clazz.getModifiers())) {</span>
+<span class="fc" id="L795">                asmEnable = false;</span>
+            }
+        }
+
+<span class="fc bfc" id="L799" title="All 2 branches covered.">        if (asmEnable) {</span>
+<span class="fc bfc" id="L800" title="All 2 branches covered.">            if (TypeUtils.isXmlField(clazz)) {</span>
+<span class="fc" id="L801">                asmEnable = false;</span>
+            }
+        }
+
+<span class="fc bfc" id="L805" title="All 2 branches covered.">        if (!asmEnable) {</span>
+<span class="fc" id="L806">            return new JavaBeanDeserializer(this, clazz, type);</span>
+        }
+
+<span class="fc" id="L809">        JavaBeanInfo beanInfo = JavaBeanInfo.build(clazz, type, propertyNamingStrategy);</span>
+        try {
+<span class="fc" id="L811">            return asmFactory.createJavaBeanDeserializer(this, beanInfo);</span>
+            // } catch (VerifyError e) {
+            // e.printStackTrace();
+            // return new JavaBeanDeserializer(this, clazz, type);
+<span class="nc" id="L815">        } catch (NoSuchMethodException ex) {</span>
+<span class="nc" id="L816">            return new JavaBeanDeserializer(this, clazz, type);</span>
+<span class="fc" id="L817">        } catch (JSONException asmError) {</span>
+<span class="fc" id="L818">            return new JavaBeanDeserializer(this, beanInfo);</span>
+<span class="nc" id="L819">        } catch (Exception e) {</span>
+<span class="nc" id="L820">            throw new JSONException(&quot;create asm deserializer error, &quot; + clazz.getName(), e);</span>
+        }
+    }
+
+    public FieldDeserializer createFieldDeserializer(ParserConfig mapping, //
+                                                     JavaBeanInfo beanInfo, //
+                                                     FieldInfo fieldInfo) {
+<span class="fc" id="L827">        Class&lt;?&gt; clazz = beanInfo.clazz;</span>
+<span class="fc" id="L828">        Class&lt;?&gt; fieldClass = fieldInfo.fieldClass;</span>
+
+<span class="fc" id="L830">        Class&lt;?&gt; deserializeUsing = null;</span>
+<span class="fc" id="L831">        JSONField annotation = fieldInfo.getAnnotation();</span>
+<span class="fc bfc" id="L832" title="All 2 branches covered.">        if (annotation != null) {</span>
+<span class="fc" id="L833">            deserializeUsing = annotation.deserializeUsing();</span>
+<span class="fc bfc" id="L834" title="All 2 branches covered.">            if (deserializeUsing == Void.class) {</span>
+<span class="fc" id="L835">                deserializeUsing = null;</span>
+            }
+        }
+
+<span class="fc bfc" id="L839" title="All 6 branches covered.">        if (deserializeUsing == null &amp;&amp; (fieldClass == List.class || fieldClass == ArrayList.class)) {</span>
+<span class="fc" id="L840">            return new ArrayListTypeFieldDeserializer(mapping, clazz, fieldInfo);</span>
+        }
+
+<span class="fc" id="L843">        return new DefaultFieldDeserializer(mapping, clazz, fieldInfo);</span>
+    }
+
+    public void putDeserializer(Type type, ObjectDeserializer deserializer) {
+<span class="fc" id="L847">        deserializers.put(type, deserializer);</span>
+<span class="fc" id="L848">    }</span>
+
+    public ObjectDeserializer getDeserializer(FieldInfo fieldInfo) {
+<span class="nc" id="L851">        return getDeserializer(fieldInfo.fieldClass, fieldInfo.fieldType);</span>
+    }
+
+    /**
+     * @deprecated  internal method, dont call
+     */
+    public boolean isPrimitive(Class&lt;?&gt; clazz) {
+<span class="nc" id="L858">        return isPrimitive2(clazz);</span>
+    }
+
+    /**
+     * @deprecated  internal method, dont call
+     */
+    public static boolean isPrimitive2(Class&lt;?&gt; clazz) {
+<span class="pc bpc" id="L865" title="2 of 32 branches missed.">        return clazz.isPrimitive() //</span>
+               || clazz == Boolean.class //
+               || clazz == Character.class //
+               || clazz == Byte.class //
+               || clazz == Short.class //
+               || clazz == Integer.class //
+               || clazz == Long.class //
+               || clazz == Float.class //
+               || clazz == Double.class //
+               || clazz == BigInteger.class //
+               || clazz == BigDecimal.class //
+               || clazz == String.class //
+               || clazz == java.util.Date.class //
+               || clazz == java.sql.Date.class //
+               || clazz == java.sql.Time.class //
+               || clazz == java.sql.Timestamp.class //
+<span class="fc bfc" id="L881" title="All 2 branches covered.">               || clazz.isEnum() //</span>
+        ;
+    }
+    
+    /**
+     * fieldName,field ，先生成fieldName的快照，减少之后的findField的轮询
+     * 
+     * @param clazz
+     * @param fieldCacheMap :map&amp;lt;fieldName ,Field&amp;gt;
+     */
+    public static void  parserAllFieldToCache(Class&lt;?&gt; clazz,Map&lt;/**fieldName*/String , Field&gt; fieldCacheMap){
+<span class="fc" id="L892">        Field[] fields = clazz.getDeclaredFields();</span>
+<span class="fc bfc" id="L893" title="All 2 branches covered.">        for (Field field : fields) {</span>
+<span class="fc" id="L894">            String fieldName = field.getName();</span>
+<span class="fc bfc" id="L895" title="All 2 branches covered.">            if (!fieldCacheMap.containsKey(fieldName)) {</span>
+<span class="fc" id="L896">                fieldCacheMap.put(fieldName, field);</span>
+            }
+        }
+<span class="fc bfc" id="L899" title="All 4 branches covered.">        if (clazz.getSuperclass() != null &amp;&amp; clazz.getSuperclass() != Object.class) {</span>
+<span class="fc" id="L900">            parserAllFieldToCache(clazz.getSuperclass(), fieldCacheMap);</span>
+        }
+<span class="fc" id="L902">    }</span>
+    
+    public static Field getFieldFromCache(String fieldName, Map&lt;String, Field&gt; fieldCacheMap) {
+<span class="fc" id="L905">        Field field = fieldCacheMap.get(fieldName);</span>
+
+<span class="fc bfc" id="L907" title="All 2 branches covered.">        if (field == null) {</span>
+<span class="fc" id="L908">            field = fieldCacheMap.get(&quot;_&quot; + fieldName);</span>
+        }
+
+<span class="fc bfc" id="L911" title="All 2 branches covered.">        if (field == null) {</span>
+<span class="fc" id="L912">            field = fieldCacheMap.get(&quot;m_&quot; + fieldName);</span>
+        }
+
+<span class="fc bfc" id="L915" title="All 2 branches covered.">        if (field == null) {</span>
+<span class="fc" id="L916">            char c0 = fieldName.charAt(0);</span>
+<span class="pc bpc" id="L917" title="1 of 4 branches missed.">            if (c0 &gt;= 'a' &amp;&amp; c0 &lt;= 'z') {</span>
+<span class="fc" id="L918">                char[] chars = fieldName.toCharArray();</span>
+<span class="fc" id="L919">                chars[0] -= 32; // lower</span>
+<span class="fc" id="L920">                String fieldNameX = new String(chars);</span>
+<span class="fc" id="L921">                field = fieldCacheMap.get(fieldNameX);</span>
+            }
+
+<span class="fc bfc" id="L924" title="All 2 branches covered.">            if (fieldName.length() &gt; 2) {</span>
+<span class="fc" id="L925">                char c1 = fieldName.charAt(1);</span>
+<span class="pc bpc" id="L926" title="3 of 10 branches missed.">                if (fieldName.length() &gt; 2</span>
+                        &amp;&amp; c0 &gt;= 'a' &amp;&amp; c0 &lt;= 'z'
+                        &amp;&amp; c1 &gt;= 'A' &amp;&amp; c1 &lt;= 'Z') {
+<span class="fc bfc" id="L929" title="All 2 branches covered.">                    for (Map.Entry&lt;String, Field&gt; entry : fieldCacheMap.entrySet()) {</span>
+<span class="fc bfc" id="L930" title="All 2 branches covered.">                        if (fieldName.equalsIgnoreCase(entry.getKey())) {</span>
+<span class="fc" id="L931">                            field = entry.getValue();</span>
+<span class="fc" id="L932">                            break;</span>
+                        }
+<span class="fc" id="L934">                    }</span>
+                }
+            }
+        }
+
+<span class="fc" id="L939">        return field;</span>
+    }
+
+    public ClassLoader getDefaultClassLoader() {
+<span class="fc" id="L943">        return defaultClassLoader;</span>
+    }
+
+    public void setDefaultClassLoader(ClassLoader defaultClassLoader) {
+<span class="nc" id="L947">        this.defaultClassLoader = defaultClassLoader;</span>
+<span class="nc" id="L948">    }</span>
+
+    public void addDeny(String name) {
+<span class="fc bfc" id="L951" title="All 4 branches covered.">        if (name == null || name.length() == 0) {</span>
+<span class="fc" id="L952">            return;</span>
+        }
+
+<span class="fc" id="L955">        long hash = TypeUtils.fnv1a_64(name);</span>
+<span class="pc bpc" id="L956" title="1 of 2 branches missed.">        if (Arrays.binarySearch(this.denyHashCodes, hash) &gt;= 0) {</span>
+<span class="nc" id="L957">            return;</span>
+        }
+
+<span class="fc" id="L960">        long[] hashCodes = new long[this.denyHashCodes.length + 1];</span>
+<span class="fc" id="L961">        hashCodes[hashCodes.length - 1] = hash;</span>
+<span class="fc" id="L962">        System.arraycopy(this.denyHashCodes, 0, hashCodes, 0, this.denyHashCodes.length);</span>
+<span class="fc" id="L963">        Arrays.sort(hashCodes);</span>
+<span class="fc" id="L964">        this.denyHashCodes = hashCodes;</span>
+<span class="fc" id="L965">    }</span>
+
+    public void addAccept(String name) {
+<span class="pc bpc" id="L968" title="2 of 4 branches missed.">        if (name == null || name.length() == 0) {</span>
+<span class="nc" id="L969">            return;</span>
+        }
+
+<span class="fc" id="L972">        long hash = TypeUtils.fnv1a_64(name);</span>
+<span class="fc bfc" id="L973" title="All 2 branches covered.">        if (Arrays.binarySearch(this.acceptHashCodes, hash) &gt;= 0) {</span>
+<span class="fc" id="L974">            return;</span>
+        }
+
+<span class="fc" id="L977">        long[] hashCodes = new long[this.acceptHashCodes.length + 1];</span>
+<span class="fc" id="L978">        hashCodes[hashCodes.length - 1] = hash;</span>
+<span class="fc" id="L979">        System.arraycopy(this.acceptHashCodes, 0, hashCodes, 0, this.acceptHashCodes.length);</span>
+<span class="fc" id="L980">        Arrays.sort(hashCodes);</span>
+<span class="fc" id="L981">        this.acceptHashCodes = hashCodes;</span>
+<span class="fc" id="L982">    }</span>
+
+    public Class&lt;?&gt; checkAutoType(Class type) {
+<span class="nc bnc" id="L985" title="All 2 branches missed.">        if (deserializers.get(type) != null) {</span>
+<span class="nc" id="L986">            return type;</span>
+        }
+
+<span class="nc" id="L989">        return checkAutoType(type.getName(), null, JSON.DEFAULT_PARSER_FEATURE);</span>
+    }
+
+    public Class&lt;?&gt; checkAutoType(String typeName, Class&lt;?&gt; expectClass) {
+<span class="fc" id="L993">        return checkAutoType(typeName, expectClass, JSON.DEFAULT_PARSER_FEATURE);</span>
+    }
+
+    public Class&lt;?&gt; checkAutoType(String typeName, Class&lt;?&gt; expectClass, int features) {
+<span class="pc bpc" id="L997" title="1 of 2 branches missed.">        if (typeName == null) {</span>
+<span class="nc" id="L998">            return null;</span>
+        }
+
+<span class="pc bpc" id="L1001" title="1 of 4 branches missed.">        if (typeName.length() &gt;= 192 || typeName.length() &lt; 3) {</span>
+<span class="fc" id="L1002">            throw new JSONException(&quot;autoType is not support. &quot; + typeName);</span>
+        }
+
+        final boolean expectClassFlag;
+<span class="fc bfc" id="L1006" title="All 2 branches covered.">        if (expectClass == null) {</span>
+<span class="fc" id="L1007">            expectClassFlag = false;</span>
+        } else {
+<span class="pc bpc" id="L1009" title="7 of 14 branches missed.">            if (expectClass == Object.class</span>
+                    || expectClass == Serializable.class
+                    || expectClass == Cloneable.class
+                    || expectClass == Closeable.class
+                    || expectClass == EventListener.class
+                    || expectClass == Iterable.class
+                    || expectClass == Collection.class
+                    ) {
+<span class="nc" id="L1017">                expectClassFlag = false;</span>
+            } else {
+<span class="fc" id="L1019">                expectClassFlag = true;</span>
+            }
+        }
+
+<span class="fc" id="L1023">        String className = typeName.replace('$', '.');</span>
+<span class="fc" id="L1024">        Class&lt;?&gt; clazz = null;</span>
+
+<span class="fc" id="L1026">        final long BASIC = 0xcbf29ce484222325L;</span>
+<span class="fc" id="L1027">        final long PRIME = 0x100000001b3L;</span>
+
+<span class="fc" id="L1029">        final long h1 = (BASIC ^ className.charAt(0)) * PRIME;</span>
+<span class="fc bfc" id="L1030" title="All 2 branches covered.">        if (h1 == 0xaf64164c86024f1aL) { // [</span>
+<span class="fc" id="L1031">            throw new JSONException(&quot;autoType is not support. &quot; + typeName);</span>
+        }
+
+<span class="fc bfc" id="L1034" title="All 2 branches covered.">        if ((h1 ^ className.charAt(className.length() - 1)) * PRIME == 0x9198507b5af98f0L) {</span>
+<span class="fc" id="L1035">            throw new JSONException(&quot;autoType is not support. &quot; + typeName);</span>
+        }
+
+<span class="fc" id="L1038">        final long h3 = (((((BASIC ^ className.charAt(0))</span>
+                * PRIME)
+<span class="fc" id="L1040">                ^ className.charAt(1))</span>
+                * PRIME)
+<span class="fc" id="L1042">                ^ className.charAt(2))</span>
+                * PRIME;
+
+<span class="fc bfc" id="L1045" title="All 4 branches covered.">        if (autoTypeSupport || expectClassFlag) {</span>
+<span class="fc" id="L1046">            long hash = h3;</span>
+<span class="fc bfc" id="L1047" title="All 2 branches covered.">            for (int i = 3; i &lt; className.length(); ++i) {</span>
+<span class="fc" id="L1048">                hash ^= className.charAt(i);</span>
+<span class="fc" id="L1049">                hash *= PRIME;</span>
+<span class="fc bfc" id="L1050" title="All 2 branches covered.">                if (Arrays.binarySearch(acceptHashCodes, hash) &gt;= 0) {</span>
+<span class="fc" id="L1051">                    clazz = TypeUtils.loadClass(typeName, defaultClassLoader, true);</span>
+<span class="fc bfc" id="L1052" title="All 2 branches covered.">                    if (clazz != null) {</span>
+<span class="fc" id="L1053">                        return clazz;</span>
+                    }
+                }
+<span class="fc bfc" id="L1056" title="All 4 branches covered.">                if (Arrays.binarySearch(denyHashCodes, hash) &gt;= 0 &amp;&amp; TypeUtils.getClassFromMapping(typeName) == null) {</span>
+<span class="fc" id="L1057">                    throw new JSONException(&quot;autoType is not support. &quot; + typeName);</span>
+                }
+            }
+        }
+
+<span class="pc bpc" id="L1062" title="1 of 2 branches missed.">        if (clazz == null) {</span>
+<span class="fc" id="L1063">            clazz = TypeUtils.getClassFromMapping(typeName);</span>
+        }
+
+<span class="fc bfc" id="L1066" title="All 2 branches covered.">        if (clazz == null) {</span>
+<span class="fc" id="L1067">            clazz = deserializers.findClass(typeName);</span>
+        }
+
+<span class="fc bfc" id="L1070" title="All 2 branches covered.">        if (clazz == null) {</span>
+<span class="fc" id="L1071">            clazz = typeMapping.get(typeName);</span>
+        }
+
+<span class="fc bfc" id="L1074" title="All 2 branches covered.">        if (clazz != null) {</span>
+<span class="fc bfc" id="L1075" title="All 4 branches covered.">            if (expectClass != null</span>
+                    &amp;&amp; clazz != java.util.HashMap.class
+<span class="pc bpc" id="L1077" title="1 of 2 branches missed.">                    &amp;&amp; !expectClass.isAssignableFrom(clazz)) {</span>
+<span class="nc" id="L1078">                throw new JSONException(&quot;type not match. &quot; + typeName + &quot; -&gt; &quot; + expectClass.getName());</span>
+            }
+
+<span class="fc" id="L1081">            return clazz;</span>
+        }
+
+<span class="fc bfc" id="L1084" title="All 2 branches covered.">        if (!autoTypeSupport) {</span>
+<span class="fc" id="L1085">            long hash = h3;</span>
+<span class="fc bfc" id="L1086" title="All 2 branches covered.">            for (int i = 3; i &lt; className.length(); ++i) {</span>
+<span class="fc" id="L1087">                char c = className.charAt(i);</span>
+<span class="fc" id="L1088">                hash ^= c;</span>
+<span class="fc" id="L1089">                hash *= PRIME;</span>
+
+<span class="fc bfc" id="L1091" title="All 2 branches covered.">                if (Arrays.binarySearch(denyHashCodes, hash) &gt;= 0) {</span>
+<span class="fc" id="L1092">                    throw new JSONException(&quot;autoType is not support. &quot; + typeName);</span>
+                }
+
+                // white list
+<span class="fc bfc" id="L1096" title="All 2 branches covered.">                if (Arrays.binarySearch(acceptHashCodes, hash) &gt;= 0) {</span>
+<span class="pc bpc" id="L1097" title="1 of 2 branches missed.">                    if (clazz == null) {</span>
+<span class="fc" id="L1098">                        clazz = TypeUtils.loadClass(typeName, defaultClassLoader, true);</span>
+                    }
+
+<span class="pc bpc" id="L1101" title="3 of 4 branches missed.">                    if (expectClass != null &amp;&amp; expectClass.isAssignableFrom(clazz)) {</span>
+<span class="nc" id="L1102">                        throw new JSONException(&quot;type not match. &quot; + typeName + &quot; -&gt; &quot; + expectClass.getName());</span>
+                    }
+
+<span class="fc" id="L1105">                    return clazz;</span>
+                }
+            }
+        }
+
+<span class="fc" id="L1110">        boolean jsonType = false;</span>
+<span class="fc" id="L1111">        InputStream is = null;</span>
+        try {
+<span class="fc" id="L1113">            String resource = typeName.replace('.', '/') + &quot;.class&quot;;</span>
+<span class="pc bpc" id="L1114" title="1 of 2 branches missed.">            if (defaultClassLoader != null) {</span>
+<span class="nc" id="L1115">                is = defaultClassLoader.getResourceAsStream(resource);</span>
+            } else {
+<span class="fc" id="L1117">                is = ParserConfig.class.getClassLoader().getResourceAsStream(resource);</span>
+            }
+<span class="fc bfc" id="L1119" title="All 2 branches covered.">            if (is != null) {</span>
+<span class="fc" id="L1120">                ClassReader classReader = new ClassReader(is, true);</span>
+<span class="fc" id="L1121">                TypeCollector visitor = new TypeCollector(&quot;&lt;clinit&gt;&quot;, new Class[0]);</span>
+<span class="fc" id="L1122">                classReader.accept(visitor);</span>
+<span class="fc" id="L1123">                jsonType = visitor.hasJsonType();</span>
+            }
+<span class="nc" id="L1125">        } catch (Exception e) {</span>
+            // skip
+        } finally {
+<span class="fc" id="L1128">            IOUtils.close(is);</span>
+        }
+
+<span class="fc" id="L1131">        final int mask = Feature.SupportAutoType.mask;</span>
+<span class="pc bpc" id="L1132" title="1 of 6 branches missed.">        boolean autoTypeSupport = this.autoTypeSupport</span>
+                || (features &amp; mask) != 0
+                || (JSON.DEFAULT_PARSER_FEATURE &amp; mask) != 0;
+
+<span class="pc bpc" id="L1136" title="1 of 8 branches missed.">        if (clazz == null &amp;&amp; (autoTypeSupport || jsonType || expectClassFlag)) {</span>
+<span class="fc bfc" id="L1137" title="All 4 branches covered.">            boolean cacheClass = autoTypeSupport || jsonType;</span>
+<span class="fc" id="L1138">            clazz = TypeUtils.loadClass(typeName, defaultClassLoader, cacheClass);</span>
+        }
+
+<span class="fc bfc" id="L1141" title="All 2 branches covered.">        if (clazz != null) {</span>
+<span class="fc bfc" id="L1142" title="All 2 branches covered.">            if (jsonType) {</span>
+<span class="fc" id="L1143">                TypeUtils.addMapping(typeName, clazz);</span>
+<span class="fc" id="L1144">                return clazz;</span>
+            }
+
+<span class="pc bpc" id="L1147" title="1 of 2 branches missed.">            if (ClassLoader.class.isAssignableFrom(clazz) // classloader is danger</span>
+<span class="pc bpc" id="L1148" title="1 of 2 branches missed.">                    || javax.sql.DataSource.class.isAssignableFrom(clazz) // dataSource can load jdbc driver</span>
+<span class="pc bpc" id="L1149" title="1 of 2 branches missed.">                    || javax.sql.RowSet.class.isAssignableFrom(clazz) //</span>
+                    ) {
+<span class="nc" id="L1151">                throw new JSONException(&quot;autoType is not support. &quot; + typeName);</span>
+            }
+
+<span class="fc bfc" id="L1154" title="All 2 branches covered.">            if (expectClass != null) {</span>
+<span class="fc bfc" id="L1155" title="All 2 branches covered.">                if (expectClass.isAssignableFrom(clazz)) {</span>
+<span class="fc" id="L1156">                    TypeUtils.addMapping(typeName, clazz);</span>
+<span class="fc" id="L1157">                    return clazz;</span>
+                } else {
+<span class="fc" id="L1159">                    throw new JSONException(&quot;type not match. &quot; + typeName + &quot; -&gt; &quot; + expectClass.getName());</span>
+                }
+            }
+
+<span class="fc" id="L1163">            JavaBeanInfo beanInfo = JavaBeanInfo.build(clazz, clazz, propertyNamingStrategy);</span>
+<span class="pc bpc" id="L1164" title="3 of 4 branches missed.">            if (beanInfo.creatorConstructor != null &amp;&amp; autoTypeSupport) {</span>
+<span class="nc" id="L1165">                throw new JSONException(&quot;autoType is not support. &quot; + typeName);</span>
+            }
+        }
+
+<span class="fc bfc" id="L1169" title="All 2 branches covered.">        if (!autoTypeSupport) {</span>
+<span class="fc" id="L1170">            throw new JSONException(&quot;autoType is not support. &quot; + typeName);</span>
+        }
+
+<span class="fc bfc" id="L1173" title="All 2 branches covered.">        if (clazz != null) {</span>
+<span class="fc" id="L1174">            TypeUtils.addMapping(typeName, clazz);</span>
+        }
+
+<span class="fc" id="L1177">        return clazz;</span>
+    }
+
+    public void clearDeserializers() {
+<span class="fc" id="L1181">        this.deserializers.clear();</span>
+<span class="fc" id="L1182">        this.initDeserializers();</span>
+<span class="fc" id="L1183">    }</span>
+
+    public boolean isJacksonCompatible() {
+<span class="fc" id="L1186">        return jacksonCompatible;</span>
+    }
+
+    public void setJacksonCompatible(boolean jacksonCompatible) {
+<span class="fc" id="L1190">        this.jacksonCompatible = jacksonCompatible;</span>
+<span class="fc" id="L1191">    }</span>
+
+    public void register(String typeName, Class type) {
+<span class="fc" id="L1194">        typeMapping.putIfAbsent(typeName, type);</span>
+<span class="fc" id="L1195">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>
