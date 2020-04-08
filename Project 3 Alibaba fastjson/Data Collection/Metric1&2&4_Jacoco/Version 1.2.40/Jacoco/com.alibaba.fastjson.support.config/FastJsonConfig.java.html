@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FastJsonConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.support.config</a> &gt; <span class="el_source">FastJsonConfig.java</span></div><h1>FastJsonConfig.java</h1><pre class="source lang-java linenums">
+package com.alibaba.fastjson.support.config;
+
+import com.alibaba.fastjson.parser.Feature;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.serializer.SerializeConfig;
+import com.alibaba.fastjson.serializer.SerializeFilter;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.fastjson.util.IOUtils;
+
+import java.nio.charset.Charset;
+import java.util.Map;
+import java.util.Map.Entry;
+
+/**
+ * Config for FastJson.
+ *
+ * @author VictorZeng
+ * @see SerializeConfig
+ * @see ParserConfig
+ * @see SerializerFeature
+ * @see SerializeFilter
+ * @see Feature
+ * @since 1.2.11
+ */
+
+public class FastJsonConfig {
+
+    /**
+     * default charset
+     */
+    private Charset charset;
+
+    /**
+     * serializeConfig
+     */
+    private SerializeConfig serializeConfig;
+
+    /**
+     * parserConfig
+     */
+    private ParserConfig parserConfig;
+
+    /**
+     * serializerFeatures
+     */
+    private SerializerFeature[] serializerFeatures;
+
+    /**
+     * serializeFilters
+     */
+    private SerializeFilter[] serializeFilters;
+
+    /**
+     * features
+     */
+    private Feature[] features;
+
+    /**
+     * class level serializeFilter
+     */
+    private Map&lt;Class&lt;?&gt;, SerializeFilter&gt; classSerializeFilters;
+
+    /**
+     * format date type
+     */
+    private String dateFormat;
+
+<span class="fc" id="L69">    protected boolean writeContentLength = true;</span>
+
+    /**
+     * init param.
+     */
+<span class="fc" id="L74">    public FastJsonConfig() {</span>
+
+<span class="fc" id="L76">        this.charset = Charset.forName(&quot;UTF-8&quot;);</span>
+
+<span class="fc" id="L78">        this.serializeConfig = SerializeConfig.getGlobalInstance();</span>
+<span class="fc" id="L79">        this.parserConfig = new ParserConfig();</span>
+
+<span class="fc" id="L81">        this.serializerFeatures = new SerializerFeature[] {</span>
+                SerializerFeature.BrowserSecure
+        };
+
+<span class="fc" id="L85">        this.serializeFilters = new SerializeFilter[0];</span>
+<span class="fc" id="L86">        this.features = new Feature[0];</span>
+<span class="fc" id="L87">    }</span>
+
+    /**
+     * @return the serializeConfig
+     */
+    public SerializeConfig getSerializeConfig() {
+<span class="fc" id="L93">        return serializeConfig;</span>
+    }
+
+    /**
+     * @param serializeConfig the serializeConfig to set
+     */
+    public void setSerializeConfig(SerializeConfig serializeConfig) {
+<span class="fc" id="L100">        this.serializeConfig = serializeConfig;</span>
+<span class="fc" id="L101">    }</span>
+
+    /**
+     * @return the parserConfig
+     */
+    public ParserConfig getParserConfig() {
+<span class="fc" id="L107">        return parserConfig;</span>
+    }
+
+    /**
+     * @param parserConfig the parserConfig to set
+     */
+    public void setParserConfig(ParserConfig parserConfig) {
+<span class="fc" id="L114">        this.parserConfig = parserConfig;</span>
+<span class="fc" id="L115">    }</span>
+
+    /**
+     * @return the serializerFeatures
+     */
+    public SerializerFeature[] getSerializerFeatures() {
+<span class="fc" id="L121">        return serializerFeatures;</span>
+    }
+
+    /**
+     * @param serializerFeatures the serializerFeatures to set
+     */
+    public void setSerializerFeatures(SerializerFeature... serializerFeatures) {
+<span class="fc" id="L128">        this.serializerFeatures = serializerFeatures;</span>
+<span class="fc" id="L129">    }</span>
+
+    /**
+     * @return the serializeFilters
+     */
+    public SerializeFilter[] getSerializeFilters() {
+<span class="fc" id="L135">        return serializeFilters;</span>
+    }
+
+    /**
+     * @param serializeFilters the serializeFilters to set
+     */
+    public void setSerializeFilters(SerializeFilter... serializeFilters) {
+<span class="fc" id="L142">        this.serializeFilters = serializeFilters;</span>
+<span class="fc" id="L143">    }</span>
+
+    /**
+     * @return the features
+     */
+    public Feature[] getFeatures() {
+<span class="fc" id="L149">        return features;</span>
+    }
+
+    /**
+     * @param features the features to set
+     */
+    public void setFeatures(Feature... features) {
+<span class="fc" id="L156">        this.features = features;</span>
+<span class="fc" id="L157">    }</span>
+
+    /**
+     * @return the classSerializeFilters
+     */
+    public Map&lt;Class&lt;?&gt;, SerializeFilter&gt; getClassSerializeFilters() {
+<span class="fc" id="L163">        return classSerializeFilters;</span>
+    }
+
+    /**
+     * @param classSerializeFilters the classSerializeFilters to set
+     */
+    public void setClassSerializeFilters(
+            Map&lt;Class&lt;?&gt;, SerializeFilter&gt; classSerializeFilters) {
+
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        if (classSerializeFilters == null)</span>
+<span class="fc" id="L173">            return;</span>
+
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        for (Entry&lt;Class&lt;?&gt;, SerializeFilter&gt; entry : classSerializeFilters.entrySet())</span>
+
+<span class="fc" id="L177">            this.serializeConfig.addFilter(entry.getKey(), entry.getValue());</span>
+
+<span class="fc" id="L179">        this.classSerializeFilters = classSerializeFilters;</span>
+<span class="fc" id="L180">    }</span>
+
+    /**
+     * @return the dateFormat
+     */
+    public String getDateFormat() {
+<span class="fc" id="L186">        return dateFormat;</span>
+    }
+
+    /**
+     * @param dateFormat the dateFormat to set
+     */
+    public void setDateFormat(String dateFormat) {
+<span class="fc" id="L193">        this.dateFormat = dateFormat;</span>
+<span class="fc" id="L194">    }</span>
+
+    /**
+     * @return the charset
+     */
+    public Charset getCharset() {
+<span class="fc" id="L200">        return charset;</span>
+    }
+
+    /**
+     * @param charset the charset to set
+     */
+    public void setCharset(Charset charset) {
+<span class="fc" id="L207">        this.charset = charset;</span>
+<span class="fc" id="L208">    }</span>
+
+    public boolean isWriteContentLength() {
+<span class="fc" id="L211">        return writeContentLength;</span>
+    }
+
+    public void setWriteContentLength(boolean writeContentLength) {
+<span class="fc" id="L215">        this.writeContentLength = writeContentLength;</span>
+<span class="fc" id="L216">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

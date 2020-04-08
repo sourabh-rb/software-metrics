@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnnotationSerializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">AnnotationSerializer.java</span></div><h1>AnnotationSerializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.serializer;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import sun.reflect.annotation.AnnotationType;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.util.Iterator;
+import java.util.Map;
+
+/**
+ * Created by wenshao on 10/05/2017.
+ */
+<span class="fc" id="L17">public class AnnotationSerializer implements ObjectSerializer {</span>
+<span class="fc" id="L18">    public static AnnotationSerializer instance = new AnnotationSerializer();</span>
+
+    public void write(JSONSerializer serializer, Object object, Object fieldName, Type fieldType, int features) throws IOException {
+<span class="fc" id="L21">        Class objClass = object.getClass();</span>
+<span class="fc" id="L22">        Class[] interfaces = objClass.getInterfaces();</span>
+<span class="pc bpc" id="L23" title="2 of 4 branches missed.">        if (interfaces.length == 1 &amp;&amp; interfaces[0].isAnnotation()) {</span>
+<span class="fc" id="L24">            Class annotationClass = interfaces[0];</span>
+<span class="fc" id="L25">            AnnotationType type = AnnotationType.getInstance(annotationClass);</span>
+<span class="fc" id="L26">            Map&lt;String, Method&gt; members = type.members();</span>
+<span class="fc" id="L27">            JSONObject json = new JSONObject(members.size());</span>
+<span class="fc" id="L28">            Iterator&lt;Map.Entry&lt;String, Method&gt;&gt; iterator = members.entrySet().iterator();</span>
+            Map.Entry&lt;String, Method&gt; entry;
+<span class="fc" id="L30">            Object val = null;</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">            while (iterator.hasNext()) {</span>
+<span class="fc" id="L32">                entry = iterator.next();</span>
+                try {
+<span class="fc" id="L34">                    val = entry.getValue().invoke(object);</span>
+<span class="nc" id="L35">                } catch (IllegalAccessException e) {</span>
+                    // skip
+<span class="nc" id="L37">                } catch (InvocationTargetException e) {</span>
+                    // skip
+<span class="pc" id="L39">                }</span>
+<span class="fc" id="L40">                json.put(entry.getKey(), JSON.toJSON(val));</span>
+            }
+<span class="fc" id="L42">            serializer.write(json);</span>
+<span class="fc" id="L43">            return;</span>
+        }
+<span class="nc" id="L45">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

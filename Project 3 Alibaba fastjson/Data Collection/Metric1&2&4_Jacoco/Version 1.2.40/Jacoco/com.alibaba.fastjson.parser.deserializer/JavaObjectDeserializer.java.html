@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaObjectDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">JavaObjectDeserializer.java</span></div><h1>JavaObjectDeserializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import java.io.Serializable;
+import java.lang.reflect.Array;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.JSONToken;
+
+<span class="fc" id="L14">public class JavaObjectDeserializer implements ObjectDeserializer {</span>
+
+<span class="fc" id="L16">    public final static JavaObjectDeserializer instance = new JavaObjectDeserializer();</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; T deserialze(DefaultJSONParser parser, Type type, Object fieldName) {
+<span class="fc bfc" id="L20" title="All 2 branches covered.">        if (type instanceof GenericArrayType) {</span>
+<span class="fc" id="L21">            Type componentType = ((GenericArrayType) type).getGenericComponentType();</span>
+<span class="fc bfc" id="L22" title="All 2 branches covered.">            if (componentType instanceof TypeVariable) {</span>
+<span class="fc" id="L23">                TypeVariable&lt;?&gt; componentVar = (TypeVariable&lt;?&gt;) componentType;</span>
+<span class="fc" id="L24">                componentType = componentVar.getBounds()[0];</span>
+            }
+
+<span class="fc" id="L27">            List&lt;Object&gt; list = new ArrayList&lt;Object&gt;();</span>
+<span class="fc" id="L28">            parser.parseArray(componentType, list);</span>
+            Class&lt;?&gt; componentClass;
+<span class="fc bfc" id="L30" title="All 2 branches covered.">            if (componentType instanceof Class) {</span>
+<span class="fc" id="L31">                componentClass = (Class&lt;?&gt;) componentType;</span>
+<span class="fc" id="L32">                Object[] array = (Object[]) Array.newInstance(componentClass, list.size());</span>
+<span class="fc" id="L33">                list.toArray(array);</span>
+<span class="fc" id="L34">                return (T) array;</span>
+            } else {
+<span class="fc" id="L36">                return (T) list.toArray();</span>
+            }
+
+        }
+        
+<span class="pc bpc" id="L41" title="1 of 6 branches missed.">        if (type instanceof Class &amp;&amp; type != Object.class &amp;&amp; type != Serializable.class) {</span>
+<span class="nc" id="L42">            return (T) parser.parseObject(type);    </span>
+        }
+
+<span class="fc" id="L45">        return (T) parser.parse(fieldName);</span>
+    }
+
+    public int getFastMatchToken() {
+<span class="fc" id="L49">        return JSONToken.LBRACE;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

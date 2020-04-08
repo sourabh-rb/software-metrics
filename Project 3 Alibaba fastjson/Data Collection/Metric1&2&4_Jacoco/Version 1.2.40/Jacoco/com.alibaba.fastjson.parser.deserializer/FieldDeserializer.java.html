@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.parser.deserializer</a> &gt; <span class="el_source">FieldDeserializer.java</span></div><h1>FieldDeserializer.java</h1><pre class="source lang-java linenums">package com.alibaba.fastjson.parser.deserializer;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.serializer.BeanContext;
+import com.alibaba.fastjson.util.FieldInfo;
+
+public abstract class FieldDeserializer {
+
+    public final FieldInfo fieldInfo;
+
+    protected final Class&lt;?&gt;  clazz;
+    
+    protected BeanContext    beanContext;
+
+<span class="fc" id="L25">    public FieldDeserializer(Class&lt;?&gt; clazz, FieldInfo fieldInfo){</span>
+<span class="fc" id="L26">        this.clazz = clazz;</span>
+<span class="fc" id="L27">        this.fieldInfo = fieldInfo;</span>
+<span class="fc" id="L28">    }</span>
+    
+    public abstract void parseField(DefaultJSONParser parser, Object object, Type objectType,
+                                    Map&lt;String, Object&gt; fieldValues);
+
+    public int getFastMatchToken() {
+<span class="nc" id="L34">        return 0;</span>
+    }
+
+    public void setValue(Object object, boolean value) {
+<span class="fc" id="L38">        setValue(object, Boolean.valueOf(value));</span>
+<span class="fc" id="L39">    }</span>
+
+    public void setValue(Object object, int value) {
+<span class="fc" id="L42">        setValue(object, Integer.valueOf(value));</span>
+<span class="fc" id="L43">    }</span>
+
+    public void setValue(Object object, long value) {
+<span class="fc" id="L46">        setValue(object, Long.valueOf(value));</span>
+<span class="fc" id="L47">    }</span>
+
+    public void setValue(Object object, String value) {
+<span class="fc" id="L50">        setValue(object, (Object) value);</span>
+<span class="fc" id="L51">    }</span>
+
+    @SuppressWarnings({ &quot;rawtypes&quot;, &quot;unchecked&quot; })
+    public void setValue(Object object, Object value) {
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (value == null //</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">            &amp;&amp; fieldInfo.fieldClass.isPrimitive()) {</span>
+<span class="fc" id="L57">            return;</span>
+<span class="fc bfc" id="L58" title="All 4 branches covered.">        } else if (fieldInfo.fieldClass == String.class</span>
+                &amp;&amp; fieldInfo.format != null
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">                &amp;&amp; fieldInfo.format.equals(&quot;trim&quot;)){</span>
+<span class="fc" id="L61">            value = ((String) value).trim();</span>
+        }
+
+        try {
+<span class="fc" id="L65">            Method method = fieldInfo.method;</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">            if (method != null) {</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">                if (fieldInfo.getOnly) {</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">                    if (fieldInfo.fieldClass == AtomicInteger.class) {</span>
+<span class="fc" id="L69">                        AtomicInteger atomic = (AtomicInteger) method.invoke(object);</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">                        if (atomic != null) {</span>
+<span class="fc" id="L71">                            atomic.set(((AtomicInteger) value).get());</span>
+                        }
+<span class="fc bfc" id="L73" title="All 2 branches covered.">                    } else if (fieldInfo.fieldClass == AtomicLong.class) {</span>
+<span class="fc" id="L74">                        AtomicLong atomic = (AtomicLong) method.invoke(object);</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">                        if (atomic != null) {</span>
+<span class="fc" id="L76">                            atomic.set(((AtomicLong) value).get());</span>
+                        }
+<span class="fc bfc" id="L78" title="All 2 branches covered.">                    } else if (fieldInfo.fieldClass == AtomicBoolean.class) {</span>
+<span class="fc" id="L79">                        AtomicBoolean atomic = (AtomicBoolean) method.invoke(object);</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">                        if (atomic != null) {</span>
+<span class="fc" id="L81">                            atomic.set(((AtomicBoolean) value).get());</span>
+                        }
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                    } else if (Map.class.isAssignableFrom(method.getReturnType())) {</span>
+<span class="fc" id="L84">                        Map map = (Map) method.invoke(object);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">                        if (map != null) {</span>
+<span class="fc" id="L86">                            map.putAll((Map) value);</span>
+                        }
+<span class="fc" id="L88">                    } else {</span>
+<span class="fc" id="L89">                        Collection collection = (Collection) method.invoke(object);</span>
+<span class="fc bfc" id="L90" title="All 4 branches covered.">                        if (collection != null &amp;&amp; value != null) {</span>
+<span class="fc" id="L91">                            collection.clear();</span>
+<span class="fc" id="L92">                            collection.addAll((Collection) value);</span>
+                        }
+<span class="fc" id="L94">                    }</span>
+                } else {
+<span class="fc" id="L96">                    method.invoke(object, value);</span>
+                }
+            } else {
+<span class="fc" id="L99">                final Field field = fieldInfo.field;</span>
+                
+<span class="fc bfc" id="L101" title="All 2 branches covered.">                if (fieldInfo.getOnly) {</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">                    if (fieldInfo.fieldClass == AtomicInteger.class) {</span>
+<span class="fc" id="L103">                        AtomicInteger atomic = (AtomicInteger) field.get(object);</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">                        if (atomic != null) {</span>
+<span class="fc" id="L105">                            atomic.set(((AtomicInteger) value).get());</span>
+                        }
+<span class="fc bfc" id="L107" title="All 2 branches covered.">                    } else if (fieldInfo.fieldClass == AtomicLong.class) {</span>
+<span class="fc" id="L108">                        AtomicLong atomic = (AtomicLong) field.get(object);</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">                        if (atomic != null) {</span>
+<span class="fc" id="L110">                            atomic.set(((AtomicLong) value).get());</span>
+                        }
+<span class="fc bfc" id="L112" title="All 2 branches covered.">                    } else if (fieldInfo.fieldClass == AtomicBoolean.class) {</span>
+<span class="fc" id="L113">                        AtomicBoolean atomic = (AtomicBoolean) field.get(object);</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">                        if (atomic != null) {</span>
+<span class="fc" id="L115">                            atomic.set(((AtomicBoolean) value).get());</span>
+                        }
+<span class="fc bfc" id="L117" title="All 2 branches covered.">                    } else if (Map.class.isAssignableFrom(fieldInfo.fieldClass)) {</span>
+<span class="fc" id="L118">                        Map map = (Map) field.get(object);</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">                        if (map != null) {</span>
+<span class="fc" id="L120">                            map.putAll((Map) value);</span>
+                        }
+<span class="fc" id="L122">                    } else {</span>
+<span class="fc" id="L123">                        Collection collection = (Collection) field.get(object);</span>
+<span class="pc bpc" id="L124" title="1 of 4 branches missed.">                        if (collection != null &amp;&amp; value != null) {</span>
+<span class="fc" id="L125">                            collection.clear();</span>
+<span class="fc" id="L126">                            collection.addAll((Collection) value);</span>
+                        }
+<span class="fc" id="L128">                    }</span>
+                } else {
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">                    if (field != null) {</span>
+<span class="fc" id="L131">                        field.set(object, value);</span>
+                    }
+                }
+            }
+<span class="fc" id="L135">        } catch (Exception e) {</span>
+<span class="fc" id="L136">            throw new JSONException(&quot;set property error, &quot; + fieldInfo.name, e);</span>
+<span class="fc" id="L137">        }</span>
+<span class="fc" id="L138">    }</span>
+
+    public void setWrappedValue(String key, Object value) {
+<span class="nc" id="L141">        throw new JSONException(&quot;TODO&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

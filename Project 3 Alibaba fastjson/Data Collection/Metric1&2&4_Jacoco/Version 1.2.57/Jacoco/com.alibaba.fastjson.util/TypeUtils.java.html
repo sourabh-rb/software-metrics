@@ -1,0 +1,2810 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TypeUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.util</a> &gt; <span class="el_source">TypeUtils.java</span></div><h1>TypeUtils.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2017 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.util;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.PropertyNamingStrategy;
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.annotation.JSONType;
+import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.Feature;
+import com.alibaba.fastjson.parser.JSONScanner;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.alibaba.fastjson.parser.deserializer.EnumDeserializer;
+import com.alibaba.fastjson.parser.deserializer.JavaBeanDeserializer;
+import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
+import com.alibaba.fastjson.serializer.CalendarCodec;
+import com.alibaba.fastjson.serializer.SerializeBeanInfo;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.security.AccessControlException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+<span class="fc" id="L60">public class TypeUtils{</span>
+
+<span class="fc" id="L62">    public static boolean compatibleWithJavaBean = false;</span>
+    /** 根据field name的大小写输出输入数据 */
+<span class="fc" id="L64">    public static boolean compatibleWithFieldName = false;</span>
+<span class="fc" id="L65">    private static boolean setAccessibleEnable = true;</span>
+<span class="fc" id="L66">    private static boolean oracleTimestampMethodInited = false;</span>
+    private static Method oracleTimestampMethod;
+<span class="fc" id="L68">    private static boolean oracleDateMethodInited = false;</span>
+    private static Method oracleDateMethod;
+<span class="fc" id="L70">    private static boolean optionalClassInited = false;</span>
+    private static Class&lt;?&gt; optionalClass;
+<span class="fc" id="L72">    private static boolean transientClassInited = false;</span>
+    private static Class&lt;? extends Annotation&gt; transientClass;
+
+<span class="fc" id="L75">    private static Class&lt;? extends Annotation&gt; class_OneToMany = null;</span>
+<span class="fc" id="L76">    private static boolean class_OneToMany_error = false;</span>
+<span class="fc" id="L77">    private static Class&lt;? extends Annotation&gt; class_ManyToMany = null;</span>
+<span class="fc" id="L78">    private static boolean class_ManyToMany_error = false;</span>
+
+<span class="fc" id="L80">    private static Method method_HibernateIsInitialized = null;</span>
+<span class="fc" id="L81">    private static boolean method_HibernateIsInitialized_error = false;</span>
+    private static volatile Class kotlin_metadata;
+    private static volatile boolean kotlin_metadata_error;
+    private static volatile boolean kotlin_class_klass_error;
+    private static volatile Constructor kotlin_kclass_constructor;
+    private static volatile Method kotlin_kclass_getConstructors;
+    private static volatile Method kotlin_kfunction_getParameters;
+    private static volatile Method kotlin_kparameter_getName;
+    private static volatile boolean kotlin_error;
+    private static volatile Map&lt;Class,String[]&gt; kotlinIgnores;
+    private static volatile boolean kotlinIgnores_error;
+<span class="fc" id="L92">    private static ConcurrentMap&lt;String,Class&lt;?&gt;&gt; mappings = new ConcurrentHashMap&lt;String,Class&lt;?&gt;&gt;(256, 0.75f, 1);</span>
+    private static Class&lt;?&gt; pathClass;
+<span class="fc" id="L94">    private static boolean pathClass_error = false;</span>
+
+<span class="fc" id="L96">    private static Class&lt;? extends Annotation&gt; class_JacksonCreator = null;</span>
+<span class="fc" id="L97">    private static boolean class_JacksonCreator_error = false;</span>
+
+<span class="fc" id="L99">    private static volatile Class class_Clob = null;</span>
+<span class="fc" id="L100">    private static volatile boolean class_Clob_error = false;</span>
+
+<span class="fc" id="L102">    private static volatile Class class_XmlAccessType = null;</span>
+<span class="fc" id="L103">    private static volatile Class class_XmlAccessorType = null;</span>
+<span class="fc" id="L104">    private static volatile boolean classXmlAccessorType_error = false;</span>
+<span class="fc" id="L105">    private static volatile Method method_XmlAccessorType_value = null;</span>
+<span class="fc" id="L106">    private static volatile Field field_XmlAccessType_FIELD = null;</span>
+<span class="fc" id="L107">    private static volatile Object field_XmlAccessType_FIELD_VALUE = null;</span>
+
+    static{
+        try{
+<span class="fc" id="L111">            TypeUtils.compatibleWithJavaBean = &quot;true&quot;.equals(IOUtils.getStringProperty(IOUtils.FASTJSON_COMPATIBLEWITHJAVABEAN));</span>
+<span class="fc" id="L112">            TypeUtils.compatibleWithFieldName = &quot;true&quot;.equals(IOUtils.getStringProperty(IOUtils.FASTJSON_COMPATIBLEWITHFIELDNAME));</span>
+<span class="nc" id="L113">        } catch(Throwable e){</span>
+            // skip
+<span class="fc" id="L115">        }</span>
+    }
+
+    static{
+<span class="fc" id="L119">        addBaseClassMappings();</span>
+<span class="fc" id="L120">    }</span>
+
+
+    public static boolean isXmlField(Class clazz) {
+<span class="pc bpc" id="L124" title="1 of 4 branches missed.">        if (class_XmlAccessorType == null &amp;&amp; !classXmlAccessorType_error) {</span>
+            try {
+<span class="fc" id="L126">                class_XmlAccessorType = Class.forName(&quot;javax.xml.bind.annotation.XmlAccessorType&quot;);</span>
+<span class="nc" id="L127">            } catch(Throwable ex){</span>
+<span class="nc" id="L128">                classXmlAccessorType_error = true;</span>
+<span class="fc" id="L129">            }</span>
+        }
+
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">        if (class_XmlAccessorType == null) {</span>
+<span class="nc" id="L133">            return false;</span>
+        }
+
+<span class="fc" id="L136">        Annotation annotation = clazz.getAnnotation(class_XmlAccessorType);</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (annotation == null) {</span>
+<span class="fc" id="L138">            return false;</span>
+        }
+
+<span class="pc bpc" id="L141" title="1 of 4 branches missed.">        if (method_XmlAccessorType_value == null &amp;&amp; !classXmlAccessorType_error) {</span>
+            try {
+<span class="fc" id="L143">                method_XmlAccessorType_value = class_XmlAccessorType.getMethod(&quot;value&quot;);</span>
+<span class="nc" id="L144">            } catch(Throwable ex){</span>
+<span class="nc" id="L145">                classXmlAccessorType_error = true;</span>
+<span class="fc" id="L146">            }</span>
+        }
+
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        if (method_XmlAccessorType_value == null) {</span>
+<span class="nc" id="L150">            return false;</span>
+        }
+
+<span class="fc" id="L153">        Object value = null;</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">        if (!classXmlAccessorType_error) {</span>
+            try {
+<span class="fc" id="L156">                value = method_XmlAccessorType_value.invoke(annotation);</span>
+<span class="nc" id="L157">            } catch (Throwable ex) {</span>
+<span class="nc" id="L158">                classXmlAccessorType_error = true;</span>
+<span class="fc" id="L159">            }</span>
+        }
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        if (value == null) {</span>
+<span class="nc" id="L162">            return false;</span>
+        }
+
+<span class="pc bpc" id="L165" title="1 of 4 branches missed.">        if (class_XmlAccessType == null &amp;&amp; !classXmlAccessorType_error) {</span>
+            try {
+<span class="fc" id="L167">                class_XmlAccessType = Class.forName(&quot;javax.xml.bind.annotation.XmlAccessType&quot;);</span>
+<span class="fc" id="L168">                field_XmlAccessType_FIELD = class_XmlAccessType.getField(&quot;FIELD&quot;);</span>
+<span class="fc" id="L169">                field_XmlAccessType_FIELD_VALUE = field_XmlAccessType_FIELD.get(null);</span>
+<span class="nc" id="L170">            } catch(Throwable ex){</span>
+<span class="nc" id="L171">                classXmlAccessorType_error = true;</span>
+<span class="fc" id="L172">            }</span>
+        }
+
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">        return value == field_XmlAccessType_FIELD_VALUE;</span>
+    }
+
+    public static Annotation getXmlAccessorType(Class clazz) {
+<span class="nc bnc" id="L179" title="All 4 branches missed.">        if (class_XmlAccessorType == null &amp;&amp; !classXmlAccessorType_error) {</span>
+
+            try{
+<span class="nc" id="L182">                class_XmlAccessorType = Class.forName(&quot;javax.xml.bind.annotation.XmlAccessorType&quot;);</span>
+<span class="nc" id="L183">            } catch(Throwable ex){</span>
+<span class="nc" id="L184">                classXmlAccessorType_error = true;</span>
+<span class="nc" id="L185">            }</span>
+        }
+
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        if (class_XmlAccessorType == null) {</span>
+<span class="nc" id="L189">            return null;</span>
+        }
+
+<span class="nc" id="L192">        return  clazz.getAnnotation(class_XmlAccessorType);</span>
+    }
+
+//
+//    public static boolean isXmlAccessType(Class clazz) {
+//        if (class_XmlAccessType == null &amp;&amp; !class_XmlAccessType_error) {
+//
+//            try{
+//                class_XmlAccessType = Class.forName(&quot;javax.xml.bind.annotation.XmlAccessType&quot;);
+//            } catch(Throwable ex){
+//                class_XmlAccessType_error = true;
+//            }
+//        }
+//
+//        if (class_XmlAccessType == null) {
+//            return false;
+//        }
+//
+//        return  class_XmlAccessType.isAssignableFrom(clazz);
+//    }
+
+    public static boolean isClob(Class clazz) {
+<span class="pc bpc" id="L214" title="1 of 4 branches missed.">        if (class_Clob == null &amp;&amp; !class_Clob_error) {</span>
+
+            try{
+<span class="fc" id="L217">                class_Clob = Class.forName(&quot;java.sql.Clob&quot;);</span>
+<span class="nc" id="L218">            } catch(Throwable ex){</span>
+<span class="nc" id="L219">                class_Clob_error = true;</span>
+<span class="fc" id="L220">            }</span>
+        }
+
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">        if (class_Clob == null) {</span>
+<span class="nc" id="L224">            return false;</span>
+        }
+
+<span class="fc" id="L227">        return  class_Clob.isAssignableFrom(clazz);</span>
+    }
+
+    public static String castToString(Object value){
+<span class="fc bfc" id="L231" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L232">            return null;</span>
+        }
+<span class="fc" id="L234">        return value.toString();</span>
+    }
+
+    public static Byte castToByte(Object value){
+<span class="fc bfc" id="L238" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L239">            return null;</span>
+        }
+
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">        if(value instanceof BigDecimal){</span>
+<span class="nc" id="L243">            return byteValue((BigDecimal) value);</span>
+        }
+
+<span class="fc bfc" id="L246" title="All 2 branches covered.">        if(value instanceof Number){</span>
+<span class="fc" id="L247">            return ((Number) value).byteValue();</span>
+        }
+
+<span class="fc bfc" id="L250" title="All 2 branches covered.">        if(value instanceof String){</span>
+<span class="fc" id="L251">            String strVal = (String) value;</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">            if(strVal.length() == 0 //</span>
+<span class="fc bfc" id="L253" title="All 2 branches covered.">                    || &quot;null&quot;.equals(strVal) //</span>
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">                    || &quot;NULL&quot;.equals(strVal)){</span>
+<span class="fc" id="L255">                return null;</span>
+            }
+<span class="fc" id="L257">            return Byte.parseByte(strVal);</span>
+        }
+<span class="fc" id="L259">        throw new JSONException(&quot;can not cast to byte, value : &quot; + value);</span>
+    }
+
+    public static Character castToChar(Object value){
+<span class="fc bfc" id="L263" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L264">            return null;</span>
+        }
+<span class="fc bfc" id="L266" title="All 2 branches covered.">        if(value instanceof Character){</span>
+<span class="fc" id="L267">            return (Character) value;</span>
+        }
+<span class="fc bfc" id="L269" title="All 2 branches covered.">        if(value instanceof String){</span>
+<span class="fc" id="L270">            String strVal = (String) value;</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">            if(strVal.length() == 0){</span>
+<span class="fc" id="L272">                return null;</span>
+            }
+<span class="fc bfc" id="L274" title="All 2 branches covered.">            if(strVal.length() != 1){</span>
+<span class="fc" id="L275">                throw new JSONException(&quot;can not cast to char, value : &quot; + value);</span>
+            }
+<span class="fc" id="L277">            return strVal.charAt(0);</span>
+        }
+<span class="fc" id="L279">        throw new JSONException(&quot;can not cast to char, value : &quot; + value);</span>
+    }
+
+    public static Short castToShort(Object value){
+<span class="fc bfc" id="L283" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L284">            return null;</span>
+        }
+
+<span class="pc bpc" id="L287" title="1 of 2 branches missed.">        if(value instanceof BigDecimal){</span>
+<span class="nc" id="L288">            return shortValue((BigDecimal) value);</span>
+        }
+
+<span class="fc bfc" id="L291" title="All 2 branches covered.">        if(value instanceof Number){</span>
+<span class="fc" id="L292">            return ((Number) value).shortValue();</span>
+        }
+
+<span class="fc bfc" id="L295" title="All 2 branches covered.">        if(value instanceof String){</span>
+<span class="fc" id="L296">            String strVal = (String) value;</span>
+<span class="fc bfc" id="L297" title="All 2 branches covered.">            if(strVal.length() == 0 //</span>
+<span class="fc bfc" id="L298" title="All 2 branches covered.">                    || &quot;null&quot;.equals(strVal) //</span>
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">                    || &quot;NULL&quot;.equals(strVal)){</span>
+<span class="fc" id="L300">                return null;</span>
+            }
+<span class="fc" id="L302">            return Short.parseShort(strVal);</span>
+        }
+
+<span class="fc" id="L305">        throw new JSONException(&quot;can not cast to short, value : &quot; + value);</span>
+    }
+
+    public static BigDecimal castToBigDecimal(Object value){
+<span class="fc bfc" id="L309" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L310">            return null;</span>
+        }
+<span class="fc bfc" id="L312" title="All 2 branches covered.">        if(value instanceof BigDecimal){</span>
+<span class="fc" id="L313">            return (BigDecimal) value;</span>
+        }
+<span class="fc bfc" id="L315" title="All 2 branches covered.">        if(value instanceof BigInteger){</span>
+<span class="fc" id="L316">            return new BigDecimal((BigInteger) value);</span>
+        }
+<span class="fc" id="L318">        String strVal = value.toString();</span>
+<span class="fc bfc" id="L319" title="All 2 branches covered.">        if(strVal.length() == 0){</span>
+<span class="fc" id="L320">            return null;</span>
+        }
+<span class="fc bfc" id="L322" title="All 4 branches covered.">        if(value instanceof Map &amp;&amp; ((Map) value).size() == 0){</span>
+<span class="fc" id="L323">            return null;</span>
+        }
+<span class="fc" id="L325">        return new BigDecimal(strVal);</span>
+    }
+
+    public static BigInteger castToBigInteger(Object value){
+<span class="fc bfc" id="L329" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L330">            return null;</span>
+        }
+<span class="fc bfc" id="L332" title="All 2 branches covered.">        if(value instanceof BigInteger){</span>
+<span class="fc" id="L333">            return (BigInteger) value;</span>
+        }
+<span class="fc bfc" id="L335" title="All 4 branches covered.">        if(value instanceof Float || value instanceof Double){</span>
+<span class="fc" id="L336">            return BigInteger.valueOf(((Number) value).longValue());</span>
+        }
+<span class="fc bfc" id="L338" title="All 2 branches covered.">        if(value instanceof BigDecimal){</span>
+<span class="fc" id="L339">            BigDecimal decimal = (BigDecimal) value;</span>
+<span class="fc" id="L340">            int scale = decimal.scale();</span>
+<span class="pc bpc" id="L341" title="1 of 4 branches missed.">            if (scale &gt; -1000 &amp;&amp; scale &lt; 1000) {</span>
+<span class="fc" id="L342">                return ((BigDecimal) value).toBigInteger();</span>
+            }
+        }
+<span class="fc" id="L345">        String strVal = value.toString();</span>
+<span class="fc bfc" id="L346" title="All 2 branches covered.">        if(strVal.length() == 0 //</span>
+<span class="pc bpc" id="L347" title="1 of 2 branches missed.">                || &quot;null&quot;.equals(strVal) //</span>
+<span class="pc bpc" id="L348" title="1 of 2 branches missed.">                || &quot;NULL&quot;.equals(strVal)){</span>
+<span class="fc" id="L349">            return null;</span>
+        }
+<span class="fc" id="L351">        return new BigInteger(strVal);</span>
+    }
+
+    public static Float castToFloat(Object value){
+<span class="fc bfc" id="L355" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L356">            return null;</span>
+        }
+<span class="fc bfc" id="L358" title="All 2 branches covered.">        if(value instanceof Number){</span>
+<span class="fc" id="L359">            return ((Number) value).floatValue();</span>
+        }
+<span class="fc bfc" id="L361" title="All 2 branches covered.">        if(value instanceof String){</span>
+<span class="fc" id="L362">            String strVal = value.toString();</span>
+<span class="fc bfc" id="L363" title="All 2 branches covered.">            if(strVal.length() == 0 //</span>
+<span class="fc bfc" id="L364" title="All 2 branches covered.">                    || &quot;null&quot;.equals(strVal) //</span>
+<span class="pc bpc" id="L365" title="1 of 2 branches missed.">                    || &quot;NULL&quot;.equals(strVal)){</span>
+<span class="fc" id="L366">                return null;</span>
+            }
+<span class="pc bpc" id="L368" title="1 of 2 branches missed.">            if(strVal.indexOf(',') != 0){</span>
+<span class="fc" id="L369">                strVal = strVal.replaceAll(&quot;,&quot;, &quot;&quot;);</span>
+            }
+<span class="fc" id="L371">            return Float.parseFloat(strVal);</span>
+        }
+<span class="fc" id="L373">        throw new JSONException(&quot;can not cast to float, value : &quot; + value);</span>
+    }
+
+    public static Double castToDouble(Object value){
+<span class="fc bfc" id="L377" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L378">            return null;</span>
+        }
+<span class="fc bfc" id="L380" title="All 2 branches covered.">        if(value instanceof Number){</span>
+<span class="fc" id="L381">            return ((Number) value).doubleValue();</span>
+        }
+<span class="fc bfc" id="L383" title="All 2 branches covered.">        if(value instanceof String){</span>
+<span class="fc" id="L384">            String strVal = value.toString();</span>
+<span class="fc bfc" id="L385" title="All 2 branches covered.">            if(strVal.length() == 0 //</span>
+<span class="fc bfc" id="L386" title="All 2 branches covered.">                    || &quot;null&quot;.equals(strVal) //</span>
+<span class="fc bfc" id="L387" title="All 2 branches covered.">                    || &quot;NULL&quot;.equals(strVal)){</span>
+<span class="fc" id="L388">                return null;</span>
+            }
+<span class="pc bpc" id="L390" title="1 of 2 branches missed.">            if(strVal.indexOf(',') != 0){</span>
+<span class="fc" id="L391">                strVal = strVal.replaceAll(&quot;,&quot;, &quot;&quot;);</span>
+            }
+<span class="fc" id="L393">            return Double.parseDouble(strVal);</span>
+        }
+<span class="fc" id="L395">        throw new JSONException(&quot;can not cast to double, value : &quot; + value);</span>
+    }
+
+    public static Date castToDate(Object value){
+<span class="fc" id="L399">        return castToDate(value, null);</span>
+    }
+
+    public static Date castToDate(Object value, String format){
+<span class="fc bfc" id="L403" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L404">            return null;</span>
+        }
+
+<span class="fc bfc" id="L407" title="All 2 branches covered.">        if(value instanceof Date){ // 使用频率最高的，应优先处理</span>
+<span class="fc" id="L408">            return (Date) value;</span>
+        }
+
+<span class="fc bfc" id="L411" title="All 2 branches covered.">        if(value instanceof Calendar){</span>
+<span class="fc" id="L412">            return ((Calendar) value).getTime();</span>
+        }
+
+<span class="fc" id="L415">        long longValue = -1;</span>
+
+<span class="fc bfc" id="L417" title="All 2 branches covered.">        if(value instanceof BigDecimal){</span>
+<span class="nc" id="L418">            longValue = longValue((BigDecimal) value);</span>
+<span class="nc" id="L419">            return new Date(longValue);</span>
+        }
+
+<span class="fc bfc" id="L422" title="All 2 branches covered.">        if(value instanceof Number){</span>
+<span class="fc" id="L423">            longValue = ((Number) value).longValue();</span>
+<span class="fc" id="L424">            return new Date(longValue);</span>
+        }
+
+<span class="fc bfc" id="L427" title="All 2 branches covered.">        if(value instanceof String){</span>
+<span class="fc" id="L428">            String strVal = (String) value;</span>
+<span class="fc" id="L429">            JSONScanner dateLexer = new JSONScanner(strVal);</span>
+            try{
+<span class="fc bfc" id="L431" title="All 2 branches covered.">                if(dateLexer.scanISO8601DateIfMatch(false)){</span>
+<span class="fc" id="L432">                    Calendar calendar = dateLexer.getCalendar();</span>
+<span class="fc" id="L433">                    return calendar.getTime();</span>
+                }
+            } finally{
+<span class="fc" id="L436">                dateLexer.close();</span>
+            }
+
+<span class="pc bpc" id="L439" title="1 of 4 branches missed.">            if (strVal.startsWith(&quot;/Date(&quot;) &amp;&amp; strVal.endsWith(&quot;)/&quot;)) {</span>
+<span class="fc" id="L440">                strVal = strVal.substring(6, strVal.length() - 2);</span>
+            }
+
+<span class="fc bfc" id="L443" title="All 4 branches covered.">            if (strVal.indexOf('-') &gt; 0 || strVal.indexOf('+') &gt; 0) {</span>
+<span class="fc bfc" id="L444" title="All 2 branches covered.">                if (format == null) {</span>
+<span class="fc bfc" id="L445" title="All 2 branches covered.">                    if (strVal.length() == JSON.DEFFAULT_DATE_FORMAT.length()</span>
+<span class="pc bpc" id="L446" title="1 of 4 branches missed.">                            || (strVal.length() == 22 &amp;&amp; JSON.DEFFAULT_DATE_FORMAT.equals(&quot;yyyyMMddHHmmssSSSZ&quot;))) {</span>
+<span class="fc" id="L447">                        format = JSON.DEFFAULT_DATE_FORMAT;</span>
+<span class="pc bpc" id="L448" title="1 of 2 branches missed.">                    } else if (strVal.length() == 10) {</span>
+<span class="fc" id="L449">                        format = &quot;yyyy-MM-dd&quot;;</span>
+<span class="nc bnc" id="L450" title="All 2 branches missed.">                    } else if (strVal.length() == &quot;yyyy-MM-dd HH:mm:ss&quot;.length()) {</span>
+<span class="nc" id="L451">                        format = &quot;yyyy-MM-dd HH:mm:ss&quot;;</span>
+<span class="nc bnc" id="L452" title="All 2 branches missed.">                    } else if (strVal.length() == 29</span>
+<span class="nc bnc" id="L453" title="All 2 branches missed.">                            &amp;&amp; strVal.charAt(26) == ':'</span>
+<span class="nc bnc" id="L454" title="All 2 branches missed.">                            &amp;&amp; strVal.charAt(28) == '0') {</span>
+<span class="nc" id="L455">                        format = &quot;yyyy-MM-dd'T'HH:mm:ss.SSSXXX&quot;;</span>
+                    } else {
+<span class="nc" id="L457">                        format = &quot;yyyy-MM-dd HH:mm:ss.SSS&quot;;</span>
+                    }
+                }
+
+<span class="fc" id="L461">                SimpleDateFormat dateFormat = new SimpleDateFormat(format, JSON.defaultLocale);</span>
+<span class="fc" id="L462">                dateFormat.setTimeZone(JSON.defaultTimeZone);</span>
+                try{
+<span class="fc" id="L464">                    return dateFormat.parse(strVal);</span>
+<span class="fc" id="L465">                } catch(ParseException e){</span>
+<span class="fc" id="L466">                    throw new JSONException(&quot;can not cast to Date, value : &quot; + strVal);</span>
+                }
+            }
+<span class="fc bfc" id="L469" title="All 2 branches covered.">            if(strVal.length() == 0){</span>
+<span class="fc" id="L470">                return null;</span>
+            }
+<span class="fc" id="L472">            longValue = Long.parseLong(strVal);</span>
+        }
+
+<span class="fc bfc" id="L475" title="All 2 branches covered.">        if (longValue == -1) {</span>
+<span class="fc" id="L476">            Class&lt;?&gt; clazz = value.getClass();</span>
+<span class="fc bfc" id="L477" title="All 2 branches covered.">            if(&quot;oracle.sql.TIMESTAMP&quot;.equals(clazz.getName())){</span>
+<span class="pc bpc" id="L478" title="2 of 4 branches missed.">                if(oracleTimestampMethod == null &amp;&amp; !oracleTimestampMethodInited){</span>
+                    try{
+<span class="fc" id="L480">                        oracleTimestampMethod = clazz.getMethod(&quot;toJdbc&quot;);</span>
+<span class="nc" id="L481">                    } catch(NoSuchMethodException e){</span>
+                        // skip
+                    } finally{
+<span class="fc" id="L484">                        oracleTimestampMethodInited = true;</span>
+                    }
+                }
+                Object result;
+                try{
+<span class="fc" id="L489">                    result = oracleTimestampMethod.invoke(value);</span>
+<span class="nc" id="L490">                } catch(Exception e){</span>
+<span class="nc" id="L491">                    throw new JSONException(&quot;can not cast oracle.sql.TIMESTAMP to Date&quot;, e);</span>
+<span class="fc" id="L492">                }</span>
+<span class="fc" id="L493">                return (Date) result;</span>
+            }
+<span class="fc bfc" id="L495" title="All 2 branches covered.">            if(&quot;oracle.sql.DATE&quot;.equals(clazz.getName())){</span>
+<span class="pc bpc" id="L496" title="2 of 4 branches missed.">                if(oracleDateMethod == null &amp;&amp; !oracleDateMethodInited){</span>
+                    try{
+<span class="fc" id="L498">                        oracleDateMethod = clazz.getMethod(&quot;toJdbc&quot;);</span>
+<span class="nc" id="L499">                    } catch(NoSuchMethodException e){</span>
+                        // skip
+                    } finally{
+<span class="fc" id="L502">                        oracleDateMethodInited = true;</span>
+                    }
+                }
+                Object result;
+                try{
+<span class="fc" id="L507">                    result = oracleDateMethod.invoke(value);</span>
+<span class="nc" id="L508">                } catch(Exception e){</span>
+<span class="nc" id="L509">                    throw new JSONException(&quot;can not cast oracle.sql.DATE to Date&quot;, e);</span>
+<span class="fc" id="L510">                }</span>
+<span class="fc" id="L511">                return (Date) result;</span>
+            }
+
+<span class="fc" id="L514">            throw new JSONException(&quot;can not cast to Date, value : &quot; + value);</span>
+        }
+
+<span class="fc" id="L517">        return new Date(longValue);</span>
+    }
+
+    public static java.sql.Date castToSqlDate(Object value){
+<span class="fc bfc" id="L521" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L522">            return null;</span>
+        }
+<span class="fc bfc" id="L524" title="All 2 branches covered.">        if(value instanceof java.sql.Date){</span>
+<span class="fc" id="L525">            return (java.sql.Date) value;</span>
+        }
+<span class="fc bfc" id="L527" title="All 2 branches covered.">        if(value instanceof java.util.Date){</span>
+<span class="fc" id="L528">            return new java.sql.Date(((java.util.Date) value).getTime());</span>
+        }
+<span class="fc bfc" id="L530" title="All 2 branches covered.">        if(value instanceof Calendar){</span>
+<span class="fc" id="L531">            return new java.sql.Date(((Calendar) value).getTimeInMillis());</span>
+        }
+
+<span class="fc" id="L534">        long longValue = 0;</span>
+<span class="fc bfc" id="L535" title="All 2 branches covered.">        if(value instanceof BigDecimal){</span>
+<span class="nc" id="L536">            longValue = longValue((BigDecimal) value);</span>
+<span class="fc bfc" id="L537" title="All 2 branches covered.">        } else if(value instanceof Number){</span>
+<span class="fc" id="L538">            longValue = ((Number) value).longValue();</span>
+        }
+
+<span class="fc bfc" id="L541" title="All 2 branches covered.">        if(value instanceof String){</span>
+<span class="fc" id="L542">            String strVal = (String) value;</span>
+<span class="fc bfc" id="L543" title="All 2 branches covered.">            if(strVal.length() == 0 //</span>
+<span class="pc bpc" id="L544" title="1 of 2 branches missed.">                    || &quot;null&quot;.equals(strVal) //</span>
+<span class="pc bpc" id="L545" title="1 of 2 branches missed.">                    || &quot;NULL&quot;.equals(strVal)){</span>
+<span class="fc" id="L546">                return null;</span>
+            }
+<span class="pc bpc" id="L548" title="1 of 2 branches missed.">            if(isNumber(strVal)){</span>
+<span class="fc" id="L549">                longValue = Long.parseLong(strVal);</span>
+            } else{
+<span class="nc" id="L551">                JSONScanner scanner = new JSONScanner(strVal);</span>
+<span class="nc bnc" id="L552" title="All 2 branches missed.">                if(scanner.scanISO8601DateIfMatch(false)){</span>
+<span class="nc" id="L553">                    longValue = scanner.getCalendar().getTime().getTime();</span>
+                } else{
+<span class="nc" id="L555">                    throw new JSONException(&quot;can not cast to Timestamp, value : &quot; + strVal);</span>
+                }
+            }
+        }
+<span class="fc bfc" id="L559" title="All 2 branches covered.">        if(longValue &lt;= 0){</span>
+<span class="fc" id="L560">            throw new JSONException(&quot;can not cast to Date, value : &quot; + value); // TODO 忽略 1970-01-01 之前的时间处理？</span>
+        }
+<span class="fc" id="L562">        return new java.sql.Date(longValue);</span>
+    }
+
+    public static long longExtractValue(Number number) {
+<span class="fc bfc" id="L566" title="All 2 branches covered.">        if (number instanceof BigDecimal) {</span>
+<span class="fc" id="L567">            return ((BigDecimal) number).longValueExact();</span>
+        }
+
+<span class="fc" id="L570">        return number.longValue();</span>
+    }
+
+    public static java.sql.Time castToSqlTime(Object value){
+<span class="pc bpc" id="L574" title="1 of 2 branches missed.">        if(value == null){</span>
+<span class="nc" id="L575">            return null;</span>
+        }
+<span class="pc bpc" id="L577" title="1 of 2 branches missed.">        if(value instanceof java.sql.Time){</span>
+<span class="nc" id="L578">            return (java.sql.Time) value;</span>
+        }
+<span class="pc bpc" id="L580" title="1 of 2 branches missed.">        if(value instanceof java.util.Date){</span>
+<span class="nc" id="L581">            return new java.sql.Time(((java.util.Date) value).getTime());</span>
+        }
+<span class="pc bpc" id="L583" title="1 of 2 branches missed.">        if(value instanceof Calendar){</span>
+<span class="nc" id="L584">            return new java.sql.Time(((Calendar) value).getTimeInMillis());</span>
+        }
+
+<span class="fc" id="L587">        long longValue = 0;</span>
+<span class="fc bfc" id="L588" title="All 2 branches covered.">        if(value instanceof BigDecimal){</span>
+<span class="nc" id="L589">            longValue = longValue((BigDecimal) value);</span>
+<span class="pc bpc" id="L590" title="1 of 2 branches missed.">        } else if(value instanceof Number){</span>
+<span class="fc" id="L591">            longValue = ((Number) value).longValue();</span>
+        }
+
+<span class="pc bpc" id="L594" title="1 of 2 branches missed.">        if(value instanceof String){</span>
+<span class="nc" id="L595">            String strVal = (String) value;</span>
+<span class="nc bnc" id="L596" title="All 2 branches missed.">            if(strVal.length() == 0 //</span>
+<span class="nc bnc" id="L597" title="All 2 branches missed.">                    || &quot;null&quot;.equalsIgnoreCase(strVal)){</span>
+<span class="nc" id="L598">                return null;</span>
+            }
+<span class="nc bnc" id="L600" title="All 2 branches missed.">            if(isNumber(strVal)){</span>
+<span class="nc" id="L601">                longValue = Long.parseLong(strVal);</span>
+            } else{
+<span class="nc" id="L603">                JSONScanner scanner = new JSONScanner(strVal);</span>
+<span class="nc bnc" id="L604" title="All 2 branches missed.">                if(scanner.scanISO8601DateIfMatch(false)){</span>
+<span class="nc" id="L605">                    longValue = scanner.getCalendar().getTime().getTime();</span>
+                } else{
+<span class="nc" id="L607">                    throw new JSONException(&quot;can not cast to Timestamp, value : &quot; + strVal);</span>
+                }
+            }
+        }
+<span class="pc bpc" id="L611" title="1 of 2 branches missed.">        if(longValue &lt;= 0){</span>
+<span class="nc" id="L612">            throw new JSONException(&quot;can not cast to Date, value : &quot; + value); // TODO 忽略 1970-01-01 之前的时间处理？</span>
+        }
+<span class="fc" id="L614">        return new java.sql.Time(longValue);</span>
+    }
+
+    public static java.sql.Timestamp castToTimestamp(Object value){
+<span class="fc bfc" id="L618" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L619">            return null;</span>
+        }
+<span class="fc bfc" id="L621" title="All 2 branches covered.">        if(value instanceof Calendar){</span>
+<span class="fc" id="L622">            return new java.sql.Timestamp(((Calendar) value).getTimeInMillis());</span>
+        }
+<span class="fc bfc" id="L624" title="All 2 branches covered.">        if(value instanceof java.sql.Timestamp){</span>
+<span class="fc" id="L625">            return (java.sql.Timestamp) value;</span>
+        }
+<span class="fc bfc" id="L627" title="All 2 branches covered.">        if(value instanceof java.util.Date){</span>
+<span class="fc" id="L628">            return new java.sql.Timestamp(((java.util.Date) value).getTime());</span>
+        }
+<span class="fc" id="L630">        long longValue = 0;</span>
+<span class="fc bfc" id="L631" title="All 2 branches covered.">        if(value instanceof BigDecimal){</span>
+<span class="fc" id="L632">            longValue = longValue((BigDecimal) value);</span>
+<span class="fc bfc" id="L633" title="All 2 branches covered.">        } else if(value instanceof Number){</span>
+<span class="fc" id="L634">            longValue = ((Number) value).longValue();</span>
+        }
+<span class="fc bfc" id="L636" title="All 2 branches covered.">        if(value instanceof String){</span>
+<span class="fc" id="L637">            String strVal = (String) value;</span>
+<span class="fc bfc" id="L638" title="All 2 branches covered.">            if(strVal.length() == 0 //</span>
+<span class="pc bpc" id="L639" title="1 of 2 branches missed.">                    || &quot;null&quot;.equals(strVal) //</span>
+<span class="pc bpc" id="L640" title="1 of 2 branches missed.">                    || &quot;NULL&quot;.equals(strVal)){</span>
+<span class="fc" id="L641">                return null;</span>
+            }
+<span class="fc bfc" id="L643" title="All 2 branches covered.">            if(strVal.endsWith(&quot;.000000000&quot;)){</span>
+<span class="fc" id="L644">                strVal = strVal.substring(0, strVal.length() - 10);</span>
+<span class="fc bfc" id="L645" title="All 2 branches covered.">            } else if(strVal.endsWith(&quot;.000000&quot;)){</span>
+<span class="fc" id="L646">                strVal = strVal.substring(0, strVal.length() - 7);</span>
+            }
+<span class="fc bfc" id="L648" title="All 2 branches covered.">            if(isNumber(strVal)){</span>
+<span class="fc" id="L649">                longValue = Long.parseLong(strVal);</span>
+            } else{
+<span class="fc" id="L651">                JSONScanner scanner = new JSONScanner(strVal);</span>
+<span class="pc bpc" id="L652" title="1 of 2 branches missed.">                if(scanner.scanISO8601DateIfMatch(false)){</span>
+<span class="fc" id="L653">                    longValue = scanner.getCalendar().getTime().getTime();</span>
+                } else{
+<span class="nc" id="L655">                    throw new JSONException(&quot;can not cast to Timestamp, value : &quot; + strVal);</span>
+                }
+            }
+        }
+<span class="fc bfc" id="L659" title="All 2 branches covered.">        if(longValue &lt;= 0){</span>
+<span class="fc" id="L660">            throw new JSONException(&quot;can not cast to Timestamp, value : &quot; + value);</span>
+        }
+<span class="fc" id="L662">        return new java.sql.Timestamp(longValue);</span>
+    }
+
+    public static boolean isNumber(String str){
+<span class="fc bfc" id="L666" title="All 2 branches covered.">        for(int i = 0; i &lt; str.length(); ++i){</span>
+<span class="fc" id="L667">            char ch = str.charAt(i);</span>
+<span class="pc bpc" id="L668" title="1 of 4 branches missed.">            if(ch == '+' || ch == '-'){</span>
+<span class="fc bfc" id="L669" title="All 2 branches covered.">                if(i != 0){</span>
+<span class="fc" id="L670">                    return false;</span>
+                } 
+<span class="fc bfc" id="L672" title="All 4 branches covered.">            } else if(ch &lt; '0' || ch &gt; '9'){</span>
+<span class="fc" id="L673">                return false;</span>
+            }
+        }
+<span class="fc" id="L676">        return true;</span>
+    }
+
+    public static Long castToLong(Object value){
+<span class="fc bfc" id="L680" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L681">            return null;</span>
+        }
+
+<span class="pc bpc" id="L684" title="1 of 2 branches missed.">        if(value instanceof BigDecimal){</span>
+<span class="nc" id="L685">            return longValue((BigDecimal) value);</span>
+        }
+
+<span class="fc bfc" id="L688" title="All 2 branches covered.">        if(value instanceof Number){</span>
+<span class="fc" id="L689">            return ((Number) value).longValue();</span>
+        }
+
+<span class="fc bfc" id="L692" title="All 2 branches covered.">        if(value instanceof String){</span>
+<span class="fc" id="L693">            String strVal = (String) value;</span>
+<span class="fc bfc" id="L694" title="All 2 branches covered.">            if(strVal.length() == 0 //</span>
+<span class="fc bfc" id="L695" title="All 2 branches covered.">                    || &quot;null&quot;.equals(strVal) //</span>
+<span class="pc bpc" id="L696" title="1 of 2 branches missed.">                    || &quot;NULL&quot;.equals(strVal)){</span>
+<span class="fc" id="L697">                return null;</span>
+            }
+<span class="pc bpc" id="L699" title="1 of 2 branches missed.">            if(strVal.indexOf(',') != 0){</span>
+<span class="fc" id="L700">                strVal = strVal.replaceAll(&quot;,&quot;, &quot;&quot;);</span>
+            }
+            try{
+<span class="fc" id="L703">                return Long.parseLong(strVal);</span>
+<span class="fc" id="L704">            } catch(NumberFormatException ex){</span>
+                //
+            }
+<span class="fc" id="L707">            JSONScanner dateParser = new JSONScanner(strVal);</span>
+<span class="fc" id="L708">            Calendar calendar = null;</span>
+<span class="fc bfc" id="L709" title="All 2 branches covered.">            if(dateParser.scanISO8601DateIfMatch(false)){</span>
+<span class="fc" id="L710">                calendar = dateParser.getCalendar();</span>
+            }
+<span class="fc" id="L712">            dateParser.close();</span>
+<span class="fc bfc" id="L713" title="All 2 branches covered.">            if(calendar != null){</span>
+<span class="fc" id="L714">                return calendar.getTimeInMillis();</span>
+            }
+        }
+
+<span class="fc bfc" id="L718" title="All 2 branches covered.">        if(value instanceof Map){</span>
+<span class="fc" id="L719">            Map map = (Map) value;</span>
+<span class="fc bfc" id="L720" title="All 2 branches covered.">            if(map.size() == 2</span>
+<span class="pc bpc" id="L721" title="1 of 2 branches missed.">                    &amp;&amp; map.containsKey(&quot;andIncrement&quot;)</span>
+<span class="pc bpc" id="L722" title="1 of 2 branches missed.">                    &amp;&amp; map.containsKey(&quot;andDecrement&quot;)){</span>
+<span class="fc" id="L723">                Iterator iter = map.values().iterator();</span>
+<span class="fc" id="L724">                iter.next();</span>
+<span class="fc" id="L725">                Object value2 = iter.next();</span>
+<span class="fc" id="L726">                return castToLong(value2);</span>
+            }
+        }
+        
+<span class="fc" id="L730">        throw new JSONException(&quot;can not cast to long, value : &quot; + value);</span>
+    }
+
+    public static byte byteValue(BigDecimal decimal) {
+<span class="pc bpc" id="L734" title="1 of 2 branches missed.">        if (decimal == null) {</span>
+<span class="nc" id="L735">            return 0;</span>
+        }
+
+<span class="fc" id="L738">        int scale = decimal.scale();</span>
+<span class="pc bpc" id="L739" title="1 of 4 branches missed.">        if (scale &gt;= -100 &amp;&amp; scale &lt;= 100) {</span>
+<span class="fc" id="L740">            return decimal.byteValue();</span>
+        }
+
+<span class="nc" id="L743">        return decimal.byteValueExact();</span>
+    }
+
+    public static short shortValue(BigDecimal decimal) {
+<span class="pc bpc" id="L747" title="1 of 2 branches missed.">        if (decimal == null) {</span>
+<span class="nc" id="L748">            return 0;</span>
+        }
+
+<span class="fc" id="L751">        int scale = decimal.scale();</span>
+<span class="pc bpc" id="L752" title="1 of 4 branches missed.">        if (scale &gt;= -100 &amp;&amp; scale &lt;= 100) {</span>
+<span class="fc" id="L753">            return decimal.shortValue();</span>
+        }
+
+<span class="nc" id="L756">        return decimal.shortValueExact();</span>
+    }
+
+    public static int intValue(BigDecimal decimal) {
+<span class="pc bpc" id="L760" title="1 of 2 branches missed.">        if (decimal == null) {</span>
+<span class="nc" id="L761">            return 0;</span>
+        }
+
+<span class="fc" id="L764">        int scale = decimal.scale();</span>
+<span class="pc bpc" id="L765" title="1 of 4 branches missed.">        if (scale &gt;= -100 &amp;&amp; scale &lt;= 100) {</span>
+<span class="fc" id="L766">            return decimal.intValue();</span>
+        }
+
+<span class="nc" id="L769">        return decimal.intValueExact();</span>
+    }
+
+    public static long longValue(BigDecimal decimal) {
+<span class="pc bpc" id="L773" title="1 of 2 branches missed.">        if (decimal == null) {</span>
+<span class="nc" id="L774">            return 0;</span>
+        }
+
+<span class="fc" id="L777">        int scale = decimal.scale();</span>
+<span class="pc bpc" id="L778" title="1 of 4 branches missed.">        if (scale &gt;= -100 &amp;&amp; scale &lt;= 100) {</span>
+<span class="fc" id="L779">            return decimal.longValue();</span>
+        }
+
+<span class="nc" id="L782">        return decimal.longValueExact();</span>
+    }
+
+    public static Integer castToInt(Object value){
+<span class="fc bfc" id="L786" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L787">            return null;</span>
+        }
+
+<span class="fc bfc" id="L790" title="All 2 branches covered.">        if(value instanceof Integer){</span>
+<span class="fc" id="L791">            return (Integer) value;</span>
+        }
+
+<span class="fc bfc" id="L794" title="All 2 branches covered.">        if(value instanceof BigDecimal){</span>
+<span class="fc" id="L795">            return intValue((BigDecimal) value);</span>
+        }
+
+<span class="fc bfc" id="L798" title="All 2 branches covered.">        if(value instanceof Number){</span>
+<span class="fc" id="L799">            return ((Number) value).intValue();</span>
+        }
+
+<span class="fc bfc" id="L802" title="All 2 branches covered.">        if(value instanceof String){</span>
+<span class="fc" id="L803">            String strVal = (String) value;</span>
+<span class="fc bfc" id="L804" title="All 2 branches covered.">            if(strVal.length() == 0 //</span>
+<span class="fc bfc" id="L805" title="All 2 branches covered.">                    || &quot;null&quot;.equals(strVal) //</span>
+<span class="fc bfc" id="L806" title="All 2 branches covered.">                    || &quot;NULL&quot;.equals(strVal)){</span>
+<span class="fc" id="L807">                return null;</span>
+            }
+<span class="pc bpc" id="L809" title="1 of 2 branches missed.">            if(strVal.indexOf(',') != 0){</span>
+<span class="fc" id="L810">                strVal = strVal.replaceAll(&quot;,&quot;, &quot;&quot;);</span>
+            }
+<span class="fc" id="L812">            return Integer.parseInt(strVal);</span>
+        }
+
+<span class="fc bfc" id="L815" title="All 2 branches covered.">        if(value instanceof Boolean){</span>
+<span class="pc bpc" id="L816" title="1 of 2 branches missed.">            return ((Boolean) value).booleanValue() ? 1 : 0;</span>
+        }
+<span class="fc bfc" id="L818" title="All 2 branches covered.">        if(value instanceof Map){</span>
+<span class="fc" id="L819">            Map map = (Map) value;</span>
+<span class="fc bfc" id="L820" title="All 2 branches covered.">            if(map.size() == 2</span>
+<span class="pc bpc" id="L821" title="1 of 2 branches missed.">                    &amp;&amp; map.containsKey(&quot;andIncrement&quot;)</span>
+<span class="pc bpc" id="L822" title="1 of 2 branches missed.">                    &amp;&amp; map.containsKey(&quot;andDecrement&quot;)){</span>
+<span class="fc" id="L823">                Iterator iter = map.values().iterator();</span>
+<span class="fc" id="L824">                iter.next();</span>
+<span class="fc" id="L825">                Object value2 = iter.next();</span>
+<span class="fc" id="L826">                return castToInt(value2);</span>
+            }
+        }
+<span class="fc" id="L829">        throw new JSONException(&quot;can not cast to int, value : &quot; + value);</span>
+    }
+
+    public static byte[] castToBytes(Object value){
+<span class="fc bfc" id="L833" title="All 2 branches covered.">        if(value instanceof byte[]){</span>
+<span class="fc" id="L834">            return (byte[]) value;</span>
+        }
+<span class="fc bfc" id="L836" title="All 2 branches covered.">        if(value instanceof String){</span>
+<span class="fc" id="L837">            return IOUtils.decodeBase64((String) value);</span>
+        }
+<span class="fc" id="L839">        throw new JSONException(&quot;can not cast to int, value : &quot; + value);</span>
+    }
+
+    public static Boolean castToBoolean(Object value){
+<span class="fc bfc" id="L843" title="All 2 branches covered.">        if(value == null){</span>
+<span class="fc" id="L844">            return null;</span>
+        }
+<span class="fc bfc" id="L846" title="All 2 branches covered.">        if(value instanceof Boolean){</span>
+<span class="fc" id="L847">            return (Boolean) value;</span>
+        }
+
+<span class="fc bfc" id="L850" title="All 2 branches covered.">        if(value instanceof BigDecimal){</span>
+<span class="nc bnc" id="L851" title="All 2 branches missed.">            return intValue((BigDecimal) value) == 1;</span>
+        }
+
+<span class="fc bfc" id="L854" title="All 2 branches covered.">        if(value instanceof Number){</span>
+<span class="fc bfc" id="L855" title="All 2 branches covered.">            return ((Number) value).intValue() == 1;</span>
+        }
+
+<span class="fc bfc" id="L858" title="All 2 branches covered.">        if(value instanceof String){</span>
+<span class="fc" id="L859">            String strVal = (String) value;</span>
+<span class="fc bfc" id="L860" title="All 2 branches covered.">            if(strVal.length() == 0 //</span>
+<span class="fc bfc" id="L861" title="All 2 branches covered.">                    || &quot;null&quot;.equals(strVal) //</span>
+<span class="fc bfc" id="L862" title="All 2 branches covered.">                    || &quot;NULL&quot;.equals(strVal)){</span>
+<span class="fc" id="L863">                return null;</span>
+            }
+<span class="fc bfc" id="L865" title="All 2 branches covered.">            if(&quot;true&quot;.equalsIgnoreCase(strVal) //</span>
+<span class="pc bpc" id="L866" title="1 of 2 branches missed.">                    || &quot;1&quot;.equals(strVal)){</span>
+<span class="fc" id="L867">                return Boolean.TRUE;</span>
+            }
+<span class="fc bfc" id="L869" title="All 2 branches covered.">            if(&quot;false&quot;.equalsIgnoreCase(strVal) //</span>
+<span class="fc bfc" id="L870" title="All 2 branches covered.">                    || &quot;0&quot;.equals(strVal)){</span>
+<span class="fc" id="L871">                return Boolean.FALSE;</span>
+            }
+<span class="fc bfc" id="L873" title="All 2 branches covered.">            if(&quot;Y&quot;.equalsIgnoreCase(strVal) //</span>
+<span class="fc bfc" id="L874" title="All 2 branches covered.">                    || &quot;T&quot;.equals(strVal)){</span>
+<span class="fc" id="L875">                return Boolean.TRUE;</span>
+            }
+<span class="fc bfc" id="L877" title="All 2 branches covered.">            if(&quot;F&quot;.equalsIgnoreCase(strVal) //</span>
+<span class="fc bfc" id="L878" title="All 2 branches covered.">                    || &quot;N&quot;.equals(strVal)){</span>
+<span class="fc" id="L879">                return Boolean.FALSE;</span>
+            }
+        }
+<span class="fc" id="L882">        throw new JSONException(&quot;can not cast to boolean, value : &quot; + value);</span>
+    }
+
+    public static &lt;T&gt; T castToJavaBean(Object obj, Class&lt;T&gt; clazz){
+<span class="fc" id="L886">        return cast(obj, clazz, ParserConfig.getGlobalInstance());</span>
+    }
+
+    @SuppressWarnings({&quot;unchecked&quot;, &quot;rawtypes&quot;})
+    public static &lt;T&gt; T cast(Object obj, Class&lt;T&gt; clazz, ParserConfig config){
+<span class="fc bfc" id="L891" title="All 2 branches covered.">        if(obj == null){</span>
+<span class="fc bfc" id="L892" title="All 2 branches covered.">            if(clazz == int.class){</span>
+<span class="fc" id="L893">                return (T) Integer.valueOf(0);</span>
+<span class="fc bfc" id="L894" title="All 2 branches covered.">            } else if(clazz == long.class){</span>
+<span class="fc" id="L895">                return (T) Long.valueOf(0);</span>
+<span class="fc bfc" id="L896" title="All 2 branches covered.">            } else if(clazz == short.class){</span>
+<span class="fc" id="L897">                return (T) Short.valueOf((short) 0);</span>
+<span class="fc bfc" id="L898" title="All 2 branches covered.">            } else if(clazz == byte.class){</span>
+<span class="fc" id="L899">                return (T) Byte.valueOf((byte) 0);</span>
+<span class="fc bfc" id="L900" title="All 2 branches covered.">            } else if(clazz == float.class){</span>
+<span class="fc" id="L901">                return (T) Float.valueOf(0);</span>
+<span class="fc bfc" id="L902" title="All 2 branches covered.">            } else if(clazz == double.class){</span>
+<span class="fc" id="L903">                return (T) Double.valueOf(0);</span>
+<span class="fc bfc" id="L904" title="All 2 branches covered.">            } else if(clazz == boolean.class){</span>
+<span class="fc" id="L905">                return (T) Boolean.FALSE;</span>
+            }
+<span class="fc" id="L907">            return null;</span>
+        }
+
+<span class="fc bfc" id="L910" title="All 2 branches covered.">        if(clazz == null){</span>
+<span class="fc" id="L911">            throw new IllegalArgumentException(&quot;clazz is null&quot;);</span>
+        }
+
+<span class="fc bfc" id="L914" title="All 2 branches covered.">        if(clazz == obj.getClass()){</span>
+<span class="fc" id="L915">            return (T) obj;</span>
+        }
+
+<span class="fc bfc" id="L918" title="All 2 branches covered.">        if(obj instanceof Map){</span>
+<span class="fc bfc" id="L919" title="All 2 branches covered.">            if(clazz == Map.class){</span>
+<span class="fc" id="L920">                return (T) obj;</span>
+            }
+
+<span class="fc" id="L923">            Map map = (Map) obj;</span>
+<span class="fc bfc" id="L924" title="All 4 branches covered.">            if(clazz == Object.class &amp;&amp; !map.containsKey(JSON.DEFAULT_TYPE_KEY)){</span>
+<span class="fc" id="L925">                return (T) obj;</span>
+            }
+<span class="fc" id="L927">            return castToJavaBean((Map&lt;String,Object&gt;) obj, clazz, config);</span>
+        }
+
+<span class="fc bfc" id="L930" title="All 2 branches covered.">        if(clazz.isArray()){</span>
+<span class="fc bfc" id="L931" title="All 2 branches covered.">            if(obj instanceof Collection){</span>
+<span class="fc" id="L932">                Collection collection = (Collection) obj;</span>
+<span class="fc" id="L933">                int index = 0;</span>
+<span class="fc" id="L934">                Object array = Array.newInstance(clazz.getComponentType(), collection.size());</span>
+<span class="fc bfc" id="L935" title="All 2 branches covered.">                for(Object item : collection){</span>
+<span class="fc" id="L936">                    Object value = cast(item, clazz.getComponentType(), config);</span>
+<span class="fc" id="L937">                    Array.set(array, index, value);</span>
+<span class="fc" id="L938">                    index++;</span>
+<span class="fc" id="L939">                }</span>
+<span class="fc" id="L940">                return (T) array;</span>
+            }
+<span class="fc bfc" id="L942" title="All 2 branches covered.">            if(clazz == byte[].class){</span>
+<span class="fc" id="L943">                return (T) castToBytes(obj);</span>
+            }
+        }
+
+<span class="fc bfc" id="L947" title="All 2 branches covered.">        if(clazz.isAssignableFrom(obj.getClass())){</span>
+<span class="fc" id="L948">            return (T) obj;</span>
+        }
+
+<span class="fc bfc" id="L951" title="All 4 branches covered.">        if(clazz == boolean.class || clazz == Boolean.class){</span>
+<span class="fc" id="L952">            return (T) castToBoolean(obj);</span>
+        }
+
+<span class="fc bfc" id="L955" title="All 4 branches covered.">        if(clazz == byte.class || clazz == Byte.class){</span>
+<span class="fc" id="L956">            return (T) castToByte(obj);</span>
+        }
+
+<span class="fc bfc" id="L959" title="All 4 branches covered.">        if(clazz == char.class || clazz == Character.class){</span>
+<span class="fc" id="L960">            return (T) castToChar(obj);</span>
+        }
+
+<span class="fc bfc" id="L963" title="All 4 branches covered.">        if(clazz == short.class || clazz == Short.class){</span>
+<span class="fc" id="L964">            return (T) castToShort(obj);</span>
+        }
+
+<span class="fc bfc" id="L967" title="All 4 branches covered.">        if(clazz == int.class || clazz == Integer.class){</span>
+<span class="fc" id="L968">            return (T) castToInt(obj);</span>
+        }
+
+<span class="fc bfc" id="L971" title="All 4 branches covered.">        if(clazz == long.class || clazz == Long.class){</span>
+<span class="fc" id="L972">            return (T) castToLong(obj);</span>
+        }
+
+<span class="fc bfc" id="L975" title="All 4 branches covered.">        if(clazz == float.class || clazz == Float.class){</span>
+<span class="fc" id="L976">            return (T) castToFloat(obj);</span>
+        }
+
+<span class="fc bfc" id="L979" title="All 4 branches covered.">        if(clazz == double.class || clazz == Double.class){</span>
+<span class="fc" id="L980">            return (T) castToDouble(obj);</span>
+        }
+
+<span class="fc bfc" id="L983" title="All 2 branches covered.">        if(clazz == String.class){</span>
+<span class="fc" id="L984">            return (T) castToString(obj);</span>
+        }
+
+<span class="fc bfc" id="L987" title="All 2 branches covered.">        if(clazz == BigDecimal.class){</span>
+<span class="fc" id="L988">            return (T) castToBigDecimal(obj);</span>
+        }
+
+<span class="fc bfc" id="L991" title="All 2 branches covered.">        if(clazz == BigInteger.class){</span>
+<span class="fc" id="L992">            return (T) castToBigInteger(obj);</span>
+        }
+
+<span class="fc bfc" id="L995" title="All 2 branches covered.">        if(clazz == Date.class){</span>
+<span class="fc" id="L996">            return (T) castToDate(obj);</span>
+        }
+
+<span class="fc bfc" id="L999" title="All 2 branches covered.">        if(clazz == java.sql.Date.class){</span>
+<span class="fc" id="L1000">            return (T) castToSqlDate(obj);</span>
+        }
+
+<span class="fc bfc" id="L1003" title="All 2 branches covered.">        if(clazz == java.sql.Time.class){</span>
+<span class="fc" id="L1004">            return (T) castToSqlTime(obj);</span>
+        }
+
+<span class="fc bfc" id="L1007" title="All 2 branches covered.">        if(clazz == java.sql.Timestamp.class){</span>
+<span class="fc" id="L1008">            return (T) castToTimestamp(obj);</span>
+        }
+
+<span class="fc bfc" id="L1011" title="All 2 branches covered.">        if(clazz.isEnum()){</span>
+<span class="fc" id="L1012">            return (T) castToEnum(obj, clazz, config);</span>
+        }
+
+<span class="fc bfc" id="L1015" title="All 2 branches covered.">        if(Calendar.class.isAssignableFrom(clazz)){</span>
+<span class="fc" id="L1016">            Date date = castToDate(obj);</span>
+            Calendar calendar;
+<span class="fc bfc" id="L1018" title="All 2 branches covered.">            if(clazz == Calendar.class){</span>
+<span class="fc" id="L1019">                calendar = Calendar.getInstance(JSON.defaultTimeZone, JSON.defaultLocale);</span>
+            } else{
+                try{
+<span class="fc" id="L1022">                    calendar = (Calendar) clazz.newInstance();</span>
+<span class="fc" id="L1023">                } catch(Exception e){</span>
+<span class="fc" id="L1024">                    throw new JSONException(&quot;can not cast to : &quot; + clazz.getName(), e);</span>
+<span class="fc" id="L1025">                }</span>
+            }
+<span class="fc" id="L1027">            calendar.setTime(date);</span>
+<span class="fc" id="L1028">            return (T) calendar;</span>
+        }
+
+<span class="fc" id="L1031">        String className = clazz.getName();</span>
+<span class="fc bfc" id="L1032" title="All 2 branches covered.">        if(className.equals(&quot;javax.xml.datatype.XMLGregorianCalendar&quot;)){</span>
+<span class="fc" id="L1033">            Date date = castToDate(obj);</span>
+<span class="fc" id="L1034">            Calendar calendar = Calendar.getInstance(JSON.defaultTimeZone, JSON.defaultLocale);</span>
+<span class="fc" id="L1035">            calendar.setTime(date);</span>
+<span class="fc" id="L1036">            return (T) CalendarCodec.instance.createXMLGregorianCalendar(calendar);</span>
+        }
+
+<span class="fc bfc" id="L1039" title="All 2 branches covered.">        if(obj instanceof String){</span>
+<span class="fc" id="L1040">            String strVal = (String) obj;</span>
+<span class="fc bfc" id="L1041" title="All 2 branches covered.">            if(strVal.length() == 0 //</span>
+<span class="fc bfc" id="L1042" title="All 2 branches covered.">                    || &quot;null&quot;.equals(strVal) //</span>
+<span class="pc bpc" id="L1043" title="1 of 2 branches missed.">                    || &quot;NULL&quot;.equals(strVal)){</span>
+<span class="fc" id="L1044">                return null;</span>
+            }
+
+<span class="fc bfc" id="L1047" title="All 2 branches covered.">            if(clazz == java.util.Currency.class){</span>
+<span class="fc" id="L1048">                return (T) java.util.Currency.getInstance(strVal);</span>
+            }
+
+<span class="fc bfc" id="L1051" title="All 2 branches covered.">            if(clazz == java.util.Locale.class){</span>
+<span class="fc" id="L1052">                return (T) toLocale(strVal);</span>
+            }
+
+<span class="fc bfc" id="L1055" title="All 2 branches covered.">            if (className.startsWith(&quot;java.time.&quot;)) {</span>
+<span class="fc" id="L1056">                String json = JSON.toJSONString(strVal);</span>
+<span class="fc" id="L1057">                return JSON.parseObject(json, clazz);</span>
+            }
+        }
+
+<span class="fc" id="L1061">        final ObjectDeserializer objectDeserializer = config.getDeserializers().get(clazz);</span>
+<span class="fc bfc" id="L1062" title="All 2 branches covered.">        if (objectDeserializer != null) {</span>
+<span class="fc" id="L1063">            String str = JSON.toJSONString(obj);</span>
+<span class="nc" id="L1064">            return JSON.parseObject(str, clazz);</span>
+        }
+<span class="fc" id="L1066">        throw new JSONException(&quot;can not cast to : &quot; + clazz.getName());</span>
+    }
+
+    public static Locale toLocale(String strVal){
+<span class="fc" id="L1070">        String[] items = strVal.split(&quot;_&quot;);</span>
+<span class="fc bfc" id="L1071" title="All 2 branches covered.">        if(items.length == 1){</span>
+<span class="fc" id="L1072">            return new Locale(items[0]);</span>
+        }
+<span class="fc bfc" id="L1074" title="All 2 branches covered.">        if(items.length == 2){</span>
+<span class="fc" id="L1075">            return new Locale(items[0], items[1]);</span>
+        }
+<span class="fc" id="L1077">        return new Locale(items[0], items[1], items[2]);</span>
+    }
+
+    @SuppressWarnings({&quot;unchecked&quot;, &quot;rawtypes&quot;})
+    public static &lt;T&gt; T castToEnum(Object obj, Class&lt;T&gt; clazz, ParserConfig mapping){
+        try{
+<span class="fc bfc" id="L1083" title="All 2 branches covered.">            if(obj instanceof String){</span>
+<span class="fc" id="L1084">                String name = (String) obj;</span>
+<span class="fc bfc" id="L1085" title="All 2 branches covered.">                if(name.length() == 0){</span>
+<span class="fc" id="L1086">                    return null;</span>
+                }
+
+<span class="fc bfc" id="L1089" title="All 2 branches covered.">                if (mapping == null) {</span>
+<span class="fc" id="L1090">                    mapping = ParserConfig.getGlobalInstance();</span>
+                }
+
+<span class="fc" id="L1093">                ObjectDeserializer derializer = mapping.getDeserializer(clazz);</span>
+<span class="pc bpc" id="L1094" title="1 of 2 branches missed.">                if (derializer instanceof EnumDeserializer) {</span>
+<span class="fc" id="L1095">                    EnumDeserializer enumDeserializer = (EnumDeserializer) derializer;</span>
+<span class="fc" id="L1096">                    return (T) enumDeserializer.getEnumByHashCode(TypeUtils.fnv1a_64(name));</span>
+                }
+
+<span class="nc" id="L1099">                return (T) Enum.valueOf((Class&lt;? extends Enum&gt;) clazz, name);</span>
+            }
+
+<span class="fc bfc" id="L1102" title="All 2 branches covered.">            if(obj instanceof BigDecimal){</span>
+<span class="nc" id="L1103">                int ordinal = intValue((BigDecimal) obj);</span>
+<span class="nc" id="L1104">                Object[] values = clazz.getEnumConstants();</span>
+<span class="nc bnc" id="L1105" title="All 2 branches missed.">                if(ordinal &lt; values.length){</span>
+<span class="nc" id="L1106">                    return (T) values[ordinal];</span>
+                }
+            }
+
+<span class="fc bfc" id="L1110" title="All 2 branches covered.">            if(obj instanceof Number){</span>
+<span class="fc" id="L1111">                int ordinal = ((Number) obj).intValue();</span>
+<span class="fc" id="L1112">                Object[] values = clazz.getEnumConstants();</span>
+<span class="fc bfc" id="L1113" title="All 2 branches covered.">                if(ordinal &lt; values.length){</span>
+<span class="fc" id="L1114">                    return (T) values[ordinal];</span>
+                }
+            }
+<span class="fc" id="L1117">        } catch(Exception ex){</span>
+<span class="fc" id="L1118">            throw new JSONException(&quot;can not cast to : &quot; + clazz.getName(), ex);</span>
+<span class="fc" id="L1119">        }</span>
+<span class="fc" id="L1120">        throw new JSONException(&quot;can not cast to : &quot; + clazz.getName());</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; T cast(Object obj, Type type, ParserConfig mapping){
+<span class="fc bfc" id="L1125" title="All 2 branches covered.">        if(obj == null){</span>
+<span class="fc" id="L1126">            return null;</span>
+        }
+<span class="fc bfc" id="L1128" title="All 2 branches covered.">        if(type instanceof Class){</span>
+<span class="fc" id="L1129">            return (T) cast(obj, (Class&lt;T&gt;) type, mapping);</span>
+        }
+<span class="fc bfc" id="L1131" title="All 2 branches covered.">        if(type instanceof ParameterizedType){</span>
+<span class="fc" id="L1132">            return (T) cast(obj, (ParameterizedType) type, mapping);</span>
+        }
+<span class="pc bpc" id="L1134" title="1 of 2 branches missed.">        if(obj instanceof String){</span>
+<span class="fc" id="L1135">            String strVal = (String) obj;</span>
+<span class="fc bfc" id="L1136" title="All 2 branches covered.">            if(strVal.length() == 0 //</span>
+<span class="fc bfc" id="L1137" title="All 2 branches covered.">                    || &quot;null&quot;.equals(strVal) //</span>
+<span class="pc bpc" id="L1138" title="1 of 2 branches missed.">                    || &quot;NULL&quot;.equals(strVal)){</span>
+<span class="fc" id="L1139">                return null;</span>
+            }
+        }
+<span class="fc bfc" id="L1142" title="All 2 branches covered.">        if(type instanceof TypeVariable){</span>
+<span class="fc" id="L1143">            return (T) obj;</span>
+        }
+<span class="fc" id="L1145">        throw new JSONException(&quot;can not cast to : &quot; + type);</span>
+    }
+
+    @SuppressWarnings({&quot;rawtypes&quot;, &quot;unchecked&quot;})
+    public static &lt;T&gt; T cast(Object obj, ParameterizedType type, ParserConfig mapping){
+<span class="fc" id="L1150">        Type rawTye = type.getRawType();</span>
+
+<span class="fc bfc" id="L1152" title="All 4 branches covered.">        if(rawTye == List.class || rawTye == ArrayList.class){</span>
+<span class="fc" id="L1153">            Type itemType = type.getActualTypeArguments()[0];</span>
+<span class="fc bfc" id="L1154" title="All 2 branches covered.">            if(obj instanceof List){</span>
+<span class="fc" id="L1155">                List listObj = (List) obj;</span>
+<span class="fc" id="L1156">                List arrayList = new ArrayList(listObj.size());</span>
+
+<span class="fc bfc" id="L1158" title="All 2 branches covered.">                for (int i = 0; i &lt; listObj.size(); i++) {</span>
+<span class="fc" id="L1159">                    Object item = listObj.get(i);</span>
+
+                    Object itemValue;
+<span class="pc bpc" id="L1162" title="1 of 2 branches missed.">                    if (itemType instanceof Class) {</span>
+<span class="pc bpc" id="L1163" title="1 of 4 branches missed.">                        if (item != null &amp;&amp; item.getClass() == JSONObject.class) {</span>
+<span class="fc" id="L1164">                            itemValue = ((JSONObject) item).toJavaObject((Class&lt;T&gt;) itemType, mapping, 0);</span>
+                        } else {
+<span class="fc" id="L1166">                            itemValue = cast(item, (Class&lt;T&gt;) itemType, mapping);</span>
+                        }
+                    } else {
+<span class="nc" id="L1169">                        itemValue = cast(item, itemType, mapping);</span>
+                    }
+
+<span class="fc" id="L1172">                    arrayList.add(itemValue);</span>
+                }
+<span class="fc" id="L1174">                return (T) arrayList;</span>
+            }
+        }
+
+<span class="fc bfc" id="L1178" title="All 12 branches covered.">        if(rawTye == Set.class || rawTye == HashSet.class //</span>
+                || rawTye == TreeSet.class //
+                || rawTye == Collection.class //
+                || rawTye == List.class //
+                || rawTye == ArrayList.class){
+<span class="fc" id="L1183">            Type itemType = type.getActualTypeArguments()[0];</span>
+<span class="fc bfc" id="L1184" title="All 2 branches covered.">            if(obj instanceof Iterable){</span>
+                Collection collection;
+<span class="fc bfc" id="L1186" title="All 4 branches covered.">                if(rawTye == Set.class || rawTye == HashSet.class){</span>
+<span class="fc" id="L1187">                    collection = new HashSet();</span>
+<span class="fc bfc" id="L1188" title="All 2 branches covered.">                } else if(rawTye == TreeSet.class){</span>
+<span class="fc" id="L1189">                    collection = new TreeSet();</span>
+                } else{
+<span class="fc" id="L1191">                    collection = new ArrayList();</span>
+                }
+<span class="fc bfc" id="L1193" title="All 2 branches covered.">                for(Iterator it = ((Iterable) obj).iterator(); it.hasNext(); ){</span>
+<span class="fc" id="L1194">                    Object item = it.next();</span>
+
+                    Object itemValue;
+<span class="pc bpc" id="L1197" title="1 of 2 branches missed.">                    if (itemType instanceof Class) {</span>
+<span class="pc bpc" id="L1198" title="1 of 4 branches missed.">                        if (item != null &amp;&amp; item.getClass() == JSONObject.class) {</span>
+<span class="fc" id="L1199">                            itemValue = ((JSONObject) item).toJavaObject((Class&lt;T&gt;) itemType, mapping, 0);</span>
+                        } else {
+<span class="fc" id="L1201">                            itemValue = cast(item, (Class&lt;T&gt;) itemType, mapping);</span>
+                        }
+                    } else {
+<span class="nc" id="L1204">                        itemValue = cast(item, itemType, mapping);</span>
+                    }
+
+<span class="fc" id="L1207">                    collection.add(itemValue);</span>
+<span class="fc" id="L1208">                }</span>
+<span class="fc" id="L1209">                return (T) collection;</span>
+            }
+        }
+
+<span class="fc bfc" id="L1213" title="All 4 branches covered.">        if(rawTye == Map.class || rawTye == HashMap.class){</span>
+<span class="fc" id="L1214">            Type keyType = type.getActualTypeArguments()[0];</span>
+<span class="fc" id="L1215">            Type valueType = type.getActualTypeArguments()[1];</span>
+<span class="fc bfc" id="L1216" title="All 2 branches covered.">            if(obj instanceof Map){</span>
+<span class="fc" id="L1217">                Map map = new HashMap();</span>
+<span class="fc bfc" id="L1218" title="All 2 branches covered.">                for(Map.Entry entry : ((Map&lt;?,?&gt;) obj).entrySet()){</span>
+<span class="fc" id="L1219">                    Object key = cast(entry.getKey(), keyType, mapping);</span>
+<span class="fc" id="L1220">                    Object value = cast(entry.getValue(), valueType, mapping);</span>
+<span class="fc" id="L1221">                    map.put(key, value);</span>
+<span class="fc" id="L1222">                }</span>
+<span class="fc" id="L1223">                return (T) map;</span>
+            }
+        }
+<span class="fc bfc" id="L1226" title="All 2 branches covered.">        if(obj instanceof String){</span>
+<span class="fc" id="L1227">            String strVal = (String) obj;</span>
+<span class="fc bfc" id="L1228" title="All 2 branches covered.">            if(strVal.length() == 0){</span>
+<span class="fc" id="L1229">                return null;</span>
+            }
+        }
+<span class="fc bfc" id="L1232" title="All 2 branches covered.">        if(type.getActualTypeArguments().length == 1){</span>
+<span class="fc" id="L1233">            Type argType = type.getActualTypeArguments()[0];</span>
+<span class="fc bfc" id="L1234" title="All 2 branches covered.">            if(argType instanceof WildcardType){</span>
+<span class="fc" id="L1235">                return (T) cast(obj, rawTye, mapping);</span>
+            }
+        }
+
+<span class="pc bpc" id="L1239" title="2 of 6 branches missed.">        if (rawTye == Map.Entry.class &amp;&amp; obj instanceof Map &amp;&amp; ((Map) obj).size() == 1) {</span>
+<span class="fc" id="L1240">            Map.Entry entry = (Map.Entry) ((Map) obj).entrySet().iterator().next();</span>
+<span class="fc" id="L1241">            return (T) entry;</span>
+        }
+
+<span class="pc bpc" id="L1244" title="1 of 2 branches missed.">        if (rawTye instanceof Class) {</span>
+<span class="fc bfc" id="L1245" title="All 2 branches covered.">            if (mapping == null) {</span>
+<span class="fc" id="L1246">                mapping = ParserConfig.global;</span>
+            }
+<span class="fc" id="L1248">            ObjectDeserializer deserializer = mapping.getDeserializer(rawTye);</span>
+<span class="pc bpc" id="L1249" title="1 of 2 branches missed.">            if (deserializer != null) {</span>
+<span class="fc" id="L1250">                String str = JSON.toJSONString(obj);</span>
+<span class="fc" id="L1251">                DefaultJSONParser parser = new DefaultJSONParser(str, mapping);</span>
+<span class="fc" id="L1252">                return (T) deserializer.deserialze(parser, type, null);</span>
+            }
+        }
+
+<span class="nc" id="L1256">        throw new JSONException(&quot;can not cast to : &quot; + type);</span>
+    }
+
+    @SuppressWarnings({&quot;unchecked&quot;})
+    public static &lt;T&gt; T castToJavaBean(Map&lt;String,Object&gt; map, Class&lt;T&gt; clazz, ParserConfig config){
+        try{
+<span class="fc bfc" id="L1262" title="All 2 branches covered.">            if(clazz == StackTraceElement.class){</span>
+<span class="fc" id="L1263">                String declaringClass = (String) map.get(&quot;className&quot;);</span>
+<span class="fc" id="L1264">                String methodName = (String) map.get(&quot;methodName&quot;);</span>
+<span class="fc" id="L1265">                String fileName = (String) map.get(&quot;fileName&quot;);</span>
+                int lineNumber;
+                {
+<span class="fc" id="L1268">                    Number value = (Number) map.get(&quot;lineNumber&quot;);</span>
+<span class="fc bfc" id="L1269" title="All 2 branches covered.">                    if(value == null) {</span>
+<span class="fc" id="L1270">                        lineNumber = 0;</span>
+<span class="fc bfc" id="L1271" title="All 2 branches covered.">                    } else if (value instanceof BigDecimal) {</span>
+<span class="nc" id="L1272">                        lineNumber = ((BigDecimal) value).intValueExact();</span>
+                    } else{
+<span class="fc" id="L1274">                        lineNumber = value.intValue();</span>
+                    }
+                }
+<span class="fc" id="L1277">                return (T) new StackTraceElement(declaringClass, methodName, fileName, lineNumber);</span>
+            }
+
+            {
+<span class="fc" id="L1281">                Object iClassObject = map.get(JSON.DEFAULT_TYPE_KEY);</span>
+<span class="fc bfc" id="L1282" title="All 2 branches covered.">                if(iClassObject instanceof String){</span>
+<span class="fc" id="L1283">                    String className = (String) iClassObject;</span>
+                    Class&lt;?&gt; loadClazz;
+<span class="fc bfc" id="L1285" title="All 2 branches covered.">                    if(config == null){</span>
+<span class="fc" id="L1286">                        config = ParserConfig.global;</span>
+                    }
+<span class="fc" id="L1288">                    loadClazz = config.checkAutoType(className, null);</span>
+<span class="pc bpc" id="L1289" title="1 of 2 branches missed.">                    if(loadClazz == null){</span>
+<span class="nc" id="L1290">                        throw new ClassNotFoundException(className + &quot; not found&quot;);</span>
+                    }
+<span class="fc bfc" id="L1292" title="All 2 branches covered.">                    if(!loadClazz.equals(clazz)){</span>
+<span class="fc" id="L1293">                        return (T) castToJavaBean(map, loadClazz, config);</span>
+                    }
+                }
+            }
+
+<span class="fc bfc" id="L1298" title="All 2 branches covered.">            if(clazz.isInterface()){</span>
+                JSONObject object;
+<span class="fc bfc" id="L1300" title="All 2 branches covered.">                if(map instanceof JSONObject){</span>
+<span class="fc" id="L1301">                    object = (JSONObject) map;</span>
+                } else{
+<span class="fc" id="L1303">                    object = new JSONObject(map);</span>
+                }
+<span class="fc bfc" id="L1305" title="All 2 branches covered.">                if(config == null){</span>
+<span class="fc" id="L1306">                    config = ParserConfig.getGlobalInstance();</span>
+                }
+<span class="fc" id="L1308">                ObjectDeserializer deserializer = config.getDeserializers().get(clazz);</span>
+<span class="fc bfc" id="L1309" title="All 2 branches covered.">                if(deserializer != null){</span>
+<span class="fc" id="L1310">                    String json = JSON.toJSONString(object);</span>
+<span class="fc" id="L1311">                    return (T) JSON.parseObject(json, clazz);</span>
+                }
+<span class="fc" id="L1313">                return (T) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),</span>
+                        new Class&lt;?&gt;[]{clazz}, object);
+            }
+
+<span class="fc bfc" id="L1317" title="All 2 branches covered.">            if(clazz == Locale.class){</span>
+<span class="fc" id="L1318">                Object arg0 = map.get(&quot;language&quot;);</span>
+<span class="fc" id="L1319">                Object arg1 = map.get(&quot;country&quot;);</span>
+<span class="pc bpc" id="L1320" title="1 of 2 branches missed.">                if(arg0 instanceof String){</span>
+<span class="fc" id="L1321">                    String language = (String) arg0;</span>
+<span class="pc bpc" id="L1322" title="1 of 2 branches missed.">                    if(arg1 instanceof String){</span>
+<span class="fc" id="L1323">                        String country = (String) arg1;</span>
+<span class="fc" id="L1324">                        return (T) new Locale(language, country);</span>
+<span class="nc bnc" id="L1325" title="All 2 branches missed.">                    } else if(arg1 == null){</span>
+<span class="nc" id="L1326">                        return (T) new Locale(language);</span>
+                    }
+                }
+            }
+
+<span class="pc bpc" id="L1331" title="1 of 4 branches missed.">            if (clazz == String.class &amp;&amp; map instanceof JSONObject) {</span>
+<span class="fc" id="L1332">                return (T) map.toString();</span>
+            }
+
+<span class="pc bpc" id="L1335" title="1 of 4 branches missed.">            if (clazz == LinkedHashMap.class &amp;&amp; map instanceof JSONObject) {</span>
+<span class="fc" id="L1336">                JSONObject jsonObject = (JSONObject) map;</span>
+<span class="fc" id="L1337">                Map innerMap = jsonObject.getInnerMap();</span>
+<span class="pc bpc" id="L1338" title="1 of 2 branches missed.">                if (innerMap instanceof LinkedHashMap) {</span>
+<span class="fc" id="L1339">                    return (T) innerMap;</span>
+                } else {
+<span class="nc" id="L1341">                    LinkedHashMap linkedHashMap = new LinkedHashMap();</span>
+<span class="nc" id="L1342">                    linkedHashMap.putAll(innerMap);</span>
+                }
+            }
+
+<span class="fc bfc" id="L1346" title="All 2 branches covered.">            if (config == null) {</span>
+<span class="fc" id="L1347">                config = ParserConfig.getGlobalInstance();</span>
+            }
+
+<span class="fc" id="L1350">            JavaBeanDeserializer javaBeanDeser = null;</span>
+<span class="fc" id="L1351">            ObjectDeserializer deserizer = config.getDeserializer(clazz);</span>
+<span class="fc bfc" id="L1352" title="All 2 branches covered.">            if (deserizer instanceof JavaBeanDeserializer) {</span>
+<span class="fc" id="L1353">                javaBeanDeser = (JavaBeanDeserializer) deserizer;</span>
+            }
+
+<span class="fc bfc" id="L1356" title="All 2 branches covered.">            if(javaBeanDeser == null){</span>
+<span class="fc" id="L1357">                throw new JSONException(&quot;can not get javaBeanDeserializer. &quot; + clazz.getName());</span>
+            }
+<span class="fc" id="L1359">            return (T) javaBeanDeser.createInstance(map, config);</span>
+<span class="fc" id="L1360">        } catch(Exception e){</span>
+<span class="fc" id="L1361">            throw new JSONException(e.getMessage(), e);</span>
+        }
+    }
+
+    private static void addBaseClassMappings(){
+<span class="fc" id="L1366">        mappings.put(&quot;byte&quot;, byte.class);</span>
+<span class="fc" id="L1367">        mappings.put(&quot;short&quot;, short.class);</span>
+<span class="fc" id="L1368">        mappings.put(&quot;int&quot;, int.class);</span>
+<span class="fc" id="L1369">        mappings.put(&quot;long&quot;, long.class);</span>
+<span class="fc" id="L1370">        mappings.put(&quot;float&quot;, float.class);</span>
+<span class="fc" id="L1371">        mappings.put(&quot;double&quot;, double.class);</span>
+<span class="fc" id="L1372">        mappings.put(&quot;boolean&quot;, boolean.class);</span>
+<span class="fc" id="L1373">        mappings.put(&quot;char&quot;, char.class);</span>
+<span class="fc" id="L1374">        mappings.put(&quot;[byte&quot;, byte[].class);</span>
+<span class="fc" id="L1375">        mappings.put(&quot;[short&quot;, short[].class);</span>
+<span class="fc" id="L1376">        mappings.put(&quot;[int&quot;, int[].class);</span>
+<span class="fc" id="L1377">        mappings.put(&quot;[long&quot;, long[].class);</span>
+<span class="fc" id="L1378">        mappings.put(&quot;[float&quot;, float[].class);</span>
+<span class="fc" id="L1379">        mappings.put(&quot;[double&quot;, double[].class);</span>
+<span class="fc" id="L1380">        mappings.put(&quot;[boolean&quot;, boolean[].class);</span>
+<span class="fc" id="L1381">        mappings.put(&quot;[char&quot;, char[].class);</span>
+<span class="fc" id="L1382">        mappings.put(&quot;[B&quot;, byte[].class);</span>
+<span class="fc" id="L1383">        mappings.put(&quot;[S&quot;, short[].class);</span>
+<span class="fc" id="L1384">        mappings.put(&quot;[I&quot;, int[].class);</span>
+<span class="fc" id="L1385">        mappings.put(&quot;[J&quot;, long[].class);</span>
+<span class="fc" id="L1386">        mappings.put(&quot;[F&quot;, float[].class);</span>
+<span class="fc" id="L1387">        mappings.put(&quot;[D&quot;, double[].class);</span>
+<span class="fc" id="L1388">        mappings.put(&quot;[C&quot;, char[].class);</span>
+<span class="fc" id="L1389">        mappings.put(&quot;[Z&quot;, boolean[].class);</span>
+<span class="fc" id="L1390">        Class&lt;?&gt;[] classes = new Class[]{</span>
+                Object.class,
+                java.lang.Cloneable.class,
+<span class="fc" id="L1393">                loadClass(&quot;java.lang.AutoCloseable&quot;),</span>
+                java.lang.Exception.class,
+                java.lang.RuntimeException.class,
+                java.lang.IllegalAccessError.class,
+                java.lang.IllegalAccessException.class,
+                java.lang.IllegalArgumentException.class,
+                java.lang.IllegalMonitorStateException.class,
+                java.lang.IllegalStateException.class,
+                java.lang.IllegalThreadStateException.class,
+                java.lang.IndexOutOfBoundsException.class,
+                java.lang.InstantiationError.class,
+                java.lang.InstantiationException.class,
+                java.lang.InternalError.class,
+                java.lang.InterruptedException.class,
+                java.lang.LinkageError.class,
+                java.lang.NegativeArraySizeException.class,
+                java.lang.NoClassDefFoundError.class,
+                java.lang.NoSuchFieldError.class,
+                java.lang.NoSuchFieldException.class,
+                java.lang.NoSuchMethodError.class,
+                java.lang.NoSuchMethodException.class,
+                java.lang.NullPointerException.class,
+                java.lang.NumberFormatException.class,
+                java.lang.OutOfMemoryError.class,
+                java.lang.SecurityException.class,
+                java.lang.StackOverflowError.class,
+                java.lang.StringIndexOutOfBoundsException.class,
+                java.lang.TypeNotPresentException.class,
+                java.lang.VerifyError.class,
+                java.lang.StackTraceElement.class,
+                java.util.HashMap.class,
+                java.util.Hashtable.class,
+                java.util.TreeMap.class,
+                java.util.IdentityHashMap.class,
+                java.util.WeakHashMap.class,
+                java.util.LinkedHashMap.class,
+                java.util.HashSet.class,
+                java.util.LinkedHashSet.class,
+                java.util.TreeSet.class,
+                java.util.ArrayList.class,
+                java.util.concurrent.TimeUnit.class,
+                java.util.concurrent.ConcurrentHashMap.class,
+<span class="fc" id="L1435">                loadClass(&quot;java.util.concurrent.ConcurrentSkipListMap&quot;),</span>
+<span class="fc" id="L1436">                loadClass(&quot;java.util.concurrent.ConcurrentSkipListSet&quot;),</span>
+                java.util.concurrent.atomic.AtomicInteger.class,
+                java.util.concurrent.atomic.AtomicLong.class,
+<span class="fc" id="L1439">                java.util.Collections.EMPTY_MAP.getClass(),</span>
+                java.lang.Boolean.class,
+                java.lang.Character.class,
+                java.lang.Byte.class,
+                java.lang.Short.class,
+                java.lang.Integer.class,
+                java.lang.Long.class,
+                java.lang.Float.class,
+                java.lang.Double.class,
+                java.lang.Number.class,
+                java.lang.String.class,
+                java.math.BigDecimal.class,
+                java.math.BigInteger.class,
+                java.util.BitSet.class,
+                java.util.Calendar.class,
+                java.util.Date.class,
+                java.util.Locale.class,
+                java.util.UUID.class,
+                java.sql.Time.class,
+                java.sql.Date.class,
+                java.sql.Timestamp.class,
+                java.text.SimpleDateFormat.class,
+                com.alibaba.fastjson.JSONObject.class,
+                com.alibaba.fastjson.JSONPObject.class,
+                com.alibaba.fastjson.JSONArray.class,
+        };
+<span class="fc bfc" id="L1465" title="All 2 branches covered.">        for(Class clazz : classes){</span>
+<span class="pc bpc" id="L1466" title="1 of 2 branches missed.">            if(clazz == null){</span>
+<span class="nc" id="L1467">                continue;</span>
+            }
+<span class="fc" id="L1469">            mappings.put(clazz.getName(), clazz);</span>
+        }
+
+<span class="fc" id="L1472">        String[] w = new String[]{</span>
+                &quot;java.util.Collections$UnmodifiableMap&quot;
+        };
+<span class="fc bfc" id="L1475" title="All 2 branches covered.">        for(String className : w){</span>
+<span class="fc" id="L1476">            Class&lt;?&gt; clazz = loadClass(className);</span>
+<span class="pc bpc" id="L1477" title="1 of 2 branches missed.">            if(clazz == null){</span>
+<span class="nc" id="L1478">                break;</span>
+            }
+<span class="fc" id="L1480">            mappings.put(clazz.getName(), clazz);</span>
+        }
+
+<span class="fc" id="L1483">        String[] awt = new String[]{</span>
+                &quot;java.awt.Rectangle&quot;,
+                &quot;java.awt.Point&quot;,
+                &quot;java.awt.Font&quot;,
+                &quot;java.awt.Color&quot;};
+<span class="fc bfc" id="L1488" title="All 2 branches covered.">        for(String className : awt){</span>
+<span class="fc" id="L1489">            Class&lt;?&gt; clazz = loadClass(className);</span>
+<span class="pc bpc" id="L1490" title="1 of 2 branches missed.">            if(clazz == null){</span>
+<span class="nc" id="L1491">                break;</span>
+            }
+<span class="fc" id="L1493">            mappings.put(clazz.getName(), clazz);</span>
+        }
+
+<span class="fc" id="L1496">        String[] spring = new String[]{</span>
+                &quot;org.springframework.util.LinkedMultiValueMap&quot;,
+                &quot;org.springframework.util.LinkedCaseInsensitiveMap&quot;,
+                &quot;org.springframework.remoting.support.RemoteInvocation&quot;,
+                &quot;org.springframework.remoting.support.RemoteInvocationResult&quot;,
+                &quot;org.springframework.security.web.savedrequest.DefaultSavedRequest&quot;,
+                &quot;org.springframework.security.web.savedrequest.SavedCookie&quot;,
+                &quot;org.springframework.security.web.csrf.DefaultCsrfToken&quot;,
+                &quot;org.springframework.security.web.authentication.WebAuthenticationDetails&quot;,
+                &quot;org.springframework.security.core.context.SecurityContextImpl&quot;,
+                &quot;org.springframework.security.authentication.UsernamePasswordAuthenticationToken&quot;,
+                &quot;org.springframework.security.core.authority.SimpleGrantedAuthority&quot;,
+                &quot;org.springframework.security.core.userdetails.User&quot;,
+                &quot;org.springframework.security.oauth2.common.DefaultExpiringOAuth2RefreshToken&quot;,
+                &quot;org.springframework.security.oauth2.common.DefaultOAuth2AccessToken&quot;,
+                &quot;org.springframework.security.oauth2.common.DefaultOAuth2RefreshToken&quot;,
+                &quot;org.springframework.cache.support.NullValue&quot;,
+        };
+<span class="fc bfc" id="L1514" title="All 2 branches covered.">        for(String className : spring){</span>
+<span class="fc" id="L1515">            Class&lt;?&gt; clazz = loadClass(className);</span>
+<span class="pc bpc" id="L1516" title="1 of 2 branches missed.">            if(clazz == null){</span>
+<span class="nc" id="L1517">                continue;</span>
+            }
+<span class="fc" id="L1519">            mappings.put(clazz.getName(), clazz);</span>
+        }
+<span class="fc" id="L1521">    }</span>
+
+    public static void clearClassMapping(){
+<span class="fc" id="L1524">        mappings.clear();</span>
+<span class="fc" id="L1525">        addBaseClassMappings();</span>
+<span class="fc" id="L1526">    }</span>
+
+    public static void addMapping(String className, Class&lt;?&gt; clazz) {
+<span class="fc" id="L1529">        mappings.put(className, clazz);</span>
+<span class="fc" id="L1530">    }</span>
+
+    public static Class&lt;?&gt; loadClass(String className){
+<span class="fc" id="L1533">        return loadClass(className, null);</span>
+    }
+
+    public static boolean isPath(Class&lt;?&gt; clazz){
+<span class="pc bpc" id="L1537" title="1 of 4 branches missed.">        if(pathClass == null &amp;&amp; !pathClass_error){</span>
+            try{
+<span class="fc" id="L1539">                pathClass = Class.forName(&quot;java.nio.file.Path&quot;);</span>
+<span class="nc" id="L1540">            } catch(Throwable ex){</span>
+<span class="nc" id="L1541">                pathClass_error = true;</span>
+<span class="fc" id="L1542">            }</span>
+        }
+<span class="pc bpc" id="L1544" title="1 of 2 branches missed.">        if(pathClass != null){</span>
+<span class="fc" id="L1545">            return pathClass.isAssignableFrom(clazz);</span>
+        }
+<span class="nc" id="L1547">        return false;</span>
+    }
+
+    public static Class&lt;?&gt; getClassFromMapping(String className){
+<span class="fc" id="L1551">        return mappings.get(className);</span>
+    }
+
+    public static Class&lt;?&gt; loadClass(String className, ClassLoader classLoader) {
+<span class="fc" id="L1555">        return loadClass(className, classLoader, false);</span>
+    }
+
+    public static Class&lt;?&gt; loadClass(String className, ClassLoader classLoader, boolean cache) {
+<span class="pc bpc" id="L1559" title="1 of 6 branches missed.">        if(className == null || className.length() == 0 || className.length() &gt; 128){</span>
+<span class="fc" id="L1560">            return null;</span>
+        }
+
+<span class="fc" id="L1563">        Class&lt;?&gt; clazz = mappings.get(className);</span>
+<span class="fc bfc" id="L1564" title="All 2 branches covered.">        if(clazz != null){</span>
+<span class="fc" id="L1565">            return clazz;</span>
+        }
+
+<span class="fc bfc" id="L1568" title="All 2 branches covered.">        if(className.charAt(0) == '['){</span>
+<span class="fc" id="L1569">            Class&lt;?&gt; componentType = loadClass(className.substring(1), classLoader);</span>
+<span class="fc" id="L1570">            return Array.newInstance(componentType, 0).getClass();</span>
+        }
+
+<span class="pc bpc" id="L1573" title="1 of 4 branches missed.">        if(className.startsWith(&quot;L&quot;) &amp;&amp; className.endsWith(&quot;;&quot;)){</span>
+<span class="fc" id="L1574">            String newClassName = className.substring(1, className.length() - 1);</span>
+<span class="fc" id="L1575">            return loadClass(newClassName, classLoader);</span>
+        }
+
+        try{
+<span class="fc bfc" id="L1579" title="All 2 branches covered.">            if(classLoader != null){</span>
+<span class="fc" id="L1580">                clazz = classLoader.loadClass(className);</span>
+<span class="pc bpc" id="L1581" title="1 of 2 branches missed.">                if (cache) {</span>
+<span class="nc" id="L1582">                    mappings.put(className, clazz);</span>
+                }
+<span class="fc" id="L1584">                return clazz;</span>
+            }
+<span class="fc" id="L1586">        } catch(Throwable e){</span>
+<span class="fc" id="L1587">            e.printStackTrace();</span>
+            // skip
+<span class="fc" id="L1589">        }</span>
+        try{
+<span class="fc" id="L1591">            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();</span>
+<span class="pc bpc" id="L1592" title="1 of 4 branches missed.">            if(contextClassLoader != null &amp;&amp; contextClassLoader != classLoader){</span>
+<span class="fc" id="L1593">                clazz = contextClassLoader.loadClass(className);</span>
+<span class="fc bfc" id="L1594" title="All 2 branches covered.">                if (cache) {</span>
+<span class="fc" id="L1595">                    mappings.put(className, clazz);</span>
+                }
+<span class="fc" id="L1597">                return clazz;</span>
+            }
+<span class="fc" id="L1599">        } catch(Throwable e){</span>
+            // skip
+<span class="fc" id="L1601">        }</span>
+        try{
+<span class="fc" id="L1603">            clazz = Class.forName(className);</span>
+<span class="pc bpc" id="L1604" title="1 of 2 branches missed.">            if (cache) {</span>
+<span class="nc" id="L1605">                mappings.put(className, clazz);</span>
+            }
+<span class="fc" id="L1607">            return clazz;</span>
+<span class="fc" id="L1608">        } catch(Throwable e){</span>
+            // skip
+        }
+<span class="fc" id="L1611">        return clazz;</span>
+    }
+
+    public static SerializeBeanInfo buildBeanInfo(Class&lt;?&gt; beanType //
+            , Map&lt;String,String&gt; aliasMap //
+            , PropertyNamingStrategy propertyNamingStrategy){
+<span class="fc" id="L1617">        return buildBeanInfo(beanType, aliasMap, propertyNamingStrategy, false);</span>
+    }
+
+    public static SerializeBeanInfo buildBeanInfo(Class&lt;?&gt; beanType //
+            , Map&lt;String,String&gt; aliasMap //
+            , PropertyNamingStrategy propertyNamingStrategy //
+            , boolean fieldBased //
+    ){
+<span class="fc" id="L1625">        JSONType jsonType = TypeUtils.getAnnotation(beanType,JSONType.class);</span>
+<span class="fc" id="L1626">        String[] orders = null;</span>
+        final int features;
+<span class="fc" id="L1628">        String typeName = null, typeKey = null;</span>
+<span class="fc bfc" id="L1629" title="All 2 branches covered.">        if(jsonType != null){</span>
+<span class="fc" id="L1630">            orders = jsonType.orders();</span>
+
+<span class="fc" id="L1632">            typeName = jsonType.typeName();</span>
+<span class="fc bfc" id="L1633" title="All 2 branches covered.">            if(typeName.length() == 0){</span>
+<span class="fc" id="L1634">                typeName = null;</span>
+            }
+
+<span class="fc" id="L1637">            PropertyNamingStrategy jsonTypeNaming = jsonType.naming();</span>
+<span class="fc bfc" id="L1638" title="All 2 branches covered.">            if (jsonTypeNaming != PropertyNamingStrategy.CamelCase) {</span>
+<span class="fc" id="L1639">                propertyNamingStrategy = jsonTypeNaming;</span>
+            }
+
+<span class="fc" id="L1642">            features = SerializerFeature.of(jsonType.serialzeFeatures());</span>
+<span class="fc" id="L1643">            for(Class&lt;?&gt; supperClass = beanType.getSuperclass()</span>
+<span class="pc bpc" id="L1644" title="1 of 4 branches missed.">                ; supperClass != null &amp;&amp; supperClass != Object.class</span>
+<span class="fc" id="L1645">                    ; supperClass = supperClass.getSuperclass()){</span>
+<span class="fc" id="L1646">                JSONType superJsonType = TypeUtils.getAnnotation(supperClass,JSONType.class);</span>
+<span class="fc bfc" id="L1647" title="All 2 branches covered.">                if(superJsonType == null){</span>
+<span class="fc" id="L1648">                    break;</span>
+                }
+<span class="fc" id="L1650">                typeKey = superJsonType.typeKey();</span>
+<span class="pc bpc" id="L1651" title="1 of 2 branches missed.">                if(typeKey.length() != 0){</span>
+<span class="nc" id="L1652">                    break;</span>
+                }
+            }
+
+<span class="pc bfc" id="L1656" title="All 2 branches covered.">            for(Class&lt;?&gt; interfaceClass : beanType.getInterfaces()){</span>
+<span class="fc" id="L1657">                JSONType superJsonType = TypeUtils.getAnnotation(interfaceClass,JSONType.class);</span>
+<span class="pc bpc" id="L1658" title="1 of 2 branches missed.">                if(superJsonType != null){</span>
+<span class="fc" id="L1659">                    typeKey = superJsonType.typeKey();</span>
+<span class="pc bpc" id="L1660" title="1 of 2 branches missed.">                    if(typeKey.length() != 0){</span>
+<span class="fc" id="L1661">                        break;</span>
+                    }
+                }
+            }
+
+<span class="fc bfc" id="L1666" title="All 4 branches covered.">            if(typeKey != null &amp;&amp; typeKey.length() == 0){</span>
+<span class="fc" id="L1667">                typeKey = null;</span>
+            }
+<span class="fc" id="L1669">        } else{</span>
+<span class="fc" id="L1670">            features = 0;</span>
+        }
+        // fieldName,field ，先生成fieldName的快照，减少之后的findField的轮询
+<span class="fc" id="L1673">        Map&lt;String,Field&gt; fieldCacheMap = new HashMap&lt;String,Field&gt;();</span>
+<span class="fc" id="L1674">        ParserConfig.parserAllFieldToCache(beanType, fieldCacheMap);</span>
+<span class="fc bfc" id="L1675" title="All 2 branches covered.">        List&lt;FieldInfo&gt; fieldInfoList = fieldBased</span>
+<span class="fc" id="L1676">                ? computeGettersWithFieldBase(beanType, aliasMap, false, propertyNamingStrategy) //</span>
+<span class="fc" id="L1677">                : computeGetters(beanType, jsonType, aliasMap, fieldCacheMap, false, propertyNamingStrategy);</span>
+<span class="fc" id="L1678">        FieldInfo[] fields = new FieldInfo[fieldInfoList.size()];</span>
+<span class="fc" id="L1679">        fieldInfoList.toArray(fields);</span>
+        FieldInfo[] sortedFields;
+        List&lt;FieldInfo&gt; sortedFieldList;
+<span class="fc bfc" id="L1682" title="All 4 branches covered.">        if(orders != null &amp;&amp; orders.length != 0){</span>
+<span class="pc bpc" id="L1683" title="1 of 2 branches missed.">            sortedFieldList = fieldBased</span>
+<span class="pc" id="L1684">                    ? computeGettersWithFieldBase(beanType, aliasMap, true, propertyNamingStrategy) //</span>
+<span class="fc" id="L1685">                    : computeGetters(beanType, jsonType, aliasMap, fieldCacheMap, true, propertyNamingStrategy);</span>
+        } else{
+<span class="fc" id="L1687">            sortedFieldList = new ArrayList&lt;FieldInfo&gt;(fieldInfoList);</span>
+<span class="fc" id="L1688">            Collections.sort(sortedFieldList);</span>
+        }
+<span class="fc" id="L1690">        sortedFields = new FieldInfo[sortedFieldList.size()];</span>
+<span class="fc" id="L1691">        sortedFieldList.toArray(sortedFields);</span>
+<span class="fc bfc" id="L1692" title="All 2 branches covered.">        if(Arrays.equals(sortedFields, fields)){</span>
+<span class="fc" id="L1693">            sortedFields = fields;</span>
+        }
+<span class="fc" id="L1695">        return new SerializeBeanInfo(beanType, jsonType, typeName, typeKey, features, fields, sortedFields);</span>
+    }
+
+    public static List&lt;FieldInfo&gt; computeGettersWithFieldBase(
+            Class&lt;?&gt; clazz, //
+            Map&lt;String,String&gt; aliasMap, //
+            boolean sorted, //
+            PropertyNamingStrategy propertyNamingStrategy){
+<span class="fc" id="L1703">        Map&lt;String,FieldInfo&gt; fieldInfoMap = new LinkedHashMap&lt;String,FieldInfo&gt;();</span>
+<span class="fc bfc" id="L1704" title="All 2 branches covered.">        for(Class&lt;?&gt; currentClass = clazz; currentClass != null; currentClass = currentClass.getSuperclass()){</span>
+<span class="fc" id="L1705">            Field[] fields = currentClass.getDeclaredFields();</span>
+<span class="fc" id="L1706">            computeFields(currentClass, aliasMap, propertyNamingStrategy, fieldInfoMap, fields);</span>
+        }
+<span class="fc" id="L1708">        return getFieldInfos(clazz, sorted, fieldInfoMap);</span>
+    }
+
+    public static List&lt;FieldInfo&gt; computeGetters(Class&lt;?&gt; clazz, Map&lt;String,String&gt; aliasMap){
+<span class="fc" id="L1712">        return computeGetters(clazz, aliasMap, true);</span>
+    }
+
+    public static List&lt;FieldInfo&gt; computeGetters(Class&lt;?&gt; clazz, Map&lt;String,String&gt; aliasMap, boolean sorted){
+<span class="fc" id="L1716">        JSONType jsonType = TypeUtils.getAnnotation(clazz,JSONType.class);</span>
+<span class="fc" id="L1717">        Map&lt;String,Field&gt; fieldCacheMap = new HashMap&lt;String,Field&gt;();</span>
+<span class="fc" id="L1718">        ParserConfig.parserAllFieldToCache(clazz, fieldCacheMap);</span>
+<span class="fc" id="L1719">        return computeGetters(clazz, jsonType, aliasMap, fieldCacheMap, sorted, PropertyNamingStrategy.CamelCase);</span>
+    }
+
+    public static List&lt;FieldInfo&gt; computeGetters(Class&lt;?&gt; clazz, //
+                                                 JSONType jsonType, //
+                                                 Map&lt;String,String&gt; aliasMap, //
+                                                 Map&lt;String,Field&gt; fieldCacheMap, //
+                                                 boolean sorted, //
+                                                 PropertyNamingStrategy propertyNamingStrategy //
+    ){
+<span class="fc" id="L1729">        Map&lt;String,FieldInfo&gt; fieldInfoMap = new LinkedHashMap&lt;String,FieldInfo&gt;();</span>
+<span class="fc" id="L1730">        boolean kotlin = TypeUtils.isKotlin(clazz);</span>
+        // for kotlin
+<span class="fc" id="L1732">        Constructor[] constructors = null;</span>
+<span class="fc" id="L1733">        Annotation[][] paramAnnotationArrays = null;</span>
+<span class="fc" id="L1734">        String[] paramNames = null;</span>
+<span class="fc" id="L1735">        short[] paramNameMapping = null;</span>
+<span class="fc" id="L1736">        Method[] methods = clazz.getMethods();</span>
+<span class="fc bfc" id="L1737" title="All 2 branches covered.">        for(Method method : methods){</span>
+<span class="fc" id="L1738">            String methodName = method.getName();</span>
+<span class="fc" id="L1739">            int ordinal = 0, serialzeFeatures = 0, parserFeatures = 0;</span>
+<span class="fc" id="L1740">            String label = null;</span>
+<span class="fc bfc" id="L1741" title="All 2 branches covered.">            if(Modifier.isStatic(method.getModifiers())){</span>
+<span class="fc" id="L1742">                continue;</span>
+            }
+<span class="fc bfc" id="L1744" title="All 2 branches covered.">            if(method.getReturnType().equals(Void.TYPE)){</span>
+<span class="fc" id="L1745">                continue;</span>
+            }
+<span class="fc bfc" id="L1747" title="All 2 branches covered.">            if(method.getParameterTypes().length != 0){</span>
+<span class="fc" id="L1748">                continue;</span>
+            }
+<span class="fc bfc" id="L1750" title="All 2 branches covered.">            if(method.getReturnType() == ClassLoader.class){</span>
+<span class="fc" id="L1751">                continue;</span>
+            }
+
+<span class="fc bfc" id="L1754" title="All 2 branches covered.">            if(methodName.equals(&quot;getMetaClass&quot;)</span>
+<span class="pc bpc" id="L1755" title="1 of 2 branches missed.">                    &amp;&amp; method.getReturnType().getName().equals(&quot;groovy.lang.MetaClass&quot;)){</span>
+<span class="fc" id="L1756">                continue;</span>
+            }
+<span class="fc bfc" id="L1758" title="All 2 branches covered.">            if(methodName.equals(&quot;getSuppressed&quot;)</span>
+<span class="pc bpc" id="L1759" title="1 of 2 branches missed.">                    &amp;&amp; method.getDeclaringClass() == Throwable.class){</span>
+<span class="fc" id="L1760">                continue;</span>
+            }
+
+<span class="fc bfc" id="L1763" title="All 4 branches covered.">            if(kotlin &amp;&amp; isKotlinIgnore(clazz, methodName)){</span>
+<span class="fc" id="L1764">                continue;</span>
+            }
+            /**
+             *  如果在属性或者方法上存在JSONField注解，并且定制了name属性，不以类上的propertyNamingStrategy设置为准，以此字段的JSONField的name定制为准。
+             */
+<span class="fc" id="L1769">            Boolean fieldAnnotationAndNameExists = false;</span>
+<span class="fc" id="L1770">            JSONField annotation = method.getAnnotation(JSONField.class);</span>
+<span class="fc bfc" id="L1771" title="All 2 branches covered.">            if(annotation == null){</span>
+<span class="fc" id="L1772">                annotation = getSuperMethodAnnotation(clazz, method);</span>
+            }
+<span class="fc bfc" id="L1774" title="All 4 branches covered.">            if(annotation == null &amp;&amp; kotlin){</span>
+<span class="fc bfc" id="L1775" title="All 2 branches covered.">                if(constructors == null){</span>
+<span class="fc" id="L1776">                    constructors = clazz.getDeclaredConstructors();</span>
+<span class="fc" id="L1777">                    Constructor creatorConstructor = TypeUtils.getKoltinConstructor(constructors);</span>
+<span class="pc bpc" id="L1778" title="1 of 2 branches missed.">                    if(creatorConstructor != null){</span>
+<span class="fc" id="L1779">                        paramAnnotationArrays = creatorConstructor.getParameterAnnotations();</span>
+<span class="fc" id="L1780">                        paramNames = TypeUtils.getKoltinConstructorParameters(clazz);</span>
+<span class="pc bpc" id="L1781" title="1 of 2 branches missed.">                        if(paramNames != null){</span>
+<span class="fc" id="L1782">                            String[] paramNames_sorted = new String[paramNames.length];</span>
+<span class="fc" id="L1783">                            System.arraycopy(paramNames, 0, paramNames_sorted, 0, paramNames.length);</span>
+
+<span class="fc" id="L1785">                            Arrays.sort(paramNames_sorted);</span>
+<span class="fc" id="L1786">                            paramNameMapping = new short[paramNames.length];</span>
+<span class="fc bfc" id="L1787" title="All 2 branches covered.">                            for(short p = 0; p &lt; paramNames.length; p++){</span>
+<span class="fc" id="L1788">                                int index = Arrays.binarySearch(paramNames_sorted, paramNames[p]);</span>
+<span class="fc" id="L1789">                                paramNameMapping[index] = p;</span>
+                            }
+<span class="fc" id="L1791">                            paramNames = paramNames_sorted;</span>
+                        }
+                    }
+                }
+<span class="pc bpc" id="L1795" title="2 of 6 branches missed.">                if(paramNames != null &amp;&amp; paramNameMapping != null &amp;&amp; methodName.startsWith(&quot;get&quot;)){</span>
+<span class="fc" id="L1796">                    String propertyName = decapitalize(methodName.substring(3));</span>
+<span class="fc" id="L1797">                    int p = Arrays.binarySearch(paramNames, propertyName);</span>
+<span class="fc bfc" id="L1798" title="All 2 branches covered.">                    if (p &lt; 0) {</span>
+<span class="fc bfc" id="L1799" title="All 2 branches covered.">                        for (int i = 0; i &lt; paramNames.length; i++) {</span>
+<span class="fc bfc" id="L1800" title="All 2 branches covered.">                            if (propertyName.equalsIgnoreCase(paramNames[i])) {</span>
+<span class="fc" id="L1801">                                p = i;</span>
+<span class="fc" id="L1802">                                break;</span>
+                            }
+                        }
+                    }
+<span class="fc bfc" id="L1806" title="All 2 branches covered.">                    if(p &gt;= 0){</span>
+<span class="fc" id="L1807">                        short index = paramNameMapping[p];</span>
+<span class="fc" id="L1808">                        Annotation[] paramAnnotations = paramAnnotationArrays[index];</span>
+<span class="pc bpc" id="L1809" title="1 of 2 branches missed.">                        if(paramAnnotations != null){</span>
+<span class="pc bfc" id="L1810" title="All 2 branches covered.">                            for(Annotation paramAnnotation : paramAnnotations){</span>
+<span class="pc bpc" id="L1811" title="1 of 2 branches missed.">                                if(paramAnnotation instanceof JSONField){</span>
+<span class="fc" id="L1812">                                    annotation = (JSONField) paramAnnotation;</span>
+<span class="fc" id="L1813">                                    break;</span>
+                                }
+                            }
+                        }
+<span class="fc bfc" id="L1817" title="All 2 branches covered.">                        if(annotation == null){</span>
+<span class="fc" id="L1818">                            Field field = ParserConfig.getFieldFromCache(propertyName, fieldCacheMap);</span>
+<span class="fc bfc" id="L1819" title="All 2 branches covered.">                            if(field != null){</span>
+<span class="fc" id="L1820">                                annotation = field.getAnnotation(JSONField.class);</span>
+                            }
+                        }
+                    }
+                }
+            }
+<span class="fc bfc" id="L1826" title="All 2 branches covered.">            if(annotation != null){</span>
+<span class="fc bfc" id="L1827" title="All 2 branches covered.">                if(!annotation.serialize()){</span>
+<span class="fc" id="L1828">                    continue;</span>
+                }
+<span class="fc" id="L1830">                ordinal = annotation.ordinal();</span>
+<span class="fc" id="L1831">                serialzeFeatures = SerializerFeature.of(annotation.serialzeFeatures());</span>
+<span class="fc" id="L1832">                parserFeatures = Feature.of(annotation.parseFeatures());</span>
+<span class="fc bfc" id="L1833" title="All 2 branches covered.">                if(annotation.name().length() != 0){</span>
+<span class="fc" id="L1834">                    String propertyName = annotation.name();</span>
+<span class="fc bfc" id="L1835" title="All 2 branches covered.">                    if(aliasMap != null){</span>
+<span class="fc" id="L1836">                        propertyName = aliasMap.get(propertyName);</span>
+<span class="pc bpc" id="L1837" title="1 of 2 branches missed.">                        if(propertyName == null){</span>
+<span class="fc" id="L1838">                            continue;</span>
+                        }
+                    }
+<span class="fc" id="L1841">                    FieldInfo fieldInfo = new FieldInfo(propertyName, method, null, clazz, null, ordinal,</span>
+                            serialzeFeatures, parserFeatures, annotation, null, label);
+<span class="fc" id="L1843">                    fieldInfoMap.put(propertyName, fieldInfo);</span>
+<span class="fc" id="L1844">                    continue;</span>
+                }
+<span class="fc bfc" id="L1846" title="All 2 branches covered.">                if(annotation.label().length() != 0){</span>
+<span class="fc" id="L1847">                    label = annotation.label();</span>
+                }
+            }
+<span class="fc bfc" id="L1850" title="All 2 branches covered.">            if(methodName.startsWith(&quot;get&quot;)){</span>
+<span class="fc bfc" id="L1851" title="All 2 branches covered.">                if(methodName.length() &lt; 4){</span>
+<span class="fc" id="L1852">                    continue;</span>
+                }
+<span class="fc bfc" id="L1854" title="All 2 branches covered.">                if(methodName.equals(&quot;getClass&quot;)){</span>
+<span class="fc" id="L1855">                    continue;</span>
+                }
+<span class="fc bfc" id="L1857" title="All 4 branches covered.">                if(methodName.equals(&quot;getDeclaringClass&quot;) &amp;&amp; clazz.isEnum()){</span>
+<span class="fc" id="L1858">                    continue;</span>
+                }
+<span class="fc" id="L1860">                char c3 = methodName.charAt(3);</span>
+                String propertyName;
+<span class="fc bfc" id="L1862" title="All 4 branches covered.">                if(Character.isUpperCase(c3) //</span>
+                        || c3 &gt; 512 // for unicode method name
+                        ){
+<span class="fc bfc" id="L1865" title="All 2 branches covered.">                    if(compatibleWithJavaBean){</span>
+<span class="fc" id="L1866">                        propertyName = decapitalize(methodName.substring(3));</span>
+                    } else{
+<span class="fc" id="L1868">                        propertyName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);</span>
+                    }
+<span class="fc" id="L1870">                    propertyName = getPropertyNameByCompatibleFieldName(fieldCacheMap, methodName, propertyName, 3);</span>
+<span class="fc bfc" id="L1871" title="All 2 branches covered.">                } else if(c3 == '_'){</span>
+<span class="fc" id="L1872">                    propertyName = methodName.substring(4);</span>
+<span class="fc bfc" id="L1873" title="All 2 branches covered.">                } else if(c3 == 'f'){</span>
+<span class="fc" id="L1874">                    propertyName = methodName.substring(3);</span>
+<span class="pc bpc" id="L1875" title="1 of 4 branches missed.">                } else if(methodName.length() &gt;= 5 &amp;&amp; Character.isUpperCase(methodName.charAt(4))){</span>
+<span class="fc" id="L1876">                    propertyName = decapitalize(methodName.substring(3));</span>
+                } else{
+                    continue;
+                }
+<span class="fc" id="L1880">                boolean ignore = isJSONTypeIgnore(clazz, propertyName);</span>
+<span class="fc bfc" id="L1881" title="All 2 branches covered.">                if(ignore){</span>
+<span class="fc" id="L1882">                    continue;</span>
+                }
+                //假如bean的field很多的情况一下，轮询时将大大降低效率
+<span class="fc" id="L1885">                Field field = ParserConfig.getFieldFromCache(propertyName, fieldCacheMap);</span>
+<span class="fc bfc" id="L1886" title="All 4 branches covered.">                if(field == null &amp;&amp; propertyName.length() &gt; 1){</span>
+<span class="fc" id="L1887">                    char ch = propertyName.charAt(1);</span>
+<span class="fc bfc" id="L1888" title="All 4 branches covered.">                    if(ch &gt;= 'A' &amp;&amp; ch &lt;= 'Z'){</span>
+<span class="fc" id="L1889">                        String javaBeanCompatiblePropertyName = decapitalize(methodName.substring(3));</span>
+<span class="fc" id="L1890">                        field = ParserConfig.getFieldFromCache(javaBeanCompatiblePropertyName, fieldCacheMap);</span>
+                    }
+                }
+<span class="fc" id="L1893">                JSONField fieldAnnotation = null;</span>
+<span class="fc bfc" id="L1894" title="All 2 branches covered.">                if(field != null){</span>
+<span class="fc" id="L1895">                    fieldAnnotation = field.getAnnotation(JSONField.class);</span>
+<span class="fc bfc" id="L1896" title="All 2 branches covered.">                    if(fieldAnnotation != null){</span>
+<span class="fc bfc" id="L1897" title="All 2 branches covered.">                        if(!fieldAnnotation.serialize()){</span>
+<span class="fc" id="L1898">                            continue;</span>
+                        }
+<span class="fc" id="L1900">                        ordinal = fieldAnnotation.ordinal();</span>
+<span class="fc" id="L1901">                        serialzeFeatures = SerializerFeature.of(fieldAnnotation.serialzeFeatures());</span>
+<span class="fc" id="L1902">                        parserFeatures = Feature.of(fieldAnnotation.parseFeatures());</span>
+<span class="fc bfc" id="L1903" title="All 2 branches covered.">                        if(fieldAnnotation.name().length() != 0){</span>
+<span class="fc" id="L1904">                            fieldAnnotationAndNameExists = true;</span>
+<span class="fc" id="L1905">                            propertyName = fieldAnnotation.name();</span>
+<span class="fc bfc" id="L1906" title="All 2 branches covered.">                            if(aliasMap != null){</span>
+<span class="fc" id="L1907">                                propertyName = aliasMap.get(propertyName);</span>
+<span class="pc bpc" id="L1908" title="1 of 2 branches missed.">                                if(propertyName == null){</span>
+<span class="fc" id="L1909">                                    continue;</span>
+                                }
+                            }
+                        }
+<span class="pc bpc" id="L1913" title="1 of 2 branches missed.">                        if(fieldAnnotation.label().length() != 0){</span>
+<span class="nc" id="L1914">                            label = fieldAnnotation.label();</span>
+                        }
+                    }
+                }
+<span class="fc bfc" id="L1918" title="All 2 branches covered.">                if(aliasMap != null){</span>
+<span class="fc" id="L1919">                    propertyName = aliasMap.get(propertyName);</span>
+<span class="fc bfc" id="L1920" title="All 2 branches covered.">                    if(propertyName == null){</span>
+<span class="fc" id="L1921">                        continue;</span>
+                    }
+                }
+<span class="fc bfc" id="L1924" title="All 4 branches covered.">                if(propertyNamingStrategy != null &amp;&amp; !fieldAnnotationAndNameExists){</span>
+<span class="fc" id="L1925">                    propertyName = propertyNamingStrategy.translate(propertyName);</span>
+                }
+<span class="fc" id="L1927">                FieldInfo fieldInfo = new FieldInfo(propertyName, method, field, clazz, null, ordinal, serialzeFeatures, parserFeatures,</span>
+                        annotation, fieldAnnotation, label);
+<span class="fc" id="L1929">                fieldInfoMap.put(propertyName, fieldInfo);</span>
+            }
+<span class="fc bfc" id="L1931" title="All 2 branches covered.">            if(methodName.startsWith(&quot;is&quot;)){</span>
+<span class="fc bfc" id="L1932" title="All 2 branches covered.">                if(methodName.length() &lt; 3){</span>
+<span class="fc" id="L1933">                    continue;</span>
+                }
+<span class="fc bfc" id="L1935" title="All 2 branches covered.">                if(method.getReturnType() != Boolean.TYPE</span>
+<span class="fc bfc" id="L1936" title="All 2 branches covered.">                        &amp;&amp; method.getReturnType() != Boolean.class){</span>
+<span class="fc" id="L1937">                    continue;</span>
+                }
+<span class="fc" id="L1939">                char c2 = methodName.charAt(2);</span>
+                String propertyName;
+<span class="fc bfc" id="L1941" title="All 2 branches covered.">                if(Character.isUpperCase(c2)){</span>
+<span class="fc bfc" id="L1942" title="All 2 branches covered.">                    if(compatibleWithJavaBean){</span>
+<span class="fc" id="L1943">                        propertyName = decapitalize(methodName.substring(2));</span>
+                    } else{
+<span class="fc" id="L1945">                        propertyName = Character.toLowerCase(methodName.charAt(2)) + methodName.substring(3);</span>
+                    }
+<span class="fc" id="L1947">                    propertyName = getPropertyNameByCompatibleFieldName(fieldCacheMap, methodName, propertyName, 2);</span>
+<span class="fc bfc" id="L1948" title="All 2 branches covered.">                } else if(c2 == '_'){</span>
+<span class="fc" id="L1949">                    propertyName = methodName.substring(3);</span>
+<span class="fc bfc" id="L1950" title="All 2 branches covered.">                } else if(c2 == 'f'){</span>
+<span class="fc" id="L1951">                    propertyName = methodName.substring(2);</span>
+                } else{
+                    continue;
+                }
+<span class="fc" id="L1955">                boolean ignore = isJSONTypeIgnore(clazz, propertyName);</span>
+<span class="fc bfc" id="L1956" title="All 2 branches covered.">                if(ignore){</span>
+<span class="fc" id="L1957">                    continue;</span>
+                }
+<span class="fc" id="L1959">                Field field = ParserConfig.getFieldFromCache(propertyName, fieldCacheMap);</span>
+<span class="fc bfc" id="L1960" title="All 2 branches covered.">                if(field == null){</span>
+<span class="fc" id="L1961">                    field = ParserConfig.getFieldFromCache(methodName, fieldCacheMap);</span>
+                }
+<span class="fc" id="L1963">                JSONField fieldAnnotation = null;</span>
+<span class="fc bfc" id="L1964" title="All 2 branches covered.">                if(field != null){</span>
+<span class="fc" id="L1965">                    fieldAnnotation = field.getAnnotation(JSONField.class);</span>
+<span class="fc bfc" id="L1966" title="All 2 branches covered.">                    if(fieldAnnotation != null){</span>
+<span class="fc bfc" id="L1967" title="All 2 branches covered.">                        if(!fieldAnnotation.serialize()){</span>
+<span class="fc" id="L1968">                            continue;</span>
+                        }
+<span class="fc" id="L1970">                        ordinal = fieldAnnotation.ordinal();</span>
+<span class="fc" id="L1971">                        serialzeFeatures = SerializerFeature.of(fieldAnnotation.serialzeFeatures());</span>
+<span class="fc" id="L1972">                        parserFeatures = Feature.of(fieldAnnotation.parseFeatures());</span>
+<span class="fc bfc" id="L1973" title="All 2 branches covered.">                        if(fieldAnnotation.name().length() != 0){</span>
+<span class="fc" id="L1974">                            propertyName = fieldAnnotation.name();</span>
+<span class="fc bfc" id="L1975" title="All 2 branches covered.">                            if(aliasMap != null){</span>
+<span class="fc" id="L1976">                                propertyName = aliasMap.get(propertyName);</span>
+<span class="pc bpc" id="L1977" title="1 of 2 branches missed.">                                if(propertyName == null){</span>
+<span class="fc" id="L1978">                                    continue;</span>
+                                }
+                            }
+                        }
+<span class="pc bpc" id="L1982" title="1 of 2 branches missed.">                        if(fieldAnnotation.label().length() != 0){</span>
+<span class="nc" id="L1983">                            label = fieldAnnotation.label();</span>
+                        }
+                    }
+                }
+<span class="fc bfc" id="L1987" title="All 2 branches covered.">                if(aliasMap != null){</span>
+<span class="fc" id="L1988">                    propertyName = aliasMap.get(propertyName);</span>
+<span class="pc bpc" id="L1989" title="1 of 2 branches missed.">                    if(propertyName == null){</span>
+<span class="fc" id="L1990">                        continue;</span>
+                    }
+                }
+<span class="fc bfc" id="L1993" title="All 2 branches covered.">                if(propertyNamingStrategy != null){</span>
+<span class="fc" id="L1994">                    propertyName = propertyNamingStrategy.translate(propertyName);</span>
+                }
+                //优先选择get
+<span class="fc bfc" id="L1997" title="All 2 branches covered.">                if(fieldInfoMap.containsKey(propertyName)){</span>
+<span class="fc" id="L1998">                    continue;</span>
+                }
+<span class="fc" id="L2000">                FieldInfo fieldInfo = new FieldInfo(propertyName, method, field, clazz, null, ordinal, serialzeFeatures, parserFeatures,</span>
+                        annotation, fieldAnnotation, label);
+<span class="fc" id="L2002">                fieldInfoMap.put(propertyName, fieldInfo);</span>
+            }
+        }
+<span class="fc" id="L2005">        Field[] fields = clazz.getFields();</span>
+<span class="fc" id="L2006">        computeFields(clazz, aliasMap, propertyNamingStrategy, fieldInfoMap, fields);</span>
+<span class="fc" id="L2007">        return getFieldInfos(clazz, sorted, fieldInfoMap);</span>
+    }
+
+    private static List&lt;FieldInfo&gt; getFieldInfos(Class&lt;?&gt; clazz, boolean sorted, Map&lt;String,FieldInfo&gt; fieldInfoMap){
+<span class="fc" id="L2011">        List&lt;FieldInfo&gt; fieldInfoList = new ArrayList&lt;FieldInfo&gt;();</span>
+<span class="fc" id="L2012">        String[] orders = null;</span>
+<span class="fc" id="L2013">        JSONType annotation = TypeUtils.getAnnotation(clazz,JSONType.class);</span>
+<span class="fc bfc" id="L2014" title="All 2 branches covered.">        if(annotation != null){</span>
+<span class="fc" id="L2015">            orders = annotation.orders();</span>
+        }
+<span class="fc bfc" id="L2017" title="All 4 branches covered.">        if(orders != null &amp;&amp; orders.length &gt; 0){</span>
+<span class="fc" id="L2018">            LinkedHashMap&lt;String,FieldInfo&gt; map = new LinkedHashMap&lt;String,FieldInfo&gt;(fieldInfoList.size());</span>
+<span class="fc bfc" id="L2019" title="All 2 branches covered.">            for(FieldInfo field : fieldInfoMap.values()){</span>
+<span class="fc" id="L2020">                map.put(field.name, field);</span>
+<span class="fc" id="L2021">            }</span>
+<span class="fc" id="L2022">            int i = 0;</span>
+<span class="fc bfc" id="L2023" title="All 2 branches covered.">            for(String item : orders){</span>
+<span class="fc" id="L2024">                FieldInfo field = map.get(item);</span>
+<span class="fc bfc" id="L2025" title="All 2 branches covered.">                if(field != null){</span>
+<span class="fc" id="L2026">                    fieldInfoList.add(field);</span>
+<span class="fc" id="L2027">                    map.remove(item);</span>
+                }
+            }
+<span class="fc bfc" id="L2030" title="All 2 branches covered.">            for(FieldInfo field : map.values()){</span>
+<span class="fc" id="L2031">                fieldInfoList.add(field);</span>
+<span class="fc" id="L2032">            }</span>
+<span class="fc" id="L2033">        } else{</span>
+<span class="fc bfc" id="L2034" title="All 2 branches covered.">            for(FieldInfo fieldInfo : fieldInfoMap.values()){</span>
+<span class="fc" id="L2035">                fieldInfoList.add(fieldInfo);</span>
+<span class="fc" id="L2036">            }</span>
+<span class="fc bfc" id="L2037" title="All 2 branches covered.">            if(sorted){</span>
+<span class="fc" id="L2038">                Collections.sort(fieldInfoList);</span>
+            }
+        }
+<span class="fc" id="L2041">        return fieldInfoList;</span>
+    }
+
+    private static void computeFields(
+            Class&lt;?&gt; clazz, //
+            Map&lt;String,String&gt; aliasMap, //
+            PropertyNamingStrategy propertyNamingStrategy, //
+            Map&lt;String,FieldInfo&gt; fieldInfoMap, //
+            Field[] fields){
+<span class="fc bfc" id="L2050" title="All 2 branches covered.">        for(Field field : fields){</span>
+<span class="fc bfc" id="L2051" title="All 2 branches covered.">            if(Modifier.isStatic(field.getModifiers())){</span>
+<span class="fc" id="L2052">                continue;</span>
+            }
+<span class="fc" id="L2054">            JSONField fieldAnnotation = field.getAnnotation(JSONField.class);</span>
+<span class="fc" id="L2055">            int ordinal = 0, serialzeFeatures = 0, parserFeatures = 0;</span>
+<span class="fc" id="L2056">            String propertyName = field.getName();</span>
+<span class="fc" id="L2057">            String label = null;</span>
+<span class="fc bfc" id="L2058" title="All 2 branches covered.">            if(fieldAnnotation != null){</span>
+<span class="fc bfc" id="L2059" title="All 2 branches covered.">                if(!fieldAnnotation.serialize()){</span>
+<span class="fc" id="L2060">                    continue;</span>
+                }
+<span class="fc" id="L2062">                ordinal = fieldAnnotation.ordinal();</span>
+<span class="fc" id="L2063">                serialzeFeatures = SerializerFeature.of(fieldAnnotation.serialzeFeatures());</span>
+<span class="fc" id="L2064">                parserFeatures = Feature.of(fieldAnnotation.parseFeatures());</span>
+<span class="fc bfc" id="L2065" title="All 2 branches covered.">                if(fieldAnnotation.name().length() != 0){</span>
+<span class="fc" id="L2066">                    propertyName = fieldAnnotation.name();</span>
+                }
+<span class="pc bpc" id="L2068" title="1 of 2 branches missed.">                if(fieldAnnotation.label().length() != 0){</span>
+<span class="nc" id="L2069">                    label = fieldAnnotation.label();</span>
+                }
+            }
+<span class="fc bfc" id="L2072" title="All 2 branches covered.">            if(aliasMap != null){</span>
+<span class="fc" id="L2073">                propertyName = aliasMap.get(propertyName);</span>
+<span class="fc bfc" id="L2074" title="All 2 branches covered.">                if(propertyName == null){</span>
+<span class="fc" id="L2075">                    continue;</span>
+                }
+            }
+<span class="fc bfc" id="L2078" title="All 2 branches covered.">            if(propertyNamingStrategy != null){</span>
+<span class="fc" id="L2079">                propertyName = propertyNamingStrategy.translate(propertyName);</span>
+            }
+<span class="fc bfc" id="L2081" title="All 2 branches covered.">            if(!fieldInfoMap.containsKey(propertyName)){</span>
+<span class="fc" id="L2082">                FieldInfo fieldInfo = new FieldInfo(propertyName, null, field, clazz, null, ordinal, serialzeFeatures, parserFeatures,</span>
+                        null, fieldAnnotation, label);
+<span class="fc" id="L2084">                fieldInfoMap.put(propertyName, fieldInfo);</span>
+            }
+        }
+<span class="fc" id="L2087">    }</span>
+
+    private static String getPropertyNameByCompatibleFieldName(Map&lt;String,Field&gt; fieldCacheMap, String methodName,
+                                                               String propertyName, int fromIdx){
+<span class="pc bpc" id="L2091" title="1 of 2 branches missed.">        if(compatibleWithFieldName){</span>
+<span class="nc bnc" id="L2092" title="All 2 branches missed.">            if(!fieldCacheMap.containsKey(propertyName)){</span>
+<span class="nc" id="L2093">                String tempPropertyName = methodName.substring(fromIdx);</span>
+<span class="nc bnc" id="L2094" title="All 2 branches missed.">                return fieldCacheMap.containsKey(tempPropertyName) ? tempPropertyName : propertyName;</span>
+            }
+        }
+<span class="fc" id="L2097">        return propertyName;</span>
+    }
+
+    public static JSONField getSuperMethodAnnotation(final Class&lt;?&gt; clazz, final Method method){
+<span class="fc" id="L2101">        Class&lt;?&gt;[] interfaces = clazz.getInterfaces();</span>
+<span class="fc bfc" id="L2102" title="All 2 branches covered.">        if(interfaces.length &gt; 0){</span>
+<span class="fc" id="L2103">            Class&lt;?&gt;[] types = method.getParameterTypes();</span>
+<span class="fc bfc" id="L2104" title="All 2 branches covered.">            for(Class&lt;?&gt; interfaceClass : interfaces){</span>
+<span class="fc bfc" id="L2105" title="All 2 branches covered.">                for(Method interfaceMethod : interfaceClass.getMethods()){</span>
+<span class="fc" id="L2106">                    Class&lt;?&gt;[] interfaceTypes = interfaceMethod.getParameterTypes();</span>
+<span class="fc bfc" id="L2107" title="All 2 branches covered.">                    if(interfaceTypes.length != types.length){</span>
+<span class="fc" id="L2108">                        continue;</span>
+                    }
+<span class="fc bfc" id="L2110" title="All 2 branches covered.">                    if(!interfaceMethod.getName().equals(method.getName())){</span>
+<span class="fc" id="L2111">                        continue;</span>
+                    }
+<span class="fc" id="L2113">                    boolean match = true;</span>
+<span class="fc bfc" id="L2114" title="All 2 branches covered.">                    for(int i = 0; i &lt; types.length; ++i){</span>
+<span class="fc bfc" id="L2115" title="All 2 branches covered.">                        if(!interfaceTypes[i].equals(types[i])){</span>
+<span class="fc" id="L2116">                            match = false;</span>
+<span class="fc" id="L2117">                            break;</span>
+                        }
+                    }
+<span class="fc bfc" id="L2120" title="All 2 branches covered.">                    if(!match){</span>
+<span class="fc" id="L2121">                        continue;</span>
+                    }
+<span class="fc" id="L2123">                    JSONField annotation = interfaceMethod.getAnnotation(JSONField.class);</span>
+<span class="fc bfc" id="L2124" title="All 2 branches covered.">                    if(annotation != null){</span>
+<span class="fc" id="L2125">                        return annotation;</span>
+                    }
+                }
+            }
+        }
+<span class="fc" id="L2130">        Class&lt;?&gt; superClass = clazz.getSuperclass();</span>
+<span class="fc bfc" id="L2131" title="All 2 branches covered.">        if(superClass == null){</span>
+<span class="fc" id="L2132">            return null;</span>
+        }
+<span class="fc bfc" id="L2134" title="All 2 branches covered.">        if(Modifier.isAbstract(superClass.getModifiers())){</span>
+<span class="fc" id="L2135">            Class&lt;?&gt;[] types = method.getParameterTypes();</span>
+<span class="fc bfc" id="L2136" title="All 2 branches covered.">            for(Method interfaceMethod : superClass.getMethods()){</span>
+<span class="fc" id="L2137">                Class&lt;?&gt;[] interfaceTypes = interfaceMethod.getParameterTypes();</span>
+<span class="fc bfc" id="L2138" title="All 2 branches covered.">                if(interfaceTypes.length != types.length){</span>
+<span class="fc" id="L2139">                    continue;</span>
+                }
+<span class="fc bfc" id="L2141" title="All 2 branches covered.">                if(!interfaceMethod.getName().equals(method.getName())){</span>
+<span class="fc" id="L2142">                    continue;</span>
+                }
+<span class="fc" id="L2144">                boolean match = true;</span>
+<span class="fc bfc" id="L2145" title="All 2 branches covered.">                for(int i = 0; i &lt; types.length; ++i){</span>
+<span class="pc bpc" id="L2146" title="1 of 2 branches missed.">                    if(!interfaceTypes[i].equals(types[i])){</span>
+<span class="nc" id="L2147">                        match = false;</span>
+<span class="nc" id="L2148">                        break;</span>
+                    }
+                }
+<span class="pc bpc" id="L2151" title="1 of 2 branches missed.">                if(!match){</span>
+<span class="nc" id="L2152">                    continue;</span>
+                }
+<span class="fc" id="L2154">                JSONField annotation = interfaceMethod.getAnnotation(JSONField.class);</span>
+<span class="fc bfc" id="L2155" title="All 2 branches covered.">                if(annotation != null){</span>
+<span class="fc" id="L2156">                    return annotation;</span>
+                }
+            }
+        }
+<span class="fc" id="L2160">        return null;</span>
+    }
+
+    private static boolean isJSONTypeIgnore(Class&lt;?&gt; clazz, String propertyName){
+<span class="fc" id="L2164">        JSONType jsonType = TypeUtils.getAnnotation(clazz,JSONType.class);</span>
+<span class="fc bfc" id="L2165" title="All 2 branches covered.">        if(jsonType != null){</span>
+            // 1、新增 includes 支持，如果 JSONType 同时设置了includes 和 ignores 属性，则以includes为准。
+            // 2、个人认为对于大小写敏感的Java和JS而言，使用 equals() 比 equalsIgnoreCase() 更好，改动的唯一风险就是向后兼容性的问题
+            // 不过，相信开发者应该都是严格按照大小写敏感的方式进行属性设置的
+<span class="fc" id="L2169">            String[] fields = jsonType.includes();</span>
+<span class="pc bpc" id="L2170" title="1 of 2 branches missed.">            if(fields.length &gt; 0){</span>
+<span class="nc bnc" id="L2171" title="All 2 branches missed.">                for(int i = 0; i &lt; fields.length; i++){</span>
+<span class="nc bnc" id="L2172" title="All 2 branches missed.">                    if(propertyName.equals(fields[i])){</span>
+<span class="nc" id="L2173">                        return false;</span>
+                    }
+                }
+<span class="nc" id="L2176">                return true;</span>
+            } else{
+<span class="fc" id="L2178">                fields = jsonType.ignores();</span>
+<span class="fc bfc" id="L2179" title="All 2 branches covered.">                for(int i = 0; i &lt; fields.length; i++){</span>
+<span class="fc bfc" id="L2180" title="All 2 branches covered.">                    if(propertyName.equals(fields[i])){</span>
+<span class="fc" id="L2181">                        return true;</span>
+                    }
+                }
+            }
+        }
+<span class="fc bfc" id="L2186" title="All 4 branches covered.">        if(clazz.getSuperclass() != Object.class &amp;&amp; clazz.getSuperclass() != null){</span>
+<span class="fc bfc" id="L2187" title="All 2 branches covered.">            if(isJSONTypeIgnore(clazz.getSuperclass(), propertyName)){</span>
+<span class="fc" id="L2188">                return true;</span>
+            }
+        }
+<span class="fc" id="L2191">        return false;</span>
+    }
+
+    public static boolean isGenericParamType(Type type){
+<span class="fc bfc" id="L2195" title="All 2 branches covered.">        if(type instanceof ParameterizedType){</span>
+<span class="fc" id="L2196">            return true;</span>
+        }
+<span class="fc bfc" id="L2198" title="All 2 branches covered.">        if(type instanceof Class) {</span>
+<span class="fc" id="L2199">            Type superType = ((Class&lt;?&gt;) type).getGenericSuperclass();</span>
+<span class="fc bfc" id="L2200" title="All 4 branches covered.">            return superType != Object.class &amp;&amp; isGenericParamType(superType);</span>
+        }
+<span class="fc" id="L2202">        return false;</span>
+    }
+
+    public static Type getGenericParamType(Type type){
+<span class="fc bfc" id="L2206" title="All 2 branches covered.">        if(type instanceof ParameterizedType){</span>
+<span class="fc" id="L2207">            return type;</span>
+        }
+<span class="pc bpc" id="L2209" title="1 of 2 branches missed.">        if(type instanceof Class){</span>
+<span class="fc" id="L2210">            return getGenericParamType(((Class&lt;?&gt;) type).getGenericSuperclass());</span>
+        }
+<span class="nc" id="L2212">        return type;</span>
+    }
+
+    public static Type unwrapOptional(Type type){
+<span class="fc bfc" id="L2216" title="All 2 branches covered.">        if(!optionalClassInited){</span>
+            try{
+<span class="fc" id="L2218">                optionalClass = Class.forName(&quot;java.util.Optional&quot;);</span>
+<span class="nc" id="L2219">            } catch(Exception e){</span>
+                // skip
+            } finally{
+<span class="fc" id="L2222">                optionalClassInited = true;</span>
+            }
+        }
+<span class="pc bpc" id="L2225" title="1 of 2 branches missed.">        if(type instanceof ParameterizedType){</span>
+<span class="fc" id="L2226">            ParameterizedType parameterizedType = (ParameterizedType) type;</span>
+<span class="pc bpc" id="L2227" title="1 of 2 branches missed.">            if(parameterizedType.getRawType() == optionalClass){</span>
+<span class="fc" id="L2228">                return parameterizedType.getActualTypeArguments()[0];</span>
+            }
+        }
+<span class="nc" id="L2231">        return type;</span>
+    }
+
+    public static Class&lt;?&gt; getClass(Type type){
+<span class="fc bfc" id="L2235" title="All 2 branches covered.">        if(type.getClass() == Class.class){</span>
+<span class="fc" id="L2236">            return (Class&lt;?&gt;) type;</span>
+        }
+
+<span class="fc bfc" id="L2239" title="All 2 branches covered.">        if(type instanceof ParameterizedType){</span>
+<span class="fc" id="L2240">            return getClass(((ParameterizedType) type).getRawType());</span>
+        }
+
+<span class="fc bfc" id="L2243" title="All 2 branches covered.">        if(type instanceof TypeVariable){</span>
+<span class="fc" id="L2244">            Type boundType = ((TypeVariable&lt;?&gt;) type).getBounds()[0];</span>
+<span class="pc bpc" id="L2245" title="1 of 2 branches missed.">            if (boundType instanceof Class) {</span>
+<span class="fc" id="L2246">                return (Class) boundType;</span>
+            }
+<span class="nc" id="L2248">            return getClass(boundType);</span>
+        }
+
+<span class="pc bpc" id="L2251" title="1 of 2 branches missed.">        if(type instanceof WildcardType){</span>
+<span class="fc" id="L2252">            Type[] upperBounds = ((WildcardType) type).getUpperBounds();</span>
+<span class="pc bpc" id="L2253" title="1 of 2 branches missed.">            if (upperBounds.length == 1) {</span>
+<span class="fc" id="L2254">                return getClass(upperBounds[0]);</span>
+            }
+        }
+
+<span class="nc" id="L2258">        return Object.class;</span>
+    }
+
+    public static Field getField(Class&lt;?&gt; clazz, String fieldName, Field[] declaredFields){
+<span class="fc bfc" id="L2262" title="All 2 branches covered.">        for(Field field : declaredFields){</span>
+<span class="fc" id="L2263">            String itemName = field.getName();</span>
+<span class="fc bfc" id="L2264" title="All 2 branches covered.">            if(fieldName.equals(itemName)){</span>
+<span class="fc" id="L2265">                return field;</span>
+            }
+
+            char c0, c1;
+<span class="fc bfc" id="L2269" title="All 2 branches covered.">            if (fieldName.length() &gt; 2</span>
+<span class="fc bfc" id="L2270" title="All 4 branches covered.">                    &amp;&amp; (c0 = fieldName.charAt(0)) &gt;= 'a' &amp;&amp; c0 &lt;= 'z'</span>
+<span class="fc bfc" id="L2271" title="All 4 branches covered.">                    &amp;&amp; (c1 = fieldName.charAt(1)) &gt;= 'A' &amp;&amp; c1 &lt;= 'Z'</span>
+<span class="fc bfc" id="L2272" title="All 2 branches covered.">                    &amp;&amp; fieldName.equalsIgnoreCase(itemName)) {</span>
+<span class="fc" id="L2273">                return field;</span>
+            }
+        }
+<span class="fc" id="L2276">        Class&lt;?&gt; superClass = clazz.getSuperclass();</span>
+<span class="fc bfc" id="L2277" title="All 4 branches covered.">        if(superClass != null &amp;&amp; superClass != Object.class){</span>
+<span class="fc" id="L2278">            return getField(superClass, fieldName, superClass.getDeclaredFields());</span>
+        }
+<span class="fc" id="L2280">        return null;</span>
+    }
+
+    /**
+     * @deprecated
+     */
+    public static int getSerializeFeatures(Class&lt;?&gt; clazz){
+<span class="fc" id="L2287">        JSONType annotation = TypeUtils.getAnnotation(clazz,JSONType.class);</span>
+<span class="fc bfc" id="L2288" title="All 2 branches covered.">        if(annotation == null){</span>
+<span class="fc" id="L2289">            return 0;</span>
+        }
+<span class="fc" id="L2291">        return SerializerFeature.of(annotation.serialzeFeatures());</span>
+    }
+
+    public static int getParserFeatures(Class&lt;?&gt; clazz){
+<span class="fc" id="L2295">        JSONType annotation = TypeUtils.getAnnotation(clazz,JSONType.class);</span>
+<span class="fc bfc" id="L2296" title="All 2 branches covered.">        if(annotation == null){</span>
+<span class="fc" id="L2297">            return 0;</span>
+        }
+<span class="fc" id="L2299">        return Feature.of(annotation.parseFeatures());</span>
+    }
+
+    public static String decapitalize(String name){
+<span class="pc bpc" id="L2303" title="2 of 4 branches missed.">        if(name == null || name.length() == 0){</span>
+<span class="nc" id="L2304">            return name;</span>
+        }
+<span class="fc bfc" id="L2306" title="All 6 branches covered.">        if(name.length() &gt; 1 &amp;&amp; Character.isUpperCase(name.charAt(1)) &amp;&amp; Character.isUpperCase(name.charAt(0))){</span>
+<span class="fc" id="L2307">            return name;</span>
+        }
+<span class="fc" id="L2309">        char chars[] = name.toCharArray();</span>
+<span class="fc" id="L2310">        chars[0] = Character.toLowerCase(chars[0]);</span>
+<span class="fc" id="L2311">        return new String(chars);</span>
+    }
+
+    static void setAccessible(AccessibleObject obj){
+<span class="pc bpc" id="L2315" title="1 of 2 branches missed.">        if(!setAccessibleEnable){</span>
+<span class="nc" id="L2316">            return;</span>
+        }
+<span class="fc bfc" id="L2318" title="All 2 branches covered.">        if(obj.isAccessible()){</span>
+<span class="fc" id="L2319">            return;</span>
+        }
+        try{
+<span class="fc" id="L2322">            obj.setAccessible(true);</span>
+<span class="nc" id="L2323">        } catch(AccessControlException error){</span>
+<span class="nc" id="L2324">            setAccessibleEnable = false;</span>
+<span class="fc" id="L2325">        }</span>
+<span class="fc" id="L2326">    }</span>
+
+    public static Type getCollectionItemType(Type fieldType) {
+<span class="fc bfc" id="L2329" title="All 2 branches covered.">        if (fieldType instanceof ParameterizedType) {</span>
+<span class="fc" id="L2330">            return getCollectionItemType((ParameterizedType) fieldType);</span>
+        }
+<span class="fc bfc" id="L2332" title="All 2 branches covered.">        if (fieldType instanceof Class&lt;?&gt;) {</span>
+<span class="fc" id="L2333">            return getCollectionItemType((Class&lt;?&gt;) fieldType);</span>
+        }
+<span class="fc" id="L2335">        return Object.class;</span>
+    }
+
+    private static Type getCollectionItemType(Class&lt;?&gt; clazz) {
+<span class="fc bfc" id="L2339" title="All 2 branches covered.">        return clazz.getName().startsWith(&quot;java.&quot;)</span>
+                ? Object.class
+<span class="fc" id="L2341">                : getCollectionItemType(getCollectionSuperType(clazz));</span>
+    }
+
+    private static Type getCollectionItemType(ParameterizedType parameterizedType) {
+<span class="fc" id="L2345">        Type rawType = parameterizedType.getRawType();</span>
+<span class="fc" id="L2346">        Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();</span>
+<span class="fc bfc" id="L2347" title="All 2 branches covered.">        if (rawType == Collection.class) {</span>
+<span class="fc" id="L2348">            return getWildcardTypeUpperBounds(actualTypeArguments[0]);</span>
+        }
+<span class="fc" id="L2350">        Class&lt;?&gt; rawClass = (Class&lt;?&gt;) rawType;</span>
+<span class="fc" id="L2351">        Map&lt;TypeVariable, Type&gt; actualTypeMap = createActualTypeMap(rawClass.getTypeParameters(), actualTypeArguments);</span>
+<span class="fc" id="L2352">        Type superType = getCollectionSuperType(rawClass);</span>
+<span class="pc bpc" id="L2353" title="1 of 2 branches missed.">        if (superType instanceof ParameterizedType) {</span>
+<span class="fc" id="L2354">            Class&lt;?&gt; superClass = getRawClass(superType);</span>
+<span class="fc" id="L2355">            Type[] superClassTypeParameters = ((ParameterizedType) superType).getActualTypeArguments();</span>
+<span class="pc bpc" id="L2356" title="1 of 2 branches missed.">            return superClassTypeParameters.length &gt; 0</span>
+<span class="pc" id="L2357">                    ? getCollectionItemType(makeParameterizedType(superClass, superClassTypeParameters, actualTypeMap))</span>
+<span class="nc" id="L2358">                    : getCollectionItemType(superClass);</span>
+        }
+<span class="nc" id="L2360">        return getCollectionItemType((Class&lt;?&gt;) superType);</span>
+    }
+
+    private static Type getCollectionSuperType(Class&lt;?&gt; clazz) {
+<span class="fc" id="L2364">        Type assignable = null;</span>
+<span class="fc bfc" id="L2365" title="All 2 branches covered.">        for (Type type : clazz.getGenericInterfaces()) {</span>
+<span class="fc" id="L2366">            Class&lt;?&gt; rawClass = getRawClass(type);</span>
+<span class="fc bfc" id="L2367" title="All 2 branches covered.">            if (rawClass == Collection.class) {</span>
+<span class="fc" id="L2368">                return type;</span>
+            }
+<span class="fc bfc" id="L2370" title="All 2 branches covered.">            if (Collection.class.isAssignableFrom(rawClass)) {</span>
+<span class="fc" id="L2371">                assignable = type;</span>
+            }
+        }
+<span class="fc bfc" id="L2374" title="All 2 branches covered.">        return assignable == null ? clazz.getGenericSuperclass() : assignable;</span>
+    }
+
+    private static Map&lt;TypeVariable, Type&gt; createActualTypeMap(TypeVariable[] typeParameters, Type[] actualTypeArguments) {
+<span class="fc" id="L2378">        int length = typeParameters.length;</span>
+<span class="fc" id="L2379">        Map&lt;TypeVariable, Type&gt; actualTypeMap = new HashMap&lt;TypeVariable, Type&gt;(length);</span>
+<span class="fc bfc" id="L2380" title="All 2 branches covered.">        for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L2381">            actualTypeMap.put(typeParameters[i], actualTypeArguments[i]);</span>
+        }
+<span class="fc" id="L2383">        return actualTypeMap;</span>
+    }
+
+    private static ParameterizedType makeParameterizedType(Class&lt;?&gt; rawClass, Type[] typeParameters, Map&lt;TypeVariable, Type&gt; actualTypeMap) {
+<span class="fc" id="L2387">        int length = typeParameters.length;</span>
+<span class="fc" id="L2388">        Type[] actualTypeArguments = new Type[length];</span>
+<span class="fc bfc" id="L2389" title="All 2 branches covered.">        for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L2390">            actualTypeArguments[i] = getActualType(typeParameters[i], actualTypeMap);</span>
+        }
+<span class="fc" id="L2392">        return new ParameterizedTypeImpl(actualTypeArguments, null, rawClass);</span>
+    }
+
+    private static Type getActualType(Type typeParameter, Map&lt;TypeVariable, Type&gt; actualTypeMap) {
+<span class="fc bfc" id="L2396" title="All 2 branches covered.">        if (typeParameter instanceof TypeVariable) {</span>
+<span class="fc" id="L2397">            return actualTypeMap.get(typeParameter);</span>
+<span class="fc bfc" id="L2398" title="All 2 branches covered.">        } else if (typeParameter instanceof ParameterizedType) {</span>
+<span class="fc" id="L2399">            return makeParameterizedType(getRawClass(typeParameter), ((ParameterizedType) typeParameter).getActualTypeArguments(), actualTypeMap);</span>
+<span class="fc bfc" id="L2400" title="All 2 branches covered.">        } else if (typeParameter instanceof GenericArrayType) {</span>
+<span class="fc" id="L2401">            return new GenericArrayTypeImpl(getActualType(((GenericArrayType) typeParameter).getGenericComponentType(), actualTypeMap));</span>
+        }
+<span class="fc" id="L2403">        return typeParameter;</span>
+    }
+
+    private static Type getWildcardTypeUpperBounds(Type type) {
+<span class="fc bfc" id="L2407" title="All 2 branches covered.">        if (type instanceof WildcardType) {</span>
+<span class="fc" id="L2408">            WildcardType wildcardType = (WildcardType) type;</span>
+<span class="fc" id="L2409">            Type[] upperBounds = wildcardType.getUpperBounds();</span>
+<span class="pc bpc" id="L2410" title="1 of 2 branches missed.">            return upperBounds.length &gt; 0 ? upperBounds[0] : Object.class;</span>
+        }
+<span class="fc" id="L2412">        return type;</span>
+    }
+
+    public static Class&lt;?&gt; getCollectionItemClass(Type fieldType){
+<span class="fc bfc" id="L2416" title="All 2 branches covered.">        if(fieldType instanceof ParameterizedType){</span>
+            Class&lt;?&gt; itemClass;
+<span class="fc" id="L2418">            Type actualTypeArgument = ((ParameterizedType) fieldType).getActualTypeArguments()[0];</span>
+<span class="fc bfc" id="L2419" title="All 2 branches covered.">            if(actualTypeArgument instanceof WildcardType){</span>
+<span class="fc" id="L2420">                WildcardType wildcardType = (WildcardType) actualTypeArgument;</span>
+<span class="fc" id="L2421">                Type[] upperBounds = wildcardType.getUpperBounds();</span>
+<span class="pc bpc" id="L2422" title="1 of 2 branches missed.">                if(upperBounds.length == 1){</span>
+<span class="fc" id="L2423">                    actualTypeArgument = upperBounds[0];</span>
+                }
+            }
+<span class="fc bfc" id="L2426" title="All 2 branches covered.">            if(actualTypeArgument instanceof Class){</span>
+<span class="fc" id="L2427">                itemClass = (Class&lt;?&gt;) actualTypeArgument;</span>
+<span class="fc bfc" id="L2428" title="All 2 branches covered.">                if(!Modifier.isPublic(itemClass.getModifiers())){</span>
+<span class="fc" id="L2429">                    throw new JSONException(&quot;can not create ASMParser&quot;);</span>
+                }
+            } else{
+<span class="fc" id="L2432">                throw new JSONException(&quot;can not create ASMParser&quot;);</span>
+            }
+<span class="fc" id="L2434">            return itemClass;</span>
+        }
+<span class="fc" id="L2436">        return Object.class;</span>
+    }
+
+    public static Type checkPrimitiveArray(GenericArrayType genericArrayType) {
+<span class="fc" id="L2440">        Type clz = genericArrayType;</span>
+<span class="fc" id="L2441">        Type genericComponentType  = genericArrayType.getGenericComponentType();</span>
+
+<span class="fc" id="L2443">        String prefix = &quot;[&quot;;</span>
+<span class="pc bpc" id="L2444" title="1 of 2 branches missed.">        while (genericComponentType instanceof GenericArrayType) {</span>
+<span class="nc" id="L2445">            genericComponentType = ((GenericArrayType) genericComponentType)</span>
+<span class="nc" id="L2446">                    .getGenericComponentType();</span>
+<span class="nc" id="L2447">            prefix += prefix;</span>
+        }
+
+<span class="fc bfc" id="L2450" title="All 2 branches covered.">        if (genericComponentType instanceof Class&lt;?&gt;) {</span>
+<span class="fc" id="L2451">            Class&lt;?&gt; ck = (Class&lt;?&gt;) genericComponentType;</span>
+<span class="pc bpc" id="L2452" title="1 of 2 branches missed.">            if (ck.isPrimitive()) {</span>
+                try {
+<span class="fc bfc" id="L2454" title="All 2 branches covered.">                    if (ck == boolean.class) {</span>
+<span class="fc" id="L2455">                        clz = Class.forName(prefix + &quot;Z&quot;);</span>
+<span class="fc bfc" id="L2456" title="All 2 branches covered.">                    } else if (ck == char.class) {</span>
+<span class="fc" id="L2457">                        clz = Class.forName(prefix + &quot;C&quot;);</span>
+<span class="fc bfc" id="L2458" title="All 2 branches covered.">                    } else if (ck == byte.class) {</span>
+<span class="fc" id="L2459">                        clz = Class.forName(prefix + &quot;B&quot;);</span>
+<span class="fc bfc" id="L2460" title="All 2 branches covered.">                    } else if (ck == short.class) {</span>
+<span class="fc" id="L2461">                        clz = Class.forName(prefix + &quot;S&quot;);</span>
+<span class="fc bfc" id="L2462" title="All 2 branches covered.">                    } else if (ck == int.class) {</span>
+<span class="fc" id="L2463">                        clz = Class.forName(prefix + &quot;I&quot;);</span>
+<span class="fc bfc" id="L2464" title="All 2 branches covered.">                    } else if (ck == long.class) {</span>
+<span class="fc" id="L2465">                        clz = Class.forName(prefix + &quot;J&quot;);</span>
+<span class="fc bfc" id="L2466" title="All 2 branches covered.">                    } else if (ck == float.class) {</span>
+<span class="fc" id="L2467">                        clz = Class.forName(prefix + &quot;F&quot;);</span>
+<span class="pc bpc" id="L2468" title="1 of 2 branches missed.">                    } else if (ck == double.class) {</span>
+<span class="fc" id="L2469">                        clz = Class.forName(prefix + &quot;D&quot;);</span>
+                    }
+<span class="nc" id="L2471">                } catch (ClassNotFoundException e) {</span>
+<span class="fc" id="L2472">                }</span>
+            }
+        }
+
+<span class="fc" id="L2476">        return clz;</span>
+    }
+
+    @SuppressWarnings({&quot;rawtypes&quot;, &quot;unchecked&quot;})
+    public static Collection createCollection(Type type) {
+<span class="fc" id="L2481">        Class&lt;?&gt; rawClass = getRawClass(type);</span>
+        Collection list;
+<span class="pc bpc" id="L2483" title="1 of 4 branches missed.">        if(rawClass == AbstractCollection.class //</span>
+                || rawClass == Collection.class){
+<span class="fc" id="L2485">            list = new ArrayList();</span>
+<span class="fc bfc" id="L2486" title="All 2 branches covered.">        } else if(rawClass.isAssignableFrom(HashSet.class)){</span>
+<span class="fc" id="L2487">            list = new HashSet();</span>
+<span class="fc bfc" id="L2488" title="All 2 branches covered.">        } else if(rawClass.isAssignableFrom(LinkedHashSet.class)){</span>
+<span class="fc" id="L2489">            list = new LinkedHashSet();</span>
+<span class="fc bfc" id="L2490" title="All 2 branches covered.">        } else if(rawClass.isAssignableFrom(TreeSet.class)){</span>
+<span class="fc" id="L2491">            list = new TreeSet();</span>
+<span class="fc bfc" id="L2492" title="All 2 branches covered.">        } else if(rawClass.isAssignableFrom(ArrayList.class)){</span>
+<span class="fc" id="L2493">            list = new ArrayList();</span>
+<span class="fc bfc" id="L2494" title="All 2 branches covered.">        } else if(rawClass.isAssignableFrom(EnumSet.class)){</span>
+            Type itemType;
+<span class="pc bpc" id="L2496" title="1 of 2 branches missed.">            if(type instanceof ParameterizedType){</span>
+<span class="fc" id="L2497">                itemType = ((ParameterizedType) type).getActualTypeArguments()[0];</span>
+            } else{
+<span class="nc" id="L2499">                itemType = Object.class;</span>
+            }
+<span class="fc" id="L2501">            list = EnumSet.noneOf((Class&lt;Enum&gt;) itemType);</span>
+<span class="fc bfc" id="L2502" title="All 2 branches covered.">        } else if(rawClass.isAssignableFrom(Queue.class)){</span>
+<span class="fc" id="L2503">            list = new LinkedList();</span>
+        } else{
+            try{
+<span class="fc" id="L2506">                list = (Collection) rawClass.newInstance();</span>
+<span class="fc" id="L2507">            } catch(Exception e){</span>
+<span class="fc" id="L2508">                throw new JSONException(&quot;create instance error, class &quot; + rawClass.getName());</span>
+<span class="fc" id="L2509">            }</span>
+        }
+<span class="fc" id="L2511">        return list;</span>
+    }
+
+    public static Class&lt;?&gt; getRawClass(Type type){
+<span class="fc bfc" id="L2515" title="All 2 branches covered.">        if(type instanceof Class&lt;?&gt;){</span>
+<span class="fc" id="L2516">            return (Class&lt;?&gt;) type;</span>
+<span class="pc bpc" id="L2517" title="1 of 2 branches missed.">        } else if(type instanceof ParameterizedType){</span>
+<span class="fc" id="L2518">            return getRawClass(((ParameterizedType) type).getRawType());</span>
+        } else{
+<span class="nc" id="L2520">            throw new JSONException(&quot;TODO&quot;);</span>
+        }
+    }
+
+    public static boolean isProxy(Class&lt;?&gt; clazz){
+<span class="fc bfc" id="L2525" title="All 2 branches covered.">        for(Class&lt;?&gt; item : clazz.getInterfaces()){</span>
+<span class="fc" id="L2526">            String interfaceName = item.getName();</span>
+<span class="fc bfc" id="L2527" title="All 2 branches covered.">            if(interfaceName.equals(&quot;net.sf.cglib.proxy.Factory&quot;) //</span>
+<span class="pc bpc" id="L2528" title="1 of 2 branches missed.">                    || interfaceName.equals(&quot;org.springframework.cglib.proxy.Factory&quot;)){</span>
+<span class="fc" id="L2529">                return true;</span>
+            }
+<span class="fc bfc" id="L2531" title="All 2 branches covered.">            if(interfaceName.equals(&quot;javassist.util.proxy.ProxyObject&quot;) //</span>
+<span class="pc bpc" id="L2532" title="1 of 2 branches missed.">                    || interfaceName.equals(&quot;org.apache.ibatis.javassist.util.proxy.ProxyObject&quot;)</span>
+                    ){
+<span class="fc" id="L2534">                return true;</span>
+            }
+<span class="pc bpc" id="L2536" title="1 of 2 branches missed.">            if (interfaceName.equals(&quot;org.hibernate.proxy.HibernateProxy&quot;)) {</span>
+<span class="nc" id="L2537">                return true;</span>
+            }
+        }
+<span class="fc" id="L2540">        return false;</span>
+    }
+
+    public static boolean isTransient(Method method){
+<span class="fc bfc" id="L2544" title="All 2 branches covered.">        if(method == null){</span>
+<span class="fc" id="L2545">            return false;</span>
+        }
+<span class="fc bfc" id="L2547" title="All 2 branches covered.">        if(!transientClassInited){</span>
+            try{
+<span class="fc" id="L2549">                transientClass = (Class&lt;? extends Annotation&gt;) Class.forName(&quot;java.beans.Transient&quot;);</span>
+<span class="nc" id="L2550">            } catch(Exception e){</span>
+                // skip
+            } finally{
+<span class="fc" id="L2553">                transientClassInited = true;</span>
+            }
+        }
+<span class="pc bpc" id="L2556" title="1 of 2 branches missed.">        if(transientClass != null){</span>
+<span class="fc" id="L2557">            Annotation annotation = method.getAnnotation(transientClass);</span>
+<span class="fc bfc" id="L2558" title="All 2 branches covered.">            return annotation != null;</span>
+        }
+<span class="nc" id="L2560">        return false;</span>
+    }
+
+    public static boolean isAnnotationPresentOneToMany(Method method) {
+<span class="fc bfc" id="L2564" title="All 2 branches covered.">        if (method == null) {</span>
+<span class="fc" id="L2565">            return false;</span>
+        }
+
+<span class="pc bpc" id="L2568" title="1 of 4 branches missed.">        if (class_OneToMany == null &amp;&amp; !class_OneToMany_error) {</span>
+            try {
+<span class="fc" id="L2570">                class_OneToMany = (Class&lt;? extends Annotation&gt;) Class.forName(&quot;javax.persistence.OneToMany&quot;);</span>
+<span class="nc" id="L2571">            } catch (Throwable e) {</span>
+                // skip
+<span class="nc" id="L2573">                class_OneToMany_error = true;</span>
+<span class="fc" id="L2574">            }</span>
+        }
+<span class="pc bpc" id="L2576" title="2 of 4 branches missed.">        return class_OneToMany != null &amp;&amp; method.isAnnotationPresent(class_OneToMany);</span>
+
+    }
+
+    public static boolean isAnnotationPresentManyToMany(Method method) {
+<span class="fc bfc" id="L2581" title="All 2 branches covered.">        if (method == null) {</span>
+<span class="fc" id="L2582">            return false;</span>
+        }
+
+<span class="pc bpc" id="L2585" title="1 of 4 branches missed.">        if (class_ManyToMany == null &amp;&amp; !class_ManyToMany_error) {</span>
+            try {
+<span class="fc" id="L2587">                class_ManyToMany = (Class&lt;? extends Annotation&gt;) Class.forName(&quot;javax.persistence.ManyToMany&quot;);</span>
+<span class="nc" id="L2588">            } catch (Throwable e) {</span>
+                // skip
+<span class="nc" id="L2590">                class_ManyToMany_error = true;</span>
+<span class="fc" id="L2591">            }</span>
+        }
+<span class="pc bpc" id="L2593" title="3 of 6 branches missed.">        return class_ManyToMany != null &amp;&amp; (method.isAnnotationPresent(class_OneToMany) || method.isAnnotationPresent(class_ManyToMany));</span>
+
+    }
+
+    public static boolean isHibernateInitialized(Object object){
+<span class="pc bpc" id="L2598" title="1 of 2 branches missed.">        if(object == null){</span>
+<span class="nc" id="L2599">            return false;</span>
+        }
+<span class="pc bpc" id="L2601" title="2 of 4 branches missed.">        if(method_HibernateIsInitialized == null &amp;&amp; !method_HibernateIsInitialized_error){</span>
+            try{
+<span class="fc" id="L2603">                Class&lt;?&gt; class_Hibernate = Class.forName(&quot;org.hibernate.Hibernate&quot;);</span>
+<span class="fc" id="L2604">                method_HibernateIsInitialized = class_Hibernate.getMethod(&quot;isInitialized&quot;, Object.class);</span>
+<span class="nc" id="L2605">            } catch(Throwable e){</span>
+                // skip
+<span class="nc" id="L2607">                method_HibernateIsInitialized_error = true;</span>
+<span class="fc" id="L2608">            }</span>
+        }
+<span class="pc bpc" id="L2610" title="1 of 2 branches missed.">        if(method_HibernateIsInitialized != null){</span>
+            try{
+<span class="fc" id="L2612">                Boolean initialized = (Boolean) method_HibernateIsInitialized.invoke(null, object);</span>
+<span class="fc" id="L2613">                return initialized.booleanValue();</span>
+<span class="nc" id="L2614">            } catch(Throwable e){</span>
+                // skip
+            }
+        }
+<span class="nc" id="L2618">        return true;</span>
+    }
+
+    public static long fnv1a_64_lower(String key){
+<span class="fc" id="L2622">        long hashCode = 0xcbf29ce484222325L;</span>
+<span class="fc bfc" id="L2623" title="All 2 branches covered.">        for(int i = 0; i &lt; key.length(); ++i){</span>
+<span class="fc" id="L2624">            char ch = key.charAt(i);</span>
+<span class="fc bfc" id="L2625" title="All 4 branches covered.">            if(ch == '_' || ch == '-'){</span>
+<span class="fc" id="L2626">                continue;</span>
+            }
+<span class="fc bfc" id="L2628" title="All 4 branches covered.">            if(ch &gt;= 'A' &amp;&amp; ch &lt;= 'Z'){</span>
+<span class="fc" id="L2629">                ch = (char) (ch + 32);</span>
+            }
+<span class="fc" id="L2631">            hashCode ^= ch;</span>
+<span class="fc" id="L2632">            hashCode *= 0x100000001b3L;</span>
+        }
+<span class="fc" id="L2634">        return hashCode;</span>
+    }
+
+    public static long fnv1a_64(String key){
+<span class="fc" id="L2638">        long hashCode = 0xcbf29ce484222325L;</span>
+<span class="fc bfc" id="L2639" title="All 2 branches covered.">        for(int i = 0; i &lt; key.length(); ++i){</span>
+<span class="fc" id="L2640">            char ch = key.charAt(i);</span>
+<span class="fc" id="L2641">            hashCode ^= ch;</span>
+<span class="fc" id="L2642">            hashCode *= 0x100000001b3L;</span>
+        }
+<span class="fc" id="L2644">        return hashCode;</span>
+    }
+
+    public static boolean isKotlin(Class clazz) {
+<span class="pc bpc" id="L2648" title="1 of 4 branches missed.">        if (kotlin_metadata == null &amp;&amp; !kotlin_metadata_error) {</span>
+            try {
+<span class="fc" id="L2650">                kotlin_metadata = Class.forName(&quot;kotlin.Metadata&quot;);</span>
+<span class="nc" id="L2651">            } catch (Throwable e) {</span>
+<span class="nc" id="L2652">                kotlin_metadata_error = true;</span>
+<span class="fc" id="L2653">            }</span>
+        }
+<span class="pc bpc" id="L2655" title="1 of 4 branches missed.">        return kotlin_metadata != null &amp;&amp; clazz.isAnnotationPresent(kotlin_metadata);</span>
+    }
+
+    public static Constructor getKoltinConstructor(Constructor[] constructors){
+<span class="fc" id="L2659">        return getKoltinConstructor(constructors, null);</span>
+    }
+
+    public static Constructor getKoltinConstructor(Constructor[] constructors, String[] paramNames){
+<span class="fc" id="L2663">        Constructor creatorConstructor = null;</span>
+<span class="fc bfc" id="L2664" title="All 2 branches covered.">        for(Constructor&lt;?&gt; constructor : constructors){</span>
+<span class="fc" id="L2665">            Class&lt;?&gt;[] parameterTypes = constructor.getParameterTypes();</span>
+<span class="fc bfc" id="L2666" title="All 4 branches covered.">            if (paramNames != null &amp;&amp; parameterTypes.length != paramNames.length) {</span>
+<span class="fc" id="L2667">                continue;</span>
+            }
+
+<span class="fc bfc" id="L2670" title="All 4 branches covered.">            if(parameterTypes.length &gt; 0 &amp;&amp; parameterTypes[parameterTypes.length - 1].getName().equals(&quot;kotlin.jvm.internal.DefaultConstructorMarker&quot;)){</span>
+<span class="fc" id="L2671">                continue;</span>
+            }
+<span class="fc bfc" id="L2673" title="All 4 branches covered.">            if(creatorConstructor != null &amp;&amp; creatorConstructor.getParameterTypes().length &gt;= parameterTypes.length){</span>
+<span class="fc" id="L2674">                continue;</span>
+            }
+<span class="fc" id="L2676">            creatorConstructor = constructor;</span>
+        }
+<span class="fc" id="L2678">        return creatorConstructor;</span>
+    }
+
+    public static String[] getKoltinConstructorParameters(Class clazz){
+<span class="pc bpc" id="L2682" title="1 of 4 branches missed.">        if(kotlin_kclass_constructor == null &amp;&amp; !kotlin_class_klass_error){</span>
+            try{
+<span class="fc" id="L2684">                Class class_kotlin_kclass = Class.forName(&quot;kotlin.reflect.jvm.internal.KClassImpl&quot;);</span>
+<span class="fc" id="L2685">                kotlin_kclass_constructor = class_kotlin_kclass.getConstructor(Class.class);</span>
+<span class="nc" id="L2686">            } catch(Throwable e){</span>
+<span class="nc" id="L2687">                kotlin_class_klass_error = true;</span>
+<span class="fc" id="L2688">            }</span>
+        }
+<span class="pc bpc" id="L2690" title="1 of 2 branches missed.">        if (kotlin_kclass_constructor == null){</span>
+<span class="nc" id="L2691">            return null;</span>
+        }
+
+<span class="pc bpc" id="L2694" title="1 of 4 branches missed.">        if (kotlin_kclass_getConstructors == null &amp;&amp; !kotlin_class_klass_error) {</span>
+            try{
+<span class="fc" id="L2696">                Class class_kotlin_kclass = Class.forName(&quot;kotlin.reflect.jvm.internal.KClassImpl&quot;);</span>
+<span class="fc" id="L2697">                kotlin_kclass_getConstructors = class_kotlin_kclass.getMethod(&quot;getConstructors&quot;);</span>
+<span class="nc" id="L2698">            } catch(Throwable e){</span>
+<span class="nc" id="L2699">                kotlin_class_klass_error = true;</span>
+<span class="fc" id="L2700">            }</span>
+        }
+
+<span class="pc bpc" id="L2703" title="1 of 4 branches missed.">        if (kotlin_kfunction_getParameters == null &amp;&amp; !kotlin_class_klass_error) {</span>
+            try{
+<span class="fc" id="L2705">                Class class_kotlin_kfunction = Class.forName(&quot;kotlin.reflect.KFunction&quot;);</span>
+<span class="fc" id="L2706">                kotlin_kfunction_getParameters = class_kotlin_kfunction.getMethod(&quot;getParameters&quot;);</span>
+<span class="nc" id="L2707">            } catch(Throwable e){</span>
+<span class="nc" id="L2708">                kotlin_class_klass_error = true;</span>
+<span class="fc" id="L2709">            }</span>
+        }
+
+<span class="pc bpc" id="L2712" title="1 of 4 branches missed.">        if (kotlin_kparameter_getName == null &amp;&amp; !kotlin_class_klass_error) {</span>
+            try{
+<span class="fc" id="L2714">                Class class_kotlinn_kparameter = Class.forName(&quot;kotlin.reflect.KParameter&quot;);</span>
+<span class="fc" id="L2715">                kotlin_kparameter_getName = class_kotlinn_kparameter.getMethod(&quot;getName&quot;);</span>
+<span class="nc" id="L2716">            } catch(Throwable e){</span>
+<span class="nc" id="L2717">                kotlin_class_klass_error = true;</span>
+<span class="fc" id="L2718">            }</span>
+        }
+
+<span class="pc bpc" id="L2721" title="1 of 2 branches missed.">        if (kotlin_error){</span>
+<span class="nc" id="L2722">            return null;</span>
+        }
+
+        try{
+<span class="fc" id="L2726">            Object constructor = null;</span>
+<span class="fc" id="L2727">            Object kclassImpl = kotlin_kclass_constructor.newInstance(clazz);</span>
+<span class="fc" id="L2728">            Iterable it = (Iterable) kotlin_kclass_getConstructors.invoke(kclassImpl);</span>
+<span class="fc bfc" id="L2729" title="All 2 branches covered.">            for(Iterator iterator = it.iterator(); iterator.hasNext(); iterator.hasNext()){</span>
+<span class="fc" id="L2730">                Object item = iterator.next();</span>
+<span class="fc" id="L2731">                List parameters = (List) kotlin_kfunction_getParameters.invoke(item);</span>
+<span class="fc bfc" id="L2732" title="All 4 branches covered.">                if (constructor != null &amp;&amp; parameters.size() == 0) {</span>
+<span class="fc" id="L2733">                    continue;</span>
+                }
+<span class="fc" id="L2735">                constructor = item;</span>
+            }
+<span class="fc" id="L2737">            List parameters = (List) kotlin_kfunction_getParameters.invoke(constructor);</span>
+<span class="fc" id="L2738">            String[] names = new String[parameters.size()];</span>
+<span class="fc bfc" id="L2739" title="All 2 branches covered.">            for(int i = 0; i &lt; parameters.size(); i++){</span>
+<span class="fc" id="L2740">                Object param = parameters.get(i);</span>
+<span class="fc" id="L2741">                names[i] = (String) kotlin_kparameter_getName.invoke(param);</span>
+            }
+<span class="fc" id="L2743">            return names;</span>
+<span class="nc" id="L2744">        } catch(Throwable e){</span>
+<span class="nc" id="L2745">            e.printStackTrace();</span>
+<span class="nc" id="L2746">            kotlin_error = true;</span>
+        }
+<span class="nc" id="L2748">        return null;</span>
+    }
+
+    private static boolean isKotlinIgnore(Class clazz, String methodName) {
+<span class="pc bpc" id="L2752" title="1 of 4 branches missed.">        if (kotlinIgnores == null &amp;&amp; !kotlinIgnores_error) {</span>
+            try {
+<span class="fc" id="L2754">                Map&lt;Class, String[]&gt; map = new HashMap&lt;Class, String[]&gt;();</span>
+<span class="fc" id="L2755">                Class charRangeClass = Class.forName(&quot;kotlin.ranges.CharRange&quot;);</span>
+<span class="fc" id="L2756">                map.put(charRangeClass, new String[]{&quot;getEndInclusive&quot;, &quot;isEmpty&quot;});</span>
+<span class="fc" id="L2757">                Class intRangeClass = Class.forName(&quot;kotlin.ranges.IntRange&quot;);</span>
+<span class="fc" id="L2758">                map.put(intRangeClass, new String[]{&quot;getEndInclusive&quot;, &quot;isEmpty&quot;});</span>
+<span class="fc" id="L2759">                Class longRangeClass = Class.forName(&quot;kotlin.ranges.LongRange&quot;);</span>
+<span class="fc" id="L2760">                map.put(longRangeClass, new String[]{&quot;getEndInclusive&quot;, &quot;isEmpty&quot;});</span>
+<span class="fc" id="L2761">                Class floatRangeClass = Class.forName(&quot;kotlin.ranges.ClosedFloatRange&quot;);</span>
+<span class="fc" id="L2762">                map.put(floatRangeClass, new String[]{&quot;getEndInclusive&quot;, &quot;isEmpty&quot;});</span>
+<span class="fc" id="L2763">                Class doubleRangeClass = Class.forName(&quot;kotlin.ranges.ClosedDoubleRange&quot;);</span>
+<span class="fc" id="L2764">                map.put(doubleRangeClass, new String[]{&quot;getEndInclusive&quot;, &quot;isEmpty&quot;});</span>
+<span class="fc" id="L2765">                kotlinIgnores = map;</span>
+<span class="nc" id="L2766">            } catch (Throwable error) {</span>
+<span class="nc" id="L2767">                kotlinIgnores_error = true;</span>
+<span class="fc" id="L2768">            }</span>
+        }
+<span class="pc bpc" id="L2770" title="1 of 2 branches missed.">        if (kotlinIgnores == null) {</span>
+<span class="nc" id="L2771">            return false;</span>
+        }
+<span class="fc" id="L2773">        String[] ignores = kotlinIgnores.get(clazz);</span>
+<span class="fc bfc" id="L2774" title="All 4 branches covered.">        return ignores != null &amp;&amp; Arrays.binarySearch(ignores, methodName) &gt;= 0;</span>
+    }
+
+    public static &lt;A extends Annotation&gt; A getAnnotation(Class&lt;?&gt; clazz, Class&lt;A&gt; annotationClass){
+<span class="fc" id="L2778">        A a = clazz.getAnnotation(annotationClass);</span>
+<span class="fc bfc" id="L2779" title="All 2 branches covered.">        if (a != null){</span>
+<span class="fc" id="L2780">            return a;</span>
+        }
+
+<span class="fc bfc" id="L2783" title="All 2 branches covered.">        if(clazz.getAnnotations().length &gt; 0){</span>
+<span class="fc bfc" id="L2784" title="All 2 branches covered.">            for(Annotation annotation : clazz.getAnnotations()){</span>
+<span class="fc" id="L2785">                a = annotation.annotationType().getAnnotation(annotationClass);</span>
+<span class="pc bpc" id="L2786" title="1 of 2 branches missed.">                if(a != null){</span>
+<span class="nc" id="L2787">                    return a;</span>
+                }
+            }
+        }
+<span class="fc" id="L2791">        return null;</span>
+    }
+
+    public static boolean isJacksonCreator(Method method) {
+<span class="pc bpc" id="L2795" title="1 of 2 branches missed.">        if (method == null) {</span>
+<span class="nc" id="L2796">            return false;</span>
+        }
+
+<span class="pc bpc" id="L2799" title="1 of 4 branches missed.">        if (class_JacksonCreator == null &amp;&amp; !class_JacksonCreator_error) {</span>
+            try {
+<span class="fc" id="L2801">                class_JacksonCreator = (Class&lt;? extends Annotation&gt;) Class.forName(&quot;com.fasterxml.jackson.annotation.JsonCreator&quot;);</span>
+<span class="nc" id="L2802">            } catch (Throwable e) {</span>
+                // skip
+<span class="nc" id="L2804">                class_JacksonCreator_error = true;</span>
+<span class="fc" id="L2805">            }</span>
+        }
+<span class="pc bpc" id="L2807" title="1 of 4 branches missed.">        return class_JacksonCreator != null &amp;&amp; method.isAnnotationPresent(class_JacksonCreator);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>

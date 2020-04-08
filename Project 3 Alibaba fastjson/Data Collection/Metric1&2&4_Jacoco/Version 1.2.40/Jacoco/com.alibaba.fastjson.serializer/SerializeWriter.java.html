@@ -1,0 +1,2450 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SerializeWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fastjson</a> &gt; <a href="index.source.html" class="el_package">com.alibaba.fastjson.serializer</a> &gt; <span class="el_source">SerializeWriter.java</span></div><h1>SerializeWriter.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 1999-2017 Alibaba Group.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.fastjson.serializer;
+
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.util.IOUtils;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Writer;
+import java.math.BigDecimal;
+import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.List;
+
+import static com.alibaba.fastjson.util.IOUtils.replaceChars;
+
+/**
+ * @author wenshao[szujobs@hotmail.com]
+ */
+public final class SerializeWriter extends Writer {
+<span class="fc" id="L36">    private final static ThreadLocal&lt;char[]&gt; bufLocal      = new ThreadLocal&lt;char[]&gt;();</span>
+<span class="fc" id="L37">    private final static ThreadLocal&lt;byte[]&gt; bytesBufLocal = new ThreadLocal&lt;byte[]&gt;();</span>
+
+    protected char                           buf[];
+
+    /**
+     * The number of chars in the buffer.
+     */
+    protected int                            count;
+
+    protected int                            features;
+
+    private final Writer                     writer;
+
+    protected boolean                        useSingleQuotes;
+    protected boolean                        quoteFieldNames;
+    protected boolean                        sortField;
+    protected boolean                        disableCircularReferenceDetect;
+    protected boolean                        beanToArray;
+    protected boolean                        writeNonStringValueAsString;
+    protected boolean                        notWriteDefaultValue;
+    protected boolean                        writeEnumUsingName;
+    protected boolean                        writeEnumUsingToString;
+    protected boolean                        writeDirect;
+
+    protected char                           keySeperator;
+
+<span class="fc" id="L63">    protected int                            maxBufSize = -1;</span>
+
+    protected boolean                        browserSecure;
+    protected long                           sepcialBits;
+
+    public SerializeWriter(){
+<span class="fc" id="L69">        this((Writer) null);</span>
+<span class="fc" id="L70">    }</span>
+
+    public SerializeWriter(Writer writer){
+<span class="fc" id="L73">        this(writer, JSON.DEFAULT_GENERATE_FEATURE, SerializerFeature.EMPTY);</span>
+<span class="fc" id="L74">    }</span>
+
+    public SerializeWriter(SerializerFeature... features){
+<span class="fc" id="L77">        this(null, features);</span>
+<span class="fc" id="L78">    }</span>
+
+    public SerializeWriter(Writer writer, SerializerFeature... features){
+<span class="fc" id="L81">        this(writer, 0, features);</span>
+<span class="fc" id="L82">    }</span>
+
+    /**
+     * @since 1.2.9
+     * @param writer
+     * @param defaultFeatures
+     * @param features
+     */
+<span class="fc" id="L90">    public SerializeWriter(Writer writer, int defaultFeatures, SerializerFeature... features){</span>
+<span class="fc" id="L91">        this.writer = writer;</span>
+
+<span class="fc" id="L93">        buf = bufLocal.get();</span>
+
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (buf != null) {</span>
+<span class="fc" id="L96">            bufLocal.set(null);</span>
+        } else {
+<span class="fc" id="L98">            buf = new char[2048];</span>
+        }
+
+<span class="fc" id="L101">        int featuresValue = defaultFeatures;</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        for (SerializerFeature feature : features) {</span>
+<span class="fc" id="L103">            featuresValue |= feature.getMask();</span>
+        }
+<span class="fc" id="L105">        this.features = featuresValue;</span>
+
+<span class="fc" id="L107">        computeFeatures();</span>
+<span class="fc" id="L108">    }</span>
+
+    public int getMaxBufSize() {
+<span class="nc" id="L111">        return maxBufSize;</span>
+    }
+
+    public void setMaxBufSize(int maxBufSize) {
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        if (maxBufSize &lt; this.buf.length) {</span>
+<span class="fc" id="L116">            throw new JSONException(&quot;must &gt; &quot; + buf.length);</span>
+        }
+
+<span class="fc" id="L119">        this.maxBufSize = maxBufSize;</span>
+<span class="fc" id="L120">    }</span>
+
+    public int getBufferLength() {
+<span class="fc" id="L123">        return this.buf.length;</span>
+    }
+
+    public SerializeWriter(int initialSize){
+<span class="fc" id="L127">        this(null, initialSize);</span>
+<span class="fc" id="L128">    }</span>
+
+<span class="fc" id="L130">    public SerializeWriter(Writer writer, int initialSize){</span>
+<span class="fc" id="L131">        this.writer = writer;</span>
+
+<span class="fc bfc" id="L133" title="All 2 branches covered.">        if (initialSize &lt;= 0) {</span>
+<span class="fc" id="L134">            throw new IllegalArgumentException(&quot;Negative initial size: &quot; + initialSize);</span>
+        }
+<span class="fc" id="L136">        buf = new char[initialSize];</span>
+
+<span class="fc" id="L138">        computeFeatures();</span>
+<span class="fc" id="L139">    }</span>
+
+    public void config(SerializerFeature feature, boolean state) {
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        if (state) {</span>
+<span class="fc" id="L143">            features |= feature.getMask();</span>
+            // 由于枚举序列化特性WriteEnumUsingToString和WriteEnumUsingName不能共存，需要检查
+<span class="fc bfc" id="L145" title="All 2 branches covered.">            if (feature == SerializerFeature.WriteEnumUsingToString) {</span>
+<span class="fc" id="L146">                features &amp;= ~SerializerFeature.WriteEnumUsingName.getMask();</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">            } else if (feature == SerializerFeature.WriteEnumUsingName) {</span>
+<span class="fc" id="L148">                features &amp;= ~SerializerFeature.WriteEnumUsingToString.getMask();</span>
+            }
+        } else {
+<span class="fc" id="L151">            features &amp;= ~feature.getMask();</span>
+        }
+
+<span class="fc" id="L154">        computeFeatures();</span>
+<span class="fc" id="L155">    }</span>
+
+<span class="fc" id="L157">    final static int nonDirectFeatures = 0 //</span>
+            | SerializerFeature.UseSingleQuotes.mask //
+            | SerializerFeature.BrowserCompatible.mask //
+            | SerializerFeature.PrettyFormat.mask //
+            | SerializerFeature.WriteEnumUsingToString.mask
+            | SerializerFeature.WriteNonStringValueAsString.mask
+            | SerializerFeature.WriteSlashAsSpecial.mask
+            | SerializerFeature.IgnoreErrorGetter.mask
+            | SerializerFeature.WriteClassName.mask
+            | SerializerFeature.NotWriteDefaultValue.mask
+            ;
+    protected void computeFeatures() {
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        quoteFieldNames = (this.features &amp; SerializerFeature.QuoteFieldNames.mask) != 0;</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        useSingleQuotes = (this.features &amp; SerializerFeature.UseSingleQuotes.mask) != 0;</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        sortField = (this.features &amp; SerializerFeature.SortField.mask) != 0;</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        disableCircularReferenceDetect = (this.features &amp; SerializerFeature.DisableCircularReferenceDetect.mask) != 0;</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        beanToArray = (this.features &amp; SerializerFeature.BeanToArray.mask) != 0;</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        writeNonStringValueAsString = (this.features &amp; SerializerFeature.WriteNonStringValueAsString.mask) != 0;</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        notWriteDefaultValue = (this.features &amp; SerializerFeature.NotWriteDefaultValue.mask) != 0;</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">        writeEnumUsingName = (this.features &amp; SerializerFeature.WriteEnumUsingName.mask) != 0;</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">        writeEnumUsingToString = (this.features &amp; SerializerFeature.WriteEnumUsingToString.mask) != 0;</span>
+
+<span class="fc bfc" id="L179" title="All 8 branches covered.">        writeDirect = quoteFieldNames //</span>
+                      &amp;&amp; (this.features &amp; nonDirectFeatures) == 0 //
+                      &amp;&amp; (beanToArray || writeEnumUsingName)
+                      ;
+
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        keySeperator = useSingleQuotes ? '\'' : '&quot;';</span>
+
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        browserSecure = (this.features &amp; SerializerFeature.BrowserSecure.mask) != 0;</span>
+
+<span class="fc" id="L188">        final long S0 = 0x4FFFFFFFFL, S1 = 0x8004FFFFFFFFL, S2 = 0x50000304ffffffffL;</span>
+//        long s = 0;
+//        for (int i = 0; i &lt;= 31; ++i) {
+//            s |= (1L &lt;&lt; i);
+//        }
+//        s |= (1L &lt;&lt; '&quot;');
+//
+//        //S0 = s;
+//        //S1 = s | (1L &lt;&lt; '/');
+//
+//        s |= (1L &lt;&lt; '('); // 41
+//        s |= (1L &lt;&lt; ')'); // 42
+//        s |= (1L &lt;&lt; '&lt;'); // 60
+//        s |= (1L &lt;&lt; '&gt;'); // 62
+//        S2 = s;
+<span class="fc bfc" id="L203" title="All 4 branches covered.">        sepcialBits = browserSecure</span>
+                ? S2
+                : (features &amp; SerializerFeature.WriteSlashAsSpecial.mask) != 0 ? S1 : S0;
+<span class="fc" id="L206">    }</span>
+
+    public boolean isSortField() {
+<span class="fc" id="L209">        return sortField;</span>
+    }
+
+    public boolean isNotWriteDefaultValue() {
+<span class="fc" id="L213">        return notWriteDefaultValue;</span>
+    }
+
+    public boolean isEnabled(SerializerFeature feature) {
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        return (this.features &amp; feature.mask) != 0;</span>
+    }
+    
+    public boolean isEnabled(int feature) {
+<span class="fc bfc" id="L221" title="All 2 branches covered.">        return (this.features &amp; feature) != 0;</span>
+    }
+
+    /**
+     * Writes a character to the buffer.
+     */
+    public void write(int c) {
+<span class="fc" id="L228">        int newcount = count + 1;</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="fc bfc" id="L230" title="All 2 branches covered.">            if (writer == null) {</span>
+<span class="fc" id="L231">                expandCapacity(newcount);</span>
+            } else {
+<span class="fc" id="L233">                flush();</span>
+<span class="fc" id="L234">                newcount = 1;</span>
+            }
+        }
+<span class="fc" id="L237">        buf[count] = (char) c;</span>
+<span class="fc" id="L238">        count = newcount;</span>
+<span class="fc" id="L239">    }</span>
+
+    /**
+     * Writes characters to the buffer.
+     * 
+     * @param c the data to be written
+     * @param off the start offset in the data
+     * @param len the number of chars that are written
+     */
+    public void write(char c[], int off, int len) {
+<span class="fc bfc" id="L249" title="All 10 branches covered.">        if (off &lt; 0 //</span>
+            || off &gt; c.length //
+            || len &lt; 0 //
+            || off + len &gt; c.length //
+            || off + len &lt; 0) {
+<span class="fc" id="L254">            throw new IndexOutOfBoundsException();</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">        } else if (len == 0) {</span>
+<span class="fc" id="L256">            return;</span>
+        }
+
+<span class="fc" id="L259">        int newcount = count + len;</span>
+<span class="fc bfc" id="L260" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="fc bfc" id="L261" title="All 2 branches covered.">            if (writer == null) {</span>
+<span class="fc" id="L262">                expandCapacity(newcount);</span>
+            } else {
+                do {
+<span class="fc" id="L265">                    int rest = buf.length - count;</span>
+<span class="fc" id="L266">                    System.arraycopy(c, off, buf, count, rest);</span>
+<span class="fc" id="L267">                    count = buf.length;</span>
+<span class="fc" id="L268">                    flush();</span>
+<span class="fc" id="L269">                    len -= rest;</span>
+<span class="fc" id="L270">                    off += rest;</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">                } while (len &gt; buf.length);</span>
+<span class="fc" id="L272">                newcount = len;</span>
+            }
+        }
+<span class="fc" id="L275">        System.arraycopy(c, off, buf, count, len);</span>
+<span class="fc" id="L276">        count = newcount;</span>
+
+<span class="fc" id="L278">    }</span>
+
+    public void expandCapacity(int minimumCapacity) {
+<span class="pc bpc" id="L281" title="1 of 4 branches missed.">        if (maxBufSize != -1 &amp;&amp; minimumCapacity &gt;= maxBufSize) {</span>
+<span class="fc" id="L282">            throw new JSONException(&quot;serialize exceeded MAX_OUTPUT_LENGTH=&quot; + maxBufSize + &quot;, minimumCapacity=&quot; + minimumCapacity);</span>
+        }
+
+<span class="fc" id="L285">        int newCapacity = buf.length + (buf.length &gt;&gt; 1) + 1;</span>
+
+<span class="fc bfc" id="L287" title="All 2 branches covered.">        if (newCapacity &lt; minimumCapacity) {</span>
+<span class="fc" id="L288">            newCapacity = minimumCapacity;</span>
+        }
+<span class="fc" id="L290">        char newValue[] = new char[newCapacity];</span>
+<span class="fc" id="L291">        System.arraycopy(buf, 0, newValue, 0, count);</span>
+<span class="fc" id="L292">        buf = newValue;</span>
+<span class="fc" id="L293">    }</span>
+    
+    public SerializeWriter append(CharSequence csq) {
+<span class="fc bfc" id="L296" title="All 2 branches covered.">        String s = (csq == null ? &quot;null&quot; : csq.toString());</span>
+<span class="fc" id="L297">        write(s, 0, s.length());</span>
+<span class="fc" id="L298">        return this;</span>
+    }
+
+    public SerializeWriter append(CharSequence csq, int start, int end) {
+<span class="fc bfc" id="L302" title="All 2 branches covered.">        String s = (csq == null ? &quot;null&quot; : csq).subSequence(start, end).toString();</span>
+<span class="fc" id="L303">        write(s, 0, s.length());</span>
+<span class="fc" id="L304">        return this;</span>
+    }
+
+    public SerializeWriter append(char c) {
+<span class="fc" id="L308">        write(c);</span>
+<span class="fc" id="L309">        return this;</span>
+    }
+
+    /**
+     * Write a portion of a string to the buffer.
+     * 
+     * @param str String to be written from
+     * @param off Offset from which to start reading characters
+     * @param len Number of characters to be written
+     */
+    public void write(String str, int off, int len) {
+<span class="fc" id="L320">        int newcount = count + len;</span>
+<span class="fc bfc" id="L321" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="fc bfc" id="L322" title="All 2 branches covered.">            if (writer == null) {</span>
+<span class="fc" id="L323">                expandCapacity(newcount);</span>
+            } else {
+                do {
+<span class="fc" id="L326">                    int rest = buf.length - count;</span>
+<span class="fc" id="L327">                    str.getChars(off, off + rest, buf, count);</span>
+<span class="fc" id="L328">                    count = buf.length;</span>
+<span class="fc" id="L329">                    flush();</span>
+<span class="fc" id="L330">                    len -= rest;</span>
+<span class="fc" id="L331">                    off += rest;</span>
+<span class="fc bfc" id="L332" title="All 2 branches covered.">                } while (len &gt; buf.length);</span>
+<span class="fc" id="L333">                newcount = len;</span>
+            }
+        }
+<span class="fc" id="L336">        str.getChars(off, off + len, buf, count);</span>
+<span class="fc" id="L337">        count = newcount;</span>
+<span class="fc" id="L338">    }</span>
+
+    /**
+     * Writes the contents of the buffer to another character stream.
+     * 
+     * @param out the output stream to write to
+     * @throws IOException If an I/O error occurs.
+     */
+    public void writeTo(Writer out) throws IOException {
+<span class="fc bfc" id="L347" title="All 2 branches covered.">        if (this.writer != null) {</span>
+<span class="fc" id="L348">            throw new UnsupportedOperationException(&quot;writer not null&quot;);</span>
+        }
+<span class="fc" id="L350">        out.write(buf, 0, count);</span>
+<span class="fc" id="L351">    }</span>
+
+    public void writeTo(OutputStream out, String charsetName) throws IOException {
+<span class="fc" id="L354">        writeTo(out, Charset.forName(charsetName));</span>
+<span class="fc" id="L355">    }</span>
+    
+    public void writeTo(OutputStream out, Charset charset) throws IOException {
+<span class="fc" id="L358">        writeToEx(out, charset);</span>
+<span class="fc" id="L359">    }</span>
+
+    public int writeToEx(OutputStream out, Charset charset) throws IOException {
+<span class="fc bfc" id="L362" title="All 2 branches covered.">        if (this.writer != null) {</span>
+<span class="fc" id="L363">            throw new UnsupportedOperationException(&quot;writer not null&quot;);</span>
+        }
+        
+<span class="fc bfc" id="L366" title="All 2 branches covered.">        if (charset == IOUtils.UTF8) {</span>
+<span class="fc" id="L367">            return encodeToUTF8(out);</span>
+        } else {
+<span class="fc" id="L369">            byte[] bytes = new String(buf, 0, count).getBytes(charset);</span>
+<span class="fc" id="L370">            out.write(bytes);</span>
+<span class="fc" id="L371">            return bytes.length;</span>
+        }
+    }
+
+    /**
+     * Returns a copy of the input data.
+     * 
+     * @return an array of chars copied from the input data.
+     */
+    public char[] toCharArray() {
+<span class="fc bfc" id="L381" title="All 2 branches covered.">        if (this.writer != null) {</span>
+<span class="fc" id="L382">            throw new UnsupportedOperationException(&quot;writer not null&quot;);</span>
+        }
+
+<span class="fc" id="L385">        char[] newValue = new char[count];</span>
+<span class="fc" id="L386">        System.arraycopy(buf, 0, newValue, 0, count);</span>
+<span class="fc" id="L387">        return newValue;</span>
+    }
+    
+    /**
+     * only for springwebsocket
+     * @return
+     */
+    public char[] toCharArrayForSpringWebSocket() {
+<span class="pc bpc" id="L395" title="1 of 2 branches missed.">        if (this.writer != null) {</span>
+<span class="nc" id="L396">            throw new UnsupportedOperationException(&quot;writer not null&quot;);</span>
+        }
+
+<span class="fc" id="L399">        char[] newValue = new char[count - 2];</span>
+<span class="fc" id="L400">        System.arraycopy(buf, 1, newValue, 0, count - 2);</span>
+<span class="fc" id="L401">        return newValue;</span>
+    }
+
+    public byte[] toBytes(String charsetName) {
+<span class="fc bfc" id="L405" title="All 4 branches covered.">        return toBytes(charsetName == null || &quot;UTF-8&quot;.equals(charsetName) //</span>
+            ? IOUtils.UTF8 //
+<span class="fc" id="L407">            : Charset.forName(charsetName));</span>
+    }
+
+    public byte[] toBytes(Charset charset) {
+<span class="fc bfc" id="L411" title="All 2 branches covered.">        if (this.writer != null) {</span>
+<span class="fc" id="L412">            throw new UnsupportedOperationException(&quot;writer not null&quot;);</span>
+        }
+        
+<span class="fc bfc" id="L415" title="All 2 branches covered.">        if (charset == IOUtils.UTF8) {</span>
+<span class="fc" id="L416">            return encodeToUTF8Bytes();</span>
+        } else {
+<span class="fc" id="L418">            return new String(buf, 0, count).getBytes(charset);</span>
+        }
+    }
+
+    private int encodeToUTF8(OutputStream out) throws IOException {
+
+<span class="fc" id="L424">        int bytesLength = (int) (count * (double) 3);</span>
+<span class="fc" id="L425">        byte[] bytes = bytesBufLocal.get();</span>
+
+<span class="fc bfc" id="L427" title="All 2 branches covered.">        if (bytes == null) {</span>
+<span class="fc" id="L428">            bytes = new byte[1024 * 8];</span>
+<span class="fc" id="L429">            bytesBufLocal.set(bytes);</span>
+        }
+
+<span class="pc bpc" id="L432" title="1 of 2 branches missed.">        if (bytes.length &lt; bytesLength) {</span>
+<span class="nc" id="L433">            bytes = new byte[bytesLength];</span>
+        }
+
+<span class="fc" id="L436">        int position = IOUtils.encodeUTF8(buf, 0, count, bytes);</span>
+<span class="fc" id="L437">        out.write(bytes, 0, position);</span>
+<span class="fc" id="L438">        return position;</span>
+    }
+    
+    private byte[] encodeToUTF8Bytes() {
+<span class="fc" id="L442">        int bytesLength = (int) (count * (double) 3);</span>
+<span class="fc" id="L443">        byte[] bytes = bytesBufLocal.get();</span>
+
+<span class="pc bpc" id="L445" title="1 of 2 branches missed.">        if (bytes == null) {</span>
+<span class="nc" id="L446">            bytes = new byte[1024 * 8];</span>
+<span class="nc" id="L447">            bytesBufLocal.set(bytes);</span>
+        }
+
+<span class="fc bfc" id="L450" title="All 2 branches covered.">        if (bytes.length &lt; bytesLength) {</span>
+<span class="fc" id="L451">            bytes = new byte[bytesLength];</span>
+        }
+
+<span class="fc" id="L454">        int position = IOUtils.encodeUTF8(buf, 0, count, bytes);</span>
+<span class="fc" id="L455">        byte[] copy = new byte[position];</span>
+<span class="fc" id="L456">        System.arraycopy(bytes, 0, copy, 0, position);</span>
+<span class="fc" id="L457">        return copy;</span>
+    }
+    
+    public int size() {
+<span class="fc" id="L461">        return count;</span>
+    }
+
+    public String toString() {
+<span class="fc" id="L465">        return new String(buf, 0, count);</span>
+    }
+
+    /**
+     * Close the stream. This method does not release the buffer, since its contents might still be required. Note:
+     * Invoking this method in this class will have no effect.
+     */
+    public void close() {
+<span class="fc bfc" id="L473" title="All 4 branches covered.">        if (writer != null &amp;&amp; count &gt; 0) {</span>
+<span class="fc" id="L474">            flush();</span>
+        }
+<span class="fc bfc" id="L476" title="All 2 branches covered.">        if (buf.length &lt;= 1024 * 128) {</span>
+<span class="fc" id="L477">            bufLocal.set(buf);</span>
+        }
+
+<span class="fc" id="L480">        this.buf = null;</span>
+<span class="fc" id="L481">    }</span>
+
+    public void write(String text) {
+<span class="fc bfc" id="L484" title="All 2 branches covered.">        if (text == null) {</span>
+<span class="fc" id="L485">            writeNull();</span>
+<span class="fc" id="L486">            return;</span>
+        }
+
+<span class="fc" id="L489">        write(text, 0, text.length());</span>
+<span class="fc" id="L490">    }</span>
+
+    public void writeInt(int i) {
+<span class="fc bfc" id="L493" title="All 2 branches covered.">        if (i == Integer.MIN_VALUE) {</span>
+<span class="fc" id="L494">            write(&quot;-2147483648&quot;);</span>
+<span class="fc" id="L495">            return;</span>
+        }
+
+<span class="fc bfc" id="L498" title="All 2 branches covered.">        int size = (i &lt; 0) ? IOUtils.stringSize(-i) + 1 : IOUtils.stringSize(i);</span>
+
+<span class="fc" id="L500">        int newcount = count + size;</span>
+<span class="fc bfc" id="L501" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="fc bfc" id="L502" title="All 2 branches covered.">            if (writer == null) {</span>
+<span class="fc" id="L503">                expandCapacity(newcount);</span>
+            } else {
+<span class="fc" id="L505">                char[] chars = new char[size];</span>
+<span class="fc" id="L506">                IOUtils.getChars(i, size, chars);</span>
+<span class="fc" id="L507">                write(chars, 0, chars.length);</span>
+<span class="fc" id="L508">                return;</span>
+            }
+        }
+
+<span class="fc" id="L512">        IOUtils.getChars(i, newcount, buf);</span>
+
+<span class="fc" id="L514">        count = newcount;</span>
+<span class="fc" id="L515">    }</span>
+
+    public void writeByteArray(byte[] bytes) {
+<span class="fc bfc" id="L518" title="All 2 branches covered.">        if (isEnabled(SerializerFeature.WriteClassName.mask)) {</span>
+<span class="fc" id="L519">            writeHex(bytes);</span>
+<span class="fc" id="L520">            return;</span>
+        }
+
+<span class="fc" id="L523">        int bytesLen = bytes.length;</span>
+<span class="fc bfc" id="L524" title="All 2 branches covered.">        final char quote = useSingleQuotes ? '\'' : '&quot;';</span>
+<span class="fc bfc" id="L525" title="All 2 branches covered.">        if (bytesLen == 0) {</span>
+<span class="pc bpc" id="L526" title="1 of 2 branches missed.">            String emptyString = useSingleQuotes ? &quot;''&quot; : &quot;\&quot;\&quot;&quot;;</span>
+<span class="fc" id="L527">            write(emptyString);</span>
+<span class="fc" id="L528">            return;</span>
+        }
+
+<span class="fc" id="L531">        final char[] CA = IOUtils.CA;</span>
+
+<span class="fc" id="L533">        int eLen = (bytesLen / 3) * 3; // Length of even 24-bits.</span>
+<span class="fc" id="L534">        int charsLen = ((bytesLen - 1) / 3 + 1) &lt;&lt; 2; // base64 character count</span>
+        // char[] chars = new char[charsLen];
+<span class="fc" id="L536">        int offset = count;</span>
+<span class="fc" id="L537">        int newcount = count + charsLen + 2;</span>
+<span class="fc bfc" id="L538" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="fc bfc" id="L539" title="All 2 branches covered.">            if (writer != null) {</span>
+<span class="fc" id="L540">                write(quote);</span>
+
+<span class="fc bfc" id="L542" title="All 2 branches covered.">                for (int s = 0; s &lt; eLen;) {</span>
+                    // Copy next three bytes into lower 24 bits of int, paying attension to sign.
+<span class="fc" id="L544">                    int i = (bytes[s++] &amp; 0xff) &lt;&lt; 16 | (bytes[s++] &amp; 0xff) &lt;&lt; 8 | (bytes[s++] &amp; 0xff);</span>
+
+                    // Encode the int into four chars
+<span class="fc" id="L547">                    write(CA[(i &gt;&gt;&gt; 18) &amp; 0x3f]);</span>
+<span class="fc" id="L548">                    write(CA[(i &gt;&gt;&gt; 12) &amp; 0x3f]);</span>
+<span class="fc" id="L549">                    write(CA[(i &gt;&gt;&gt; 6) &amp; 0x3f]);</span>
+<span class="fc" id="L550">                    write(CA[i &amp; 0x3f]);</span>
+<span class="fc" id="L551">                }</span>
+
+                // Pad and encode last bits if source isn't even 24 bits.
+<span class="fc" id="L554">                int left = bytesLen - eLen; // 0 - 2.</span>
+<span class="pc bpc" id="L555" title="1 of 2 branches missed.">                if (left &gt; 0) {</span>
+                    // Prepare the int
+<span class="pc bpc" id="L557" title="1 of 2 branches missed.">                    int i = ((bytes[eLen] &amp; 0xff) &lt;&lt; 10) | (left == 2 ? ((bytes[bytesLen - 1] &amp; 0xff) &lt;&lt; 2) : 0);</span>
+
+                    // Set last four chars
+<span class="fc" id="L560">                    write(CA[i &gt;&gt; 12]);</span>
+<span class="fc" id="L561">                    write(CA[(i &gt;&gt;&gt; 6) &amp; 0x3f]);</span>
+<span class="pc bpc" id="L562" title="1 of 2 branches missed.">                    write(left == 2 ? CA[i &amp; 0x3f] : '=');</span>
+<span class="fc" id="L563">                    write('=');</span>
+                }
+
+<span class="fc" id="L566">                write(quote);</span>
+<span class="fc" id="L567">                return;</span>
+            }
+<span class="fc" id="L569">            expandCapacity(newcount);</span>
+        }
+<span class="fc" id="L571">        count = newcount;</span>
+<span class="fc" id="L572">        buf[offset++] = quote;</span>
+
+        // Encode even 24-bits
+<span class="fc bfc" id="L575" title="All 2 branches covered.">        for (int s = 0, d = offset; s &lt; eLen;) {</span>
+            // Copy next three bytes into lower 24 bits of int, paying attension to sign.
+<span class="fc" id="L577">            int i = (bytes[s++] &amp; 0xff) &lt;&lt; 16 | (bytes[s++] &amp; 0xff) &lt;&lt; 8 | (bytes[s++] &amp; 0xff);</span>
+
+            // Encode the int into four chars
+<span class="fc" id="L580">            buf[d++] = CA[(i &gt;&gt;&gt; 18) &amp; 0x3f];</span>
+<span class="fc" id="L581">            buf[d++] = CA[(i &gt;&gt;&gt; 12) &amp; 0x3f];</span>
+<span class="fc" id="L582">            buf[d++] = CA[(i &gt;&gt;&gt; 6) &amp; 0x3f];</span>
+<span class="fc" id="L583">            buf[d++] = CA[i &amp; 0x3f];</span>
+<span class="fc" id="L584">        }</span>
+
+        // Pad and encode last bits if source isn't even 24 bits.
+<span class="fc" id="L587">        int left = bytesLen - eLen; // 0 - 2.</span>
+<span class="fc bfc" id="L588" title="All 2 branches covered.">        if (left &gt; 0) {</span>
+            // Prepare the int
+<span class="fc bfc" id="L590" title="All 2 branches covered.">            int i = ((bytes[eLen] &amp; 0xff) &lt;&lt; 10) | (left == 2 ? ((bytes[bytesLen - 1] &amp; 0xff) &lt;&lt; 2) : 0);</span>
+
+            // Set last four chars
+<span class="fc" id="L593">            buf[newcount - 5] = CA[i &gt;&gt; 12];</span>
+<span class="fc" id="L594">            buf[newcount - 4] = CA[(i &gt;&gt;&gt; 6) &amp; 0x3f];</span>
+<span class="fc bfc" id="L595" title="All 2 branches covered.">            buf[newcount - 3] = left == 2 ? CA[i &amp; 0x3f] : '=';</span>
+<span class="fc" id="L596">            buf[newcount - 2] = '=';</span>
+        }
+<span class="fc" id="L598">        buf[newcount - 1] = quote;</span>
+<span class="fc" id="L599">    }</span>
+
+    public void writeHex(byte[] bytes) {
+<span class="fc" id="L602">        int newcount = count + bytes.length * 2 + 3;</span>
+<span class="pc bpc" id="L603" title="1 of 2 branches missed.">        if (newcount &gt; buf.length) {</span>
+<span class="nc bnc" id="L604" title="All 2 branches missed.">            if (writer != null) {</span>
+<span class="nc" id="L605">                char[] chars = new char[bytes.length + 3];</span>
+<span class="nc" id="L606">                int pos = 0;</span>
+<span class="nc" id="L607">                chars[pos++] = 'x';</span>
+<span class="nc" id="L608">                chars[pos++] = '\'';</span>
+
+<span class="nc bnc" id="L610" title="All 2 branches missed.">                for (int i = 0; i &lt; bytes.length; ++i) {</span>
+<span class="nc" id="L611">                    byte b = bytes[i];</span>
+
+<span class="nc" id="L613">                    int a = b &amp; 0xFF;</span>
+<span class="nc" id="L614">                    int b0 = a &gt;&gt; 4;</span>
+<span class="nc" id="L615">                    int b1 = a &amp; 0xf;</span>
+
+<span class="nc bnc" id="L617" title="All 2 branches missed.">                    chars[pos++] = (char) (b0 + (b0 &lt; 10 ? 48 : 55));</span>
+<span class="nc bnc" id="L618" title="All 2 branches missed.">                    chars[pos++] = (char) (b1 + (b1 &lt; 10 ? 48 : 55));</span>
+                }
+<span class="nc" id="L620">                chars[pos++] = '\'';</span>
+                try {
+<span class="nc" id="L622">                    writer.write(chars);</span>
+<span class="nc" id="L623">                } catch (IOException ex) {</span>
+<span class="nc" id="L624">                    throw new JSONException(&quot;writeBytes error.&quot;, ex);</span>
+<span class="nc" id="L625">                }</span>
+<span class="nc" id="L626">                return;</span>
+            }
+<span class="nc" id="L628">            expandCapacity(newcount);</span>
+        }
+
+<span class="fc" id="L631">        buf[count++] = 'x';</span>
+<span class="fc" id="L632">        buf[count++] = '\'';</span>
+
+<span class="fc bfc" id="L634" title="All 2 branches covered.">        for (int i = 0; i &lt; bytes.length; ++i) {</span>
+<span class="fc" id="L635">            byte b = bytes[i];</span>
+
+<span class="fc" id="L637">            int a = b &amp; 0xFF;</span>
+<span class="fc" id="L638">            int b0 = a &gt;&gt; 4;</span>
+<span class="fc" id="L639">            int b1 = a &amp; 0xf;</span>
+
+<span class="fc bfc" id="L641" title="All 2 branches covered.">            buf[count++] = (char) (b0 + (b0 &lt; 10 ? 48 : 55));</span>
+<span class="fc bfc" id="L642" title="All 2 branches covered.">            buf[count++] = (char) (b1 + (b1 &lt; 10 ? 48 : 55));</span>
+        }
+<span class="fc" id="L644">        buf[count++] = '\'';</span>
+<span class="fc" id="L645">    }</span>
+
+    public void writeFloat(float value, boolean checkWriteClassName) {
+<span class="fc bfc" id="L648" title="All 2 branches covered.">        if (Float.isNaN(value) // </span>
+<span class="fc bfc" id="L649" title="All 2 branches covered.">                || Float.isInfinite(value)) {</span>
+<span class="fc" id="L650">            writeNull();</span>
+        } else {
+<span class="fc" id="L652">            String floatText= Float.toString(value);</span>
+<span class="fc bfc" id="L653" title="All 4 branches covered.">            if (isEnabled(SerializerFeature.WriteNullNumberAsZero) &amp;&amp; floatText.endsWith(&quot;.0&quot;)) {</span>
+<span class="fc" id="L654">                floatText = floatText.substring(0, floatText.length() - 2);</span>
+            }
+<span class="fc" id="L656">            write(floatText);</span>
+            
+<span class="fc bfc" id="L658" title="All 4 branches covered.">            if (checkWriteClassName &amp;&amp; isEnabled(SerializerFeature.WriteClassName)) {</span>
+<span class="fc" id="L659">                write('F');</span>
+            }
+        }
+<span class="fc" id="L662">    }</span>
+
+    public void writeDouble(double doubleValue, boolean checkWriteClassName) {
+<span class="pc bpc" id="L665" title="1 of 2 branches missed.">        if (Double.isNaN(doubleValue) //</span>
+<span class="pc bpc" id="L666" title="1 of 2 branches missed.">                || Double.isInfinite(doubleValue)) {</span>
+<span class="nc" id="L667">            writeNull();</span>
+        } else {
+<span class="fc" id="L669">            String doubleText = Double.toString(doubleValue);</span>
+<span class="fc bfc" id="L670" title="All 4 branches covered.">            if (isEnabled(SerializerFeature.WriteNullNumberAsZero) &amp;&amp; doubleText.endsWith(&quot;.0&quot;)) {</span>
+<span class="fc" id="L671">                doubleText = doubleText.substring(0, doubleText.length() - 2);</span>
+            }
+            
+<span class="fc" id="L674">            write(doubleText);</span>
+
+<span class="fc bfc" id="L676" title="All 4 branches covered.">            if (checkWriteClassName &amp;&amp; isEnabled(SerializerFeature.WriteClassName)) {</span>
+<span class="fc" id="L677">                write('D');</span>
+            }
+        }
+<span class="fc" id="L680">    }</span>
+
+    public void writeEnum(Enum&lt;?&gt; value) {
+<span class="fc bfc" id="L683" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L684">            writeNull();</span>
+<span class="fc" id="L685">            return;</span>
+        }
+        
+<span class="fc" id="L688">        String strVal = null;</span>
+<span class="fc bfc" id="L689" title="All 4 branches covered.">        if (writeEnumUsingName &amp;&amp; !writeEnumUsingToString) {</span>
+<span class="fc" id="L690">            strVal = value.name();</span>
+<span class="fc bfc" id="L691" title="All 2 branches covered.">        } else if (writeEnumUsingToString) {</span>
+<span class="fc" id="L692">            strVal = value.toString();;</span>
+        }
+
+<span class="fc bfc" id="L695" title="All 2 branches covered.">        if (strVal != null) {</span>
+<span class="fc bfc" id="L696" title="All 2 branches covered.">            char quote = isEnabled(SerializerFeature.UseSingleQuotes) ? '\'' : '&quot;';</span>
+<span class="fc" id="L697">            write(quote);</span>
+<span class="fc" id="L698">            write(strVal);</span>
+<span class="fc" id="L699">            write(quote);</span>
+<span class="fc" id="L700">        } else {</span>
+<span class="fc" id="L701">            writeInt(value.ordinal());</span>
+        }
+<span class="fc" id="L703">    }</span>
+
+    public void writeLong(long i) {
+<span class="fc bfc" id="L706" title="All 2 branches covered.">        boolean needQuotationMark = isEnabled(SerializerFeature.BrowserCompatible) //</span>
+<span class="fc bfc" id="L707" title="All 6 branches covered.">                                    &amp;&amp; (!isEnabled(SerializerFeature.WriteClassName)) //</span>
+                                    &amp;&amp; (i &gt; 9007199254740991L || i &lt; -9007199254740991L);
+
+<span class="fc bfc" id="L710" title="All 2 branches covered.">        if (i == Long.MIN_VALUE) {</span>
+<span class="fc bfc" id="L711" title="All 2 branches covered.">            if (needQuotationMark) write(&quot;\&quot;-9223372036854775808\&quot;&quot;);</span>
+<span class="fc" id="L712">            else write(&quot;-9223372036854775808&quot;);</span>
+<span class="fc" id="L713">            return;</span>
+        }
+
+<span class="fc bfc" id="L716" title="All 2 branches covered.">        int size = (i &lt; 0) ? IOUtils.stringSize(-i) + 1 : IOUtils.stringSize(i);</span>
+
+<span class="fc" id="L718">        int newcount = count + size;</span>
+<span class="fc bfc" id="L719" title="All 2 branches covered.">        if (needQuotationMark) newcount += 2;</span>
+<span class="fc bfc" id="L720" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="fc bfc" id="L721" title="All 2 branches covered.">            if (writer == null) {</span>
+<span class="fc" id="L722">                expandCapacity(newcount);</span>
+            } else {
+<span class="fc" id="L724">                char[] chars = new char[size];</span>
+<span class="fc" id="L725">                IOUtils.getChars(i, size, chars);</span>
+<span class="fc bfc" id="L726" title="All 2 branches covered.">                if (needQuotationMark) {</span>
+<span class="fc" id="L727">                    write('&quot;');</span>
+<span class="fc" id="L728">                    write(chars, 0, chars.length);</span>
+<span class="fc" id="L729">                    write('&quot;');</span>
+                } else {
+<span class="fc" id="L731">                    write(chars, 0, chars.length);</span>
+                }
+<span class="fc" id="L733">                return;</span>
+            }
+        }
+
+<span class="fc bfc" id="L737" title="All 2 branches covered.">        if (needQuotationMark) {</span>
+<span class="fc" id="L738">            buf[count] = '&quot;';</span>
+<span class="fc" id="L739">            IOUtils.getChars(i, newcount - 1, buf);</span>
+<span class="fc" id="L740">            buf[newcount - 1] = '&quot;';</span>
+        } else {
+<span class="fc" id="L742">            IOUtils.getChars(i, newcount, buf);</span>
+        }
+
+<span class="fc" id="L745">        count = newcount;</span>
+<span class="fc" id="L746">    }</span>
+
+    public void writeNull() {
+<span class="fc" id="L749">        write(&quot;null&quot;);</span>
+<span class="fc" id="L750">    }</span>
+    
+    public void writeNull(SerializerFeature feature) {
+<span class="fc" id="L753">        writeNull(0, feature.mask);</span>
+<span class="fc" id="L754">    }</span>
+    
+    public void writeNull(int beanFeatures , int feature) {
+<span class="fc bfc" id="L757" title="All 4 branches covered.">        if ((beanFeatures &amp; feature) == 0 //</span>
+            &amp;&amp; (this.features &amp; feature) == 0) {
+<span class="fc" id="L759">            writeNull();</span>
+<span class="fc" id="L760">            return;</span>
+        }
+        
+<span class="fc bfc" id="L763" title="All 2 branches covered.">        if (feature == SerializerFeature.WriteNullListAsEmpty.mask) {</span>
+<span class="fc" id="L764">            write(&quot;[]&quot;);</span>
+<span class="fc bfc" id="L765" title="All 2 branches covered.">        } else if (feature == SerializerFeature.WriteNullStringAsEmpty.mask) {</span>
+<span class="fc" id="L766">            writeString(&quot;&quot;);</span>
+<span class="fc bfc" id="L767" title="All 2 branches covered.">        } else if (feature == SerializerFeature.WriteNullBooleanAsFalse.mask) {</span>
+<span class="fc" id="L768">            write(&quot;false&quot;);</span>
+<span class="pc bpc" id="L769" title="1 of 2 branches missed.">        } else if (feature == SerializerFeature.WriteNullNumberAsZero.mask) {</span>
+<span class="fc" id="L770">            write('0');</span>
+        } else {
+<span class="nc" id="L772">            writeNull();</span>
+        }
+<span class="fc" id="L774">    }</span>
+    
+    public void writeStringWithDoubleQuote(String text, final char seperator) {
+<span class="fc bfc" id="L777" title="All 2 branches covered.">        if (text == null) {</span>
+<span class="fc" id="L778">            writeNull();</span>
+<span class="fc bfc" id="L779" title="All 2 branches covered.">            if (seperator != 0) {</span>
+<span class="fc" id="L780">                write(seperator);</span>
+            }
+<span class="fc" id="L782">            return;</span>
+        }
+
+<span class="fc" id="L785">        int len = text.length();</span>
+<span class="fc" id="L786">        int newcount = count + len + 2;</span>
+<span class="fc bfc" id="L787" title="All 2 branches covered.">        if (seperator != 0) {</span>
+<span class="fc" id="L788">            newcount++;</span>
+        }
+
+<span class="fc bfc" id="L791" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="fc bfc" id="L792" title="All 2 branches covered.">            if (writer != null) {</span>
+<span class="fc" id="L793">                write('&quot;');</span>
+
+<span class="fc bfc" id="L795" title="All 2 branches covered.">                for (int i = 0; i &lt; text.length(); ++i) {</span>
+<span class="fc" id="L796">                    char ch = text.charAt(i);</span>
+
+<span class="fc bfc" id="L798" title="All 2 branches covered.">                    if (isEnabled(SerializerFeature.BrowserSecure)) {</span>
+<span class="pc bpc" id="L799" title="2 of 8 branches missed.">                       if (ch == '(' || ch == ')' || ch == '&lt;' || ch == '&gt;') {</span>
+<span class="fc" id="L800">                            write('\\');</span>
+<span class="fc" id="L801">                            write('u');</span>
+<span class="fc" id="L802">                            write(IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15]);</span>
+<span class="fc" id="L803">                            write(IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15]);</span>
+<span class="fc" id="L804">                            write(IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15]);</span>
+<span class="fc" id="L805">                            write(IOUtils.DIGITS[ch &amp; 15]);</span>
+<span class="fc" id="L806">                            continue;</span>
+                        }
+                    }
+
+<span class="fc bfc" id="L810" title="All 2 branches covered.">                    if (isEnabled(SerializerFeature.BrowserCompatible)) {</span>
+<span class="pc bpc" id="L811" title="7 of 16 branches missed.">                        if (ch == '\b' //</span>
+                            || ch == '\f' //
+                            || ch == '\n' //
+                            || ch == '\r' //
+                            || ch == '\t' //
+                            || ch == '&quot;' //
+                            || ch == '/' //
+                            || ch == '\\') {
+<span class="fc" id="L819">                            write('\\');</span>
+<span class="fc" id="L820">                            write(replaceChars[(int) ch]);</span>
+<span class="fc" id="L821">                            continue;</span>
+                        }
+
+<span class="fc bfc" id="L824" title="All 2 branches covered.">                        if (ch &lt; 32) {</span>
+<span class="fc" id="L825">                            write('\\');</span>
+<span class="fc" id="L826">                            write('u');</span>
+<span class="fc" id="L827">                            write('0');</span>
+<span class="fc" id="L828">                            write('0');</span>
+<span class="fc" id="L829">                            write(IOUtils.ASCII_CHARS[ch * 2]);</span>
+<span class="fc" id="L830">                            write(IOUtils.ASCII_CHARS[ch * 2 + 1]);</span>
+<span class="fc" id="L831">                            continue;</span>
+                        }
+
+<span class="fc bfc" id="L834" title="All 2 branches covered.">                        if (ch &gt;= 127) {</span>
+<span class="fc" id="L835">                            write('\\');</span>
+<span class="fc" id="L836">                            write('u');</span>
+<span class="fc" id="L837">                            write(IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15]);</span>
+<span class="fc" id="L838">                            write(IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15]);</span>
+<span class="fc" id="L839">                            write(IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15]);</span>
+<span class="fc" id="L840">                            write(IOUtils.DIGITS[ch &amp; 15]);</span>
+<span class="fc" id="L841">                            continue;</span>
+                        }
+                    } else {
+<span class="fc bfc" id="L844" title="All 6 branches covered.">                        if (ch &lt; IOUtils.specicalFlags_doubleQuotes.length</span>
+                            &amp;&amp; IOUtils.specicalFlags_doubleQuotes[ch] != 0 //
+<span class="pc bpc" id="L846" title="1 of 2 branches missed.">                            || (ch == '/' &amp;&amp; isEnabled(SerializerFeature.WriteSlashAsSpecial))) {</span>
+<span class="fc" id="L847">                            write('\\');</span>
+<span class="fc bfc" id="L848" title="All 2 branches covered.">                            if (IOUtils.specicalFlags_doubleQuotes[ch] == 4) {</span>
+<span class="fc" id="L849">                                write('u');</span>
+<span class="fc" id="L850">                                write(IOUtils.DIGITS[ch &gt;&gt;&gt; 12 &amp; 15]);</span>
+<span class="fc" id="L851">                                write(IOUtils.DIGITS[ch &gt;&gt;&gt; 8 &amp; 15]);</span>
+<span class="fc" id="L852">                                write(IOUtils.DIGITS[ch &gt;&gt;&gt; 4 &amp; 15]);</span>
+<span class="fc" id="L853">                                write(IOUtils.DIGITS[ch &amp; 15]);</span>
+                            } else {
+<span class="fc" id="L855">                                write(IOUtils.replaceChars[ch]);</span>
+                            }
+<span class="fc" id="L857">                            continue;</span>
+                        }
+                    }
+
+<span class="fc" id="L861">                    write(ch);</span>
+                }
+
+<span class="fc" id="L864">                write('&quot;');</span>
+<span class="fc bfc" id="L865" title="All 2 branches covered.">                if (seperator != 0) {</span>
+<span class="fc" id="L866">                    write(seperator);</span>
+                }
+<span class="fc" id="L868">                return;</span>
+            }
+<span class="fc" id="L870">            expandCapacity(newcount);</span>
+        }
+
+<span class="fc" id="L873">        int start = count + 1;</span>
+<span class="fc" id="L874">        int end = start + len;</span>
+
+<span class="fc" id="L876">        buf[count] = '\&quot;';</span>
+<span class="fc" id="L877">        text.getChars(0, len, buf, start);</span>
+
+<span class="fc" id="L879">        count = newcount;</span>
+
+<span class="fc bfc" id="L881" title="All 2 branches covered.">        if (isEnabled(SerializerFeature.BrowserCompatible)) {</span>
+<span class="fc" id="L882">            int lastSpecialIndex = -1;</span>
+
+<span class="fc bfc" id="L884" title="All 2 branches covered.">            for (int i = start; i &lt; end; ++i) {</span>
+<span class="fc" id="L885">                char ch = buf[i];</span>
+
+<span class="fc bfc" id="L887" title="All 6 branches covered.">                if (ch == '&quot;' //</span>
+                    || ch == '/' //
+                    || ch == '\\') {
+<span class="fc" id="L890">                    lastSpecialIndex = i;</span>
+<span class="fc" id="L891">                    newcount += 1;</span>
+<span class="fc" id="L892">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L895" title="All 10 branches covered.">                if (ch == '\b' //</span>
+                    || ch == '\f' //
+                    || ch == '\n' //
+                    || ch == '\r' //
+                    || ch == '\t') {
+<span class="fc" id="L900">                    lastSpecialIndex = i;</span>
+<span class="fc" id="L901">                    newcount += 1;</span>
+<span class="fc" id="L902">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L905" title="All 2 branches covered.">                if (ch &lt; 32) {</span>
+<span class="fc" id="L906">                    lastSpecialIndex = i;</span>
+<span class="fc" id="L907">                    newcount += 5;</span>
+<span class="fc" id="L908">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L911" title="All 2 branches covered.">                if (ch &gt;= 127) {</span>
+<span class="fc" id="L912">                    lastSpecialIndex = i;</span>
+<span class="fc" id="L913">                    newcount += 5;</span>
+<span class="fc" id="L914">                    continue;</span>
+                }
+            }
+
+<span class="fc bfc" id="L918" title="All 2 branches covered.">            if (newcount &gt; buf.length) {</span>
+<span class="fc" id="L919">                expandCapacity(newcount);</span>
+            }
+<span class="fc" id="L921">            count = newcount;</span>
+
+<span class="fc bfc" id="L923" title="All 2 branches covered.">            for (int i = lastSpecialIndex; i &gt;= start; --i) {</span>
+<span class="fc" id="L924">                char ch = buf[i];</span>
+
+<span class="fc bfc" id="L926" title="All 10 branches covered.">                if (ch == '\b' //</span>
+                    || ch == '\f'//
+                    || ch == '\n' //
+                    || ch == '\r' //
+                    || ch == '\t') {
+<span class="fc" id="L931">                    System.arraycopy(buf, i + 1, buf, i + 2, end - i - 1);</span>
+<span class="fc" id="L932">                    buf[i] = '\\';</span>
+<span class="fc" id="L933">                    buf[i + 1] = replaceChars[(int) ch];</span>
+<span class="fc" id="L934">                    end += 1;</span>
+<span class="fc" id="L935">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L938" title="All 6 branches covered.">                if (ch == '&quot;' //</span>
+                    || ch == '/' //
+                    || ch == '\\') {
+<span class="fc" id="L941">                    System.arraycopy(buf, i + 1, buf, i + 2, end - i - 1);</span>
+<span class="fc" id="L942">                    buf[i] = '\\';</span>
+<span class="fc" id="L943">                    buf[i + 1] = ch;</span>
+<span class="fc" id="L944">                    end += 1;</span>
+<span class="fc" id="L945">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L948" title="All 2 branches covered.">                if (ch &lt; 32) {</span>
+<span class="fc" id="L949">                    System.arraycopy(buf, i + 1, buf, i + 6, end - i - 1);</span>
+<span class="fc" id="L950">                    buf[i] = '\\';</span>
+<span class="fc" id="L951">                    buf[i + 1] = 'u';</span>
+<span class="fc" id="L952">                    buf[i + 2] = '0';</span>
+<span class="fc" id="L953">                    buf[i + 3] = '0';</span>
+<span class="fc" id="L954">                    buf[i + 4] = IOUtils.ASCII_CHARS[ch * 2];</span>
+<span class="fc" id="L955">                    buf[i + 5] = IOUtils.ASCII_CHARS[ch * 2 + 1];</span>
+<span class="fc" id="L956">                    end += 5;</span>
+<span class="fc" id="L957">                    continue;</span>
+                }
+
+<span class="fc bfc" id="L960" title="All 2 branches covered.">                if (ch &gt;= 127) {</span>
+<span class="fc" id="L961">                    System.arraycopy(buf, i + 1, buf, i + 6, end - i - 1);</span>
+<span class="fc" id="L962">                    buf[i] = '\\';</span>
+<span class="fc" id="L963">                    buf[i + 1] = 'u';</span>
+<span class="fc" id="L964">                    buf[i + 2] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="fc" id="L965">                    buf[i + 3] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="fc" id="L966">                    buf[i + 4] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="fc" id="L967">                    buf[i + 5] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="fc" id="L968">                    end += 5;</span>
+                }
+            }
+
+<span class="fc bfc" id="L972" title="All 2 branches covered.">            if (seperator != 0) {</span>
+<span class="fc" id="L973">                buf[count - 2] = '\&quot;';</span>
+<span class="fc" id="L974">                buf[count - 1] = seperator;</span>
+            } else {
+<span class="fc" id="L976">                buf[count - 1] = '\&quot;';</span>
+            }
+
+<span class="fc" id="L979">            return;</span>
+        }
+
+<span class="fc" id="L982">        int specialCount = 0;</span>
+<span class="fc" id="L983">        int lastSpecialIndex = -1;</span>
+<span class="fc" id="L984">        int firstSpecialIndex = -1;</span>
+<span class="fc" id="L985">        char lastSpecial = '\0';</span>
+
+<span class="fc bfc" id="L987" title="All 2 branches covered.">        for (int i = start; i &lt; end; ++i) {</span>
+<span class="fc" id="L988">            char ch = buf[i];</span>
+
+<span class="fc bfc" id="L990" title="All 2 branches covered.">            if (ch &gt;= ']') { // 93</span>
+<span class="fc bfc" id="L991" title="All 8 branches covered.">                if (ch &gt;= 0x7F //</span>
+                        &amp;&amp; (ch == '\u2028' //
+                        || ch == '\u2029' //
+                        || ch &lt; 0xA0)) {
+<span class="fc bfc" id="L995" title="All 2 branches covered.">                    if (firstSpecialIndex == -1) {</span>
+<span class="fc" id="L996">                        firstSpecialIndex = i;</span>
+                    }
+
+<span class="fc" id="L999">                    specialCount++;</span>
+<span class="fc" id="L1000">                    lastSpecialIndex = i;</span>
+<span class="fc" id="L1001">                    lastSpecial = ch;</span>
+<span class="fc" id="L1002">                    newcount += 4;</span>
+                }
+                continue;
+            }
+
+<span class="fc bfc" id="L1007" title="All 6 branches covered.">            boolean special = (ch &lt; 64 &amp;&amp; (sepcialBits &amp; (1L &lt;&lt; ch)) != 0) || ch == '\\';</span>
+<span class="fc bfc" id="L1008" title="All 2 branches covered.">            if (special) {</span>
+<span class="fc" id="L1009">                specialCount++;</span>
+<span class="fc" id="L1010">                lastSpecialIndex = i;</span>
+<span class="fc" id="L1011">                lastSpecial = ch;</span>
+
+<span class="pc bpc" id="L1013" title="1 of 12 branches missed.">                if (ch == '('</span>
+                        || ch == ')'
+                        || ch == '&lt;'
+                        || ch == '&gt;'
+                        || (ch &lt; IOUtils.specicalFlags_doubleQuotes.length //
+                    &amp;&amp; IOUtils.specicalFlags_doubleQuotes[ch] == 4) //
+                ) {
+<span class="fc" id="L1020">                    newcount += 4;</span>
+                }
+
+<span class="fc bfc" id="L1023" title="All 2 branches covered.">                if (firstSpecialIndex == -1) {</span>
+<span class="fc" id="L1024">                    firstSpecialIndex = i;</span>
+                }
+            }
+        }
+
+<span class="fc bfc" id="L1029" title="All 2 branches covered.">        if (specialCount &gt; 0) {</span>
+<span class="fc" id="L1030">            newcount += specialCount;</span>
+<span class="fc bfc" id="L1031" title="All 2 branches covered.">            if (newcount &gt; buf.length) {</span>
+<span class="fc" id="L1032">                expandCapacity(newcount);</span>
+            }
+<span class="fc" id="L1034">            count = newcount;</span>
+
+<span class="fc bfc" id="L1036" title="All 2 branches covered.">            if (specialCount == 1) {</span>
+<span class="fc bfc" id="L1037" title="All 2 branches covered.">                if (lastSpecial == '\u2028') {</span>
+<span class="fc" id="L1038">                    int srcPos = lastSpecialIndex + 1;</span>
+<span class="fc" id="L1039">                    int destPos = lastSpecialIndex + 6;</span>
+<span class="fc" id="L1040">                    int LengthOfCopy = end - lastSpecialIndex - 1;</span>
+<span class="fc" id="L1041">                    System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+<span class="fc" id="L1042">                    buf[lastSpecialIndex] = '\\';</span>
+<span class="fc" id="L1043">                    buf[++lastSpecialIndex] = 'u';</span>
+<span class="fc" id="L1044">                    buf[++lastSpecialIndex] = '2';</span>
+<span class="fc" id="L1045">                    buf[++lastSpecialIndex] = '0';</span>
+<span class="fc" id="L1046">                    buf[++lastSpecialIndex] = '2';</span>
+<span class="fc" id="L1047">                    buf[++lastSpecialIndex] = '8';</span>
+<span class="fc bfc" id="L1048" title="All 2 branches covered.">                } else if (lastSpecial == '\u2029') {</span>
+<span class="fc" id="L1049">                    int srcPos = lastSpecialIndex + 1;</span>
+<span class="fc" id="L1050">                    int destPos = lastSpecialIndex + 6;</span>
+<span class="fc" id="L1051">                    int LengthOfCopy = end - lastSpecialIndex - 1;</span>
+<span class="fc" id="L1052">                    System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+<span class="fc" id="L1053">                    buf[lastSpecialIndex] = '\\';</span>
+<span class="fc" id="L1054">                    buf[++lastSpecialIndex] = 'u';</span>
+<span class="fc" id="L1055">                    buf[++lastSpecialIndex] = '2';</span>
+<span class="fc" id="L1056">                    buf[++lastSpecialIndex] = '0';</span>
+<span class="fc" id="L1057">                    buf[++lastSpecialIndex] = '2';</span>
+<span class="fc" id="L1058">                    buf[++lastSpecialIndex] = '9';</span>
+<span class="fc bfc" id="L1059" title="All 8 branches covered.">                } else if (lastSpecial == '(' || lastSpecial == ')' || lastSpecial == '&lt;' || lastSpecial == '&gt;') {</span>
+<span class="fc" id="L1060">                    int srcPos = lastSpecialIndex + 1;</span>
+<span class="fc" id="L1061">                    int destPos = lastSpecialIndex + 6;</span>
+<span class="fc" id="L1062">                    int LengthOfCopy = end - lastSpecialIndex - 1;</span>
+<span class="fc" id="L1063">                    System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+<span class="fc" id="L1064">                    buf[lastSpecialIndex] = '\\';</span>
+<span class="fc" id="L1065">                    buf[++lastSpecialIndex] = 'u';</span>
+
+<span class="fc" id="L1067">                    final char ch = lastSpecial;</span>
+<span class="fc" id="L1068">                    buf[++lastSpecialIndex] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="fc" id="L1069">                    buf[++lastSpecialIndex] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="fc" id="L1070">                    buf[++lastSpecialIndex] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="fc" id="L1071">                    buf[++lastSpecialIndex] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="fc" id="L1072">                } else {</span>
+<span class="fc" id="L1073">                    final char ch = lastSpecial;</span>
+<span class="pc bpc" id="L1074" title="1 of 4 branches missed.">                    if (ch &lt; IOUtils.specicalFlags_doubleQuotes.length //</span>
+                        &amp;&amp; IOUtils.specicalFlags_doubleQuotes[ch] == 4) {
+<span class="fc" id="L1076">                        int srcPos = lastSpecialIndex + 1;</span>
+<span class="fc" id="L1077">                        int destPos = lastSpecialIndex + 6;</span>
+<span class="fc" id="L1078">                        int LengthOfCopy = end - lastSpecialIndex - 1;</span>
+<span class="fc" id="L1079">                        System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+
+<span class="fc" id="L1081">                        int bufIndex = lastSpecialIndex;</span>
+<span class="fc" id="L1082">                        buf[bufIndex++] = '\\';</span>
+<span class="fc" id="L1083">                        buf[bufIndex++] = 'u';</span>
+<span class="fc" id="L1084">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="fc" id="L1085">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="fc" id="L1086">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="fc" id="L1087">                        buf[bufIndex++] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="fc" id="L1088">                    } else {</span>
+<span class="fc" id="L1089">                        int srcPos = lastSpecialIndex + 1;</span>
+<span class="fc" id="L1090">                        int destPos = lastSpecialIndex + 2;</span>
+<span class="fc" id="L1091">                        int LengthOfCopy = end - lastSpecialIndex - 1;</span>
+<span class="fc" id="L1092">                        System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+<span class="fc" id="L1093">                        buf[lastSpecialIndex] = '\\';</span>
+<span class="fc" id="L1094">                        buf[++lastSpecialIndex] = replaceChars[(int) ch];</span>
+                    }
+<span class="fc" id="L1096">                }</span>
+<span class="pc bpc" id="L1097" title="1 of 2 branches missed.">            } else if (specialCount &gt; 1) {</span>
+<span class="fc" id="L1098">                int textIndex = firstSpecialIndex - start;</span>
+<span class="fc" id="L1099">                int bufIndex = firstSpecialIndex;</span>
+<span class="fc bfc" id="L1100" title="All 2 branches covered.">                for (int i = textIndex; i &lt; text.length(); ++i) {</span>
+<span class="fc" id="L1101">                    char ch = text.charAt(i);</span>
+
+<span class="fc bfc" id="L1103" title="All 10 branches covered.">                    if (browserSecure &amp;&amp; (ch == '('</span>
+                            || ch == ')'
+                            || ch == '&lt;'
+                            || ch == '&gt;')) {
+<span class="fc" id="L1107">                        buf[bufIndex++] = '\\';</span>
+<span class="fc" id="L1108">                        buf[bufIndex++] = 'u';</span>
+<span class="fc" id="L1109">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="fc" id="L1110">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="fc" id="L1111">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="fc" id="L1112">                        buf[bufIndex++] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="fc" id="L1113">                        end += 5;</span>
+<span class="fc bfc" id="L1114" title="All 6 branches covered.">                    } else if (ch &lt; IOUtils.specicalFlags_doubleQuotes.length //</span>
+                        &amp;&amp; IOUtils.specicalFlags_doubleQuotes[ch] != 0 //
+<span class="fc bfc" id="L1116" title="All 2 branches covered.">                        || (ch == '/' &amp;&amp; isEnabled(SerializerFeature.WriteSlashAsSpecial))) {</span>
+<span class="fc" id="L1117">                        buf[bufIndex++] = '\\';</span>
+<span class="fc bfc" id="L1118" title="All 2 branches covered.">                        if (IOUtils.specicalFlags_doubleQuotes[ch] == 4) {</span>
+<span class="fc" id="L1119">                            buf[bufIndex++] = 'u';</span>
+<span class="fc" id="L1120">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="fc" id="L1121">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="fc" id="L1122">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="fc" id="L1123">                            buf[bufIndex++] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="fc" id="L1124">                            end += 5;</span>
+                        } else {
+<span class="fc" id="L1126">                            buf[bufIndex++] = replaceChars[(int) ch];</span>
+<span class="fc" id="L1127">                            end++;</span>
+                        }
+                    } else {
+<span class="fc bfc" id="L1130" title="All 4 branches covered.">                        if (ch == '\u2028' || ch == '\u2029') {</span>
+<span class="fc" id="L1131">                            buf[bufIndex++] = '\\';</span>
+<span class="fc" id="L1132">                            buf[bufIndex++] = 'u';</span>
+<span class="fc" id="L1133">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="fc" id="L1134">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="fc" id="L1135">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="fc" id="L1136">                            buf[bufIndex++] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="fc" id="L1137">                            end += 5;</span>
+                        } else {
+<span class="fc" id="L1139">                            buf[bufIndex++] = ch;</span>
+                        }
+                    }
+                }
+            }
+        }
+
+<span class="fc bfc" id="L1146" title="All 2 branches covered.">        if (seperator != 0) {</span>
+<span class="fc" id="L1147">            buf[count - 2] = '\&quot;';</span>
+<span class="fc" id="L1148">            buf[count - 1] = seperator;</span>
+        } else {
+<span class="fc" id="L1150">            buf[count - 1] = '\&quot;';</span>
+        }
+<span class="fc" id="L1152">    }</span>
+
+    public void writeStringWithDoubleQuote(char[] text, final char seperator) {
+<span class="nc bnc" id="L1155" title="All 2 branches missed.">        if (text == null) {</span>
+<span class="nc" id="L1156">            writeNull();</span>
+<span class="nc bnc" id="L1157" title="All 2 branches missed.">            if (seperator != 0) {</span>
+<span class="nc" id="L1158">                write(seperator);</span>
+            }
+<span class="nc" id="L1160">            return;</span>
+        }
+
+<span class="nc" id="L1163">        int len = text.length;</span>
+<span class="nc" id="L1164">        int newcount = count + len + 2;</span>
+<span class="nc bnc" id="L1165" title="All 2 branches missed.">        if (seperator != 0) {</span>
+<span class="nc" id="L1166">            newcount++;</span>
+        }
+
+<span class="nc bnc" id="L1169" title="All 2 branches missed.">        if (newcount &gt; buf.length) {</span>
+<span class="nc bnc" id="L1170" title="All 2 branches missed.">            if (writer != null) {</span>
+<span class="nc" id="L1171">                write('&quot;');</span>
+
+<span class="nc bnc" id="L1173" title="All 2 branches missed.">                for (int i = 0; i &lt; text.length; ++i) {</span>
+<span class="nc" id="L1174">                    char ch = text[i];</span>
+
+<span class="nc bnc" id="L1176" title="All 2 branches missed.">                    if (isEnabled(SerializerFeature.BrowserSecure)) {</span>
+<span class="nc bnc" id="L1177" title="All 8 branches missed.">                        if (ch == '(' || ch == ')' || ch == '&lt;' || ch == '&gt;') {</span>
+<span class="nc" id="L1178">                            write('\\');</span>
+<span class="nc" id="L1179">                            write('u');</span>
+<span class="nc" id="L1180">                            write(IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15]);</span>
+<span class="nc" id="L1181">                            write(IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15]);</span>
+<span class="nc" id="L1182">                            write(IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15]);</span>
+<span class="nc" id="L1183">                            write(IOUtils.DIGITS[ch &amp; 15]);</span>
+<span class="nc" id="L1184">                            continue;</span>
+                        }
+                    }
+
+<span class="nc bnc" id="L1188" title="All 2 branches missed.">                    if (isEnabled(SerializerFeature.BrowserCompatible)) {</span>
+<span class="nc bnc" id="L1189" title="All 16 branches missed.">                        if (ch == '\b' //</span>
+                                || ch == '\f' //
+                                || ch == '\n' //
+                                || ch == '\r' //
+                                || ch == '\t' //
+                                || ch == '&quot;' //
+                                || ch == '/' //
+                                || ch == '\\') {
+<span class="nc" id="L1197">                            write('\\');</span>
+<span class="nc" id="L1198">                            write(replaceChars[(int) ch]);</span>
+<span class="nc" id="L1199">                            continue;</span>
+                        }
+
+<span class="nc bnc" id="L1202" title="All 2 branches missed.">                        if (ch &lt; 32) {</span>
+<span class="nc" id="L1203">                            write('\\');</span>
+<span class="nc" id="L1204">                            write('u');</span>
+<span class="nc" id="L1205">                            write('0');</span>
+<span class="nc" id="L1206">                            write('0');</span>
+<span class="nc" id="L1207">                            write(IOUtils.ASCII_CHARS[ch * 2]);</span>
+<span class="nc" id="L1208">                            write(IOUtils.ASCII_CHARS[ch * 2 + 1]);</span>
+<span class="nc" id="L1209">                            continue;</span>
+                        }
+
+<span class="nc bnc" id="L1212" title="All 2 branches missed.">                        if (ch &gt;= 127) {</span>
+<span class="nc" id="L1213">                            write('\\');</span>
+<span class="nc" id="L1214">                            write('u');</span>
+<span class="nc" id="L1215">                            write(IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15]);</span>
+<span class="nc" id="L1216">                            write(IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15]);</span>
+<span class="nc" id="L1217">                            write(IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15]);</span>
+<span class="nc" id="L1218">                            write(IOUtils.DIGITS[ch &amp; 15]);</span>
+<span class="nc" id="L1219">                            continue;</span>
+                        }
+                    } else {
+<span class="nc bnc" id="L1222" title="All 6 branches missed.">                        if (ch &lt; IOUtils.specicalFlags_doubleQuotes.length</span>
+                                &amp;&amp; IOUtils.specicalFlags_doubleQuotes[ch] != 0 //
+<span class="nc bnc" id="L1224" title="All 2 branches missed.">                                || (ch == '/' &amp;&amp; isEnabled(SerializerFeature.WriteSlashAsSpecial))) {</span>
+<span class="nc" id="L1225">                            write('\\');</span>
+<span class="nc bnc" id="L1226" title="All 2 branches missed.">                            if (IOUtils.specicalFlags_doubleQuotes[ch] == 4) {</span>
+<span class="nc" id="L1227">                                write('u');</span>
+<span class="nc" id="L1228">                                write(IOUtils.DIGITS[ch &gt;&gt;&gt; 12 &amp; 15]);</span>
+<span class="nc" id="L1229">                                write(IOUtils.DIGITS[ch &gt;&gt;&gt; 8 &amp; 15]);</span>
+<span class="nc" id="L1230">                                write(IOUtils.DIGITS[ch &gt;&gt;&gt; 4 &amp; 15]);</span>
+<span class="nc" id="L1231">                                write(IOUtils.DIGITS[ch &amp; 15]);</span>
+                            } else {
+<span class="nc" id="L1233">                                write(IOUtils.replaceChars[ch]);</span>
+                            }
+<span class="nc" id="L1235">                            continue;</span>
+                        }
+                    }
+
+<span class="nc" id="L1239">                    write(ch);</span>
+                }
+
+<span class="nc" id="L1242">                write('&quot;');</span>
+<span class="nc bnc" id="L1243" title="All 2 branches missed.">                if (seperator != 0) {</span>
+<span class="nc" id="L1244">                    write(seperator);</span>
+                }
+<span class="nc" id="L1246">                return;</span>
+            }
+<span class="nc" id="L1248">            expandCapacity(newcount);</span>
+        }
+
+<span class="nc" id="L1251">        int start = count + 1;</span>
+<span class="nc" id="L1252">        int end = start + len;</span>
+
+<span class="nc" id="L1254">        buf[count] = '\&quot;';</span>
+//        text.getChars(0, len, buf, start);
+<span class="nc" id="L1256">        System.arraycopy(text, 0, buf, start, text.length);</span>
+
+<span class="nc" id="L1258">        count = newcount;</span>
+
+<span class="nc bnc" id="L1260" title="All 2 branches missed.">        if (isEnabled(SerializerFeature.BrowserCompatible)) {</span>
+<span class="nc" id="L1261">            int lastSpecialIndex = -1;</span>
+
+<span class="nc bnc" id="L1263" title="All 2 branches missed.">            for (int i = start; i &lt; end; ++i) {</span>
+<span class="nc" id="L1264">                char ch = buf[i];</span>
+
+<span class="nc bnc" id="L1266" title="All 6 branches missed.">                if (ch == '&quot;' //</span>
+                        || ch == '/' //
+                        || ch == '\\') {
+<span class="nc" id="L1269">                    lastSpecialIndex = i;</span>
+<span class="nc" id="L1270">                    newcount += 1;</span>
+<span class="nc" id="L1271">                    continue;</span>
+                }
+
+<span class="nc bnc" id="L1274" title="All 10 branches missed.">                if (ch == '\b' //</span>
+                        || ch == '\f' //
+                        || ch == '\n' //
+                        || ch == '\r' //
+                        || ch == '\t') {
+<span class="nc" id="L1279">                    lastSpecialIndex = i;</span>
+<span class="nc" id="L1280">                    newcount += 1;</span>
+<span class="nc" id="L1281">                    continue;</span>
+                }
+
+<span class="nc bnc" id="L1284" title="All 2 branches missed.">                if (ch &lt; 32) {</span>
+<span class="nc" id="L1285">                    lastSpecialIndex = i;</span>
+<span class="nc" id="L1286">                    newcount += 5;</span>
+<span class="nc" id="L1287">                    continue;</span>
+                }
+
+<span class="nc bnc" id="L1290" title="All 2 branches missed.">                if (ch &gt;= 127) {</span>
+<span class="nc" id="L1291">                    lastSpecialIndex = i;</span>
+<span class="nc" id="L1292">                    newcount += 5;</span>
+<span class="nc" id="L1293">                    continue;</span>
+                }
+            }
+
+<span class="nc bnc" id="L1297" title="All 2 branches missed.">            if (newcount &gt; buf.length) {</span>
+<span class="nc" id="L1298">                expandCapacity(newcount);</span>
+            }
+<span class="nc" id="L1300">            count = newcount;</span>
+
+<span class="nc bnc" id="L1302" title="All 2 branches missed.">            for (int i = lastSpecialIndex; i &gt;= start; --i) {</span>
+<span class="nc" id="L1303">                char ch = buf[i];</span>
+
+<span class="nc bnc" id="L1305" title="All 10 branches missed.">                if (ch == '\b' //</span>
+                        || ch == '\f'//
+                        || ch == '\n' //
+                        || ch == '\r' //
+                        || ch == '\t') {
+<span class="nc" id="L1310">                    System.arraycopy(buf, i + 1, buf, i + 2, end - i - 1);</span>
+<span class="nc" id="L1311">                    buf[i] = '\\';</span>
+<span class="nc" id="L1312">                    buf[i + 1] = replaceChars[(int) ch];</span>
+<span class="nc" id="L1313">                    end += 1;</span>
+<span class="nc" id="L1314">                    continue;</span>
+                }
+
+<span class="nc bnc" id="L1317" title="All 6 branches missed.">                if (ch == '&quot;' //</span>
+                        || ch == '/' //
+                        || ch == '\\') {
+<span class="nc" id="L1320">                    System.arraycopy(buf, i + 1, buf, i + 2, end - i - 1);</span>
+<span class="nc" id="L1321">                    buf[i] = '\\';</span>
+<span class="nc" id="L1322">                    buf[i + 1] = ch;</span>
+<span class="nc" id="L1323">                    end += 1;</span>
+<span class="nc" id="L1324">                    continue;</span>
+                }
+
+<span class="nc bnc" id="L1327" title="All 2 branches missed.">                if (ch &lt; 32) {</span>
+<span class="nc" id="L1328">                    System.arraycopy(buf, i + 1, buf, i + 6, end - i - 1);</span>
+<span class="nc" id="L1329">                    buf[i] = '\\';</span>
+<span class="nc" id="L1330">                    buf[i + 1] = 'u';</span>
+<span class="nc" id="L1331">                    buf[i + 2] = '0';</span>
+<span class="nc" id="L1332">                    buf[i + 3] = '0';</span>
+<span class="nc" id="L1333">                    buf[i + 4] = IOUtils.ASCII_CHARS[ch * 2];</span>
+<span class="nc" id="L1334">                    buf[i + 5] = IOUtils.ASCII_CHARS[ch * 2 + 1];</span>
+<span class="nc" id="L1335">                    end += 5;</span>
+<span class="nc" id="L1336">                    continue;</span>
+                }
+
+<span class="nc bnc" id="L1339" title="All 2 branches missed.">                if (ch &gt;= 127) {</span>
+<span class="nc" id="L1340">                    System.arraycopy(buf, i + 1, buf, i + 6, end - i - 1);</span>
+<span class="nc" id="L1341">                    buf[i] = '\\';</span>
+<span class="nc" id="L1342">                    buf[i + 1] = 'u';</span>
+<span class="nc" id="L1343">                    buf[i + 2] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="nc" id="L1344">                    buf[i + 3] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="nc" id="L1345">                    buf[i + 4] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="nc" id="L1346">                    buf[i + 5] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="nc" id="L1347">                    end += 5;</span>
+                }
+            }
+
+<span class="nc bnc" id="L1351" title="All 2 branches missed.">            if (seperator != 0) {</span>
+<span class="nc" id="L1352">                buf[count - 2] = '\&quot;';</span>
+<span class="nc" id="L1353">                buf[count - 1] = seperator;</span>
+            } else {
+<span class="nc" id="L1355">                buf[count - 1] = '\&quot;';</span>
+            }
+
+<span class="nc" id="L1358">            return;</span>
+        }
+
+<span class="nc" id="L1361">        int specialCount = 0;</span>
+<span class="nc" id="L1362">        int lastSpecialIndex = -1;</span>
+<span class="nc" id="L1363">        int firstSpecialIndex = -1;</span>
+<span class="nc" id="L1364">        char lastSpecial = '\0';</span>
+
+<span class="nc bnc" id="L1366" title="All 2 branches missed.">        for (int i = start; i &lt; end; ++i) {</span>
+<span class="nc" id="L1367">            char ch = buf[i];</span>
+
+<span class="nc bnc" id="L1369" title="All 2 branches missed.">            if (ch &gt;= ']') { // 93</span>
+<span class="nc bnc" id="L1370" title="All 8 branches missed.">                if (ch &gt;= 0x7F //</span>
+                        &amp;&amp; (ch == '\u2028' //
+                        || ch == '\u2029' //
+                        || ch &lt; 0xA0)) {
+<span class="nc bnc" id="L1374" title="All 2 branches missed.">                    if (firstSpecialIndex == -1) {</span>
+<span class="nc" id="L1375">                        firstSpecialIndex = i;</span>
+                    }
+
+<span class="nc" id="L1378">                    specialCount++;</span>
+<span class="nc" id="L1379">                    lastSpecialIndex = i;</span>
+<span class="nc" id="L1380">                    lastSpecial = ch;</span>
+<span class="nc" id="L1381">                    newcount += 4;</span>
+                }
+                continue;
+            }
+
+<span class="nc bnc" id="L1386" title="All 6 branches missed.">            boolean special = (ch &lt; 64 &amp;&amp; (sepcialBits &amp; (1L &lt;&lt; ch)) != 0) || ch == '\\';</span>
+<span class="nc bnc" id="L1387" title="All 2 branches missed.">            if (special) {</span>
+<span class="nc" id="L1388">                specialCount++;</span>
+<span class="nc" id="L1389">                lastSpecialIndex = i;</span>
+<span class="nc" id="L1390">                lastSpecial = ch;</span>
+
+<span class="nc bnc" id="L1392" title="All 12 branches missed.">                if (ch == '('</span>
+                        || ch == ')'
+                        || ch == '&lt;'
+                        || ch == '&gt;'
+                        || (ch &lt; IOUtils.specicalFlags_doubleQuotes.length //
+                        &amp;&amp; IOUtils.specicalFlags_doubleQuotes[ch] == 4) //
+                        ) {
+<span class="nc" id="L1399">                    newcount += 4;</span>
+                }
+
+<span class="nc bnc" id="L1402" title="All 2 branches missed.">                if (firstSpecialIndex == -1) {</span>
+<span class="nc" id="L1403">                    firstSpecialIndex = i;</span>
+                }
+            }
+        }
+
+<span class="nc bnc" id="L1408" title="All 2 branches missed.">        if (specialCount &gt; 0) {</span>
+<span class="nc" id="L1409">            newcount += specialCount;</span>
+<span class="nc bnc" id="L1410" title="All 2 branches missed.">            if (newcount &gt; buf.length) {</span>
+<span class="nc" id="L1411">                expandCapacity(newcount);</span>
+            }
+<span class="nc" id="L1413">            count = newcount;</span>
+
+<span class="nc bnc" id="L1415" title="All 2 branches missed.">            if (specialCount == 1) {</span>
+<span class="nc bnc" id="L1416" title="All 2 branches missed.">                if (lastSpecial == '\u2028') {</span>
+<span class="nc" id="L1417">                    int srcPos = lastSpecialIndex + 1;</span>
+<span class="nc" id="L1418">                    int destPos = lastSpecialIndex + 6;</span>
+<span class="nc" id="L1419">                    int LengthOfCopy = end - lastSpecialIndex - 1;</span>
+<span class="nc" id="L1420">                    System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+<span class="nc" id="L1421">                    buf[lastSpecialIndex] = '\\';</span>
+<span class="nc" id="L1422">                    buf[++lastSpecialIndex] = 'u';</span>
+<span class="nc" id="L1423">                    buf[++lastSpecialIndex] = '2';</span>
+<span class="nc" id="L1424">                    buf[++lastSpecialIndex] = '0';</span>
+<span class="nc" id="L1425">                    buf[++lastSpecialIndex] = '2';</span>
+<span class="nc" id="L1426">                    buf[++lastSpecialIndex] = '8';</span>
+<span class="nc bnc" id="L1427" title="All 2 branches missed.">                } else if (lastSpecial == '\u2029') {</span>
+<span class="nc" id="L1428">                    int srcPos = lastSpecialIndex + 1;</span>
+<span class="nc" id="L1429">                    int destPos = lastSpecialIndex + 6;</span>
+<span class="nc" id="L1430">                    int LengthOfCopy = end - lastSpecialIndex - 1;</span>
+<span class="nc" id="L1431">                    System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+<span class="nc" id="L1432">                    buf[lastSpecialIndex] = '\\';</span>
+<span class="nc" id="L1433">                    buf[++lastSpecialIndex] = 'u';</span>
+<span class="nc" id="L1434">                    buf[++lastSpecialIndex] = '2';</span>
+<span class="nc" id="L1435">                    buf[++lastSpecialIndex] = '0';</span>
+<span class="nc" id="L1436">                    buf[++lastSpecialIndex] = '2';</span>
+<span class="nc" id="L1437">                    buf[++lastSpecialIndex] = '9';</span>
+<span class="nc bnc" id="L1438" title="All 8 branches missed.">                } else if (lastSpecial == '(' || lastSpecial == ')' || lastSpecial == '&lt;' || lastSpecial == '&gt;') {</span>
+<span class="nc" id="L1439">                    int srcPos = lastSpecialIndex + 1;</span>
+<span class="nc" id="L1440">                    int destPos = lastSpecialIndex + 6;</span>
+<span class="nc" id="L1441">                    int LengthOfCopy = end - lastSpecialIndex - 1;</span>
+<span class="nc" id="L1442">                    System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+<span class="nc" id="L1443">                    buf[lastSpecialIndex] = '\\';</span>
+<span class="nc" id="L1444">                    buf[++lastSpecialIndex] = 'u';</span>
+
+<span class="nc" id="L1446">                    final char ch = lastSpecial;</span>
+<span class="nc" id="L1447">                    buf[++lastSpecialIndex] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="nc" id="L1448">                    buf[++lastSpecialIndex] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="nc" id="L1449">                    buf[++lastSpecialIndex] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="nc" id="L1450">                    buf[++lastSpecialIndex] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="nc" id="L1451">                } else {</span>
+<span class="nc" id="L1452">                    final char ch = lastSpecial;</span>
+<span class="nc bnc" id="L1453" title="All 4 branches missed.">                    if (ch &lt; IOUtils.specicalFlags_doubleQuotes.length //</span>
+                            &amp;&amp; IOUtils.specicalFlags_doubleQuotes[ch] == 4) {
+<span class="nc" id="L1455">                        int srcPos = lastSpecialIndex + 1;</span>
+<span class="nc" id="L1456">                        int destPos = lastSpecialIndex + 6;</span>
+<span class="nc" id="L1457">                        int LengthOfCopy = end - lastSpecialIndex - 1;</span>
+<span class="nc" id="L1458">                        System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+
+<span class="nc" id="L1460">                        int bufIndex = lastSpecialIndex;</span>
+<span class="nc" id="L1461">                        buf[bufIndex++] = '\\';</span>
+<span class="nc" id="L1462">                        buf[bufIndex++] = 'u';</span>
+<span class="nc" id="L1463">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="nc" id="L1464">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="nc" id="L1465">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="nc" id="L1466">                        buf[bufIndex++] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="nc" id="L1467">                    } else {</span>
+<span class="nc" id="L1468">                        int srcPos = lastSpecialIndex + 1;</span>
+<span class="nc" id="L1469">                        int destPos = lastSpecialIndex + 2;</span>
+<span class="nc" id="L1470">                        int LengthOfCopy = end - lastSpecialIndex - 1;</span>
+<span class="nc" id="L1471">                        System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+<span class="nc" id="L1472">                        buf[lastSpecialIndex] = '\\';</span>
+<span class="nc" id="L1473">                        buf[++lastSpecialIndex] = replaceChars[(int) ch];</span>
+                    }
+<span class="nc" id="L1475">                }</span>
+<span class="nc bnc" id="L1476" title="All 2 branches missed.">            } else if (specialCount &gt; 1) {</span>
+<span class="nc" id="L1477">                int textIndex = firstSpecialIndex - start;</span>
+<span class="nc" id="L1478">                int bufIndex = firstSpecialIndex;</span>
+<span class="nc bnc" id="L1479" title="All 2 branches missed.">                for (int i = textIndex; i &lt; text.length; ++i) {</span>
+<span class="nc" id="L1480">                    char ch = text[i];</span>
+
+<span class="nc bnc" id="L1482" title="All 10 branches missed.">                    if (browserSecure &amp;&amp; (ch == '('</span>
+                            || ch == ')'
+                            || ch == '&lt;'
+                            || ch == '&gt;')) {
+<span class="nc" id="L1486">                        buf[bufIndex++] = '\\';</span>
+<span class="nc" id="L1487">                        buf[bufIndex++] = 'u';</span>
+<span class="nc" id="L1488">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="nc" id="L1489">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="nc" id="L1490">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="nc" id="L1491">                        buf[bufIndex++] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="nc" id="L1492">                        end += 5;</span>
+<span class="nc bnc" id="L1493" title="All 6 branches missed.">                    } else if (ch &lt; IOUtils.specicalFlags_doubleQuotes.length //</span>
+                            &amp;&amp; IOUtils.specicalFlags_doubleQuotes[ch] != 0 //
+<span class="nc bnc" id="L1495" title="All 2 branches missed.">                            || (ch == '/' &amp;&amp; isEnabled(SerializerFeature.WriteSlashAsSpecial))) {</span>
+<span class="nc" id="L1496">                        buf[bufIndex++] = '\\';</span>
+<span class="nc bnc" id="L1497" title="All 2 branches missed.">                        if (IOUtils.specicalFlags_doubleQuotes[ch] == 4) {</span>
+<span class="nc" id="L1498">                            buf[bufIndex++] = 'u';</span>
+<span class="nc" id="L1499">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="nc" id="L1500">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="nc" id="L1501">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="nc" id="L1502">                            buf[bufIndex++] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="nc" id="L1503">                            end += 5;</span>
+                        } else {
+<span class="nc" id="L1505">                            buf[bufIndex++] = replaceChars[(int) ch];</span>
+<span class="nc" id="L1506">                            end++;</span>
+                        }
+                    } else {
+<span class="nc bnc" id="L1509" title="All 4 branches missed.">                        if (ch == '\u2028' || ch == '\u2029') {</span>
+<span class="nc" id="L1510">                            buf[bufIndex++] = '\\';</span>
+<span class="nc" id="L1511">                            buf[bufIndex++] = 'u';</span>
+<span class="nc" id="L1512">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="nc" id="L1513">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="nc" id="L1514">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="nc" id="L1515">                            buf[bufIndex++] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="nc" id="L1516">                            end += 5;</span>
+                        } else {
+<span class="nc" id="L1518">                            buf[bufIndex++] = ch;</span>
+                        }
+                    }
+                }
+            }
+        }
+
+<span class="nc bnc" id="L1525" title="All 2 branches missed.">        if (seperator != 0) {</span>
+<span class="nc" id="L1526">            buf[count - 2] = '\&quot;';</span>
+<span class="nc" id="L1527">            buf[count - 1] = seperator;</span>
+        } else {
+<span class="nc" id="L1529">            buf[count - 1] = '\&quot;';</span>
+        }
+<span class="nc" id="L1531">    }</span>
+    
+    public void writeFieldNameDirect(String text) {
+<span class="fc" id="L1534">        int len = text.length();</span>
+<span class="fc" id="L1535">        int newcount = count + len + 3;</span>
+
+<span class="pc bpc" id="L1537" title="1 of 2 branches missed.">        if (newcount &gt; buf.length) {</span>
+<span class="nc" id="L1538">            expandCapacity(newcount);</span>
+        }
+
+<span class="fc" id="L1541">        int start = count + 1;</span>
+
+<span class="fc" id="L1543">        buf[count] = '\&quot;';</span>
+<span class="fc" id="L1544">        text.getChars(0, len, buf, start);</span>
+
+<span class="fc" id="L1546">        count = newcount;</span>
+<span class="fc" id="L1547">        buf[count - 2] = '\&quot;';</span>
+<span class="fc" id="L1548">        buf[count - 1] = ':';</span>
+<span class="fc" id="L1549">    }</span>
+
+    public void write(List&lt;String&gt; list) {
+<span class="pc bpc" id="L1552" title="1 of 2 branches missed.">        if (list.isEmpty()) {</span>
+<span class="nc" id="L1553">            write(&quot;[]&quot;);</span>
+<span class="nc" id="L1554">            return;</span>
+        }
+
+<span class="fc" id="L1557">        int offset = count;</span>
+<span class="fc" id="L1558">        final int initOffset = offset;</span>
+<span class="fc bfc" id="L1559" title="All 2 branches covered.">        for (int i = 0, list_size = list.size(); i &lt; list_size; ++i) {</span>
+<span class="fc" id="L1560">            String text = list.get(i);</span>
+
+<span class="fc" id="L1562">            boolean hasSpecial = false;</span>
+<span class="fc bfc" id="L1563" title="All 2 branches covered.">            if (text == null) {</span>
+<span class="fc" id="L1564">                hasSpecial = true;</span>
+            } else {
+<span class="fc bfc" id="L1566" title="All 2 branches covered.">                for (int j = 0, len = text.length(); j &lt; len; ++j) {</span>
+<span class="fc" id="L1567">                    char ch = text.charAt(j);</span>
+<span class="pc bpc" id="L1568" title="5 of 10 branches missed.">                    if (hasSpecial = (ch &lt; ' ' //</span>
+                                      || ch &gt; '~' //
+                                      || ch == '&quot;' //
+                                      || ch == '\\')) {
+<span class="nc" id="L1572">                        break;</span>
+                    }
+                }
+            }
+
+<span class="fc bfc" id="L1577" title="All 2 branches covered.">            if (hasSpecial) {</span>
+<span class="fc" id="L1578">                count = initOffset;</span>
+<span class="fc" id="L1579">                write('[');</span>
+<span class="fc bfc" id="L1580" title="All 2 branches covered.">                for (int j = 0; j &lt; list.size(); ++j) {</span>
+<span class="fc" id="L1581">                    text = list.get(j);</span>
+<span class="fc bfc" id="L1582" title="All 2 branches covered.">                    if (j != 0) {</span>
+<span class="fc" id="L1583">                        write(',');</span>
+                    }
+
+<span class="fc bfc" id="L1586" title="All 2 branches covered.">                    if (text == null) {</span>
+<span class="fc" id="L1587">                        write(&quot;null&quot;);</span>
+                    } else {
+<span class="fc" id="L1589">                        writeStringWithDoubleQuote(text, (char) 0);</span>
+                    }
+                }
+<span class="fc" id="L1592">                write(']');</span>
+<span class="fc" id="L1593">                return;</span>
+            }
+
+<span class="fc" id="L1596">            int newcount = offset + text.length() + 3;</span>
+<span class="fc bfc" id="L1597" title="All 2 branches covered.">            if (i == list.size() - 1) {</span>
+<span class="fc" id="L1598">                newcount++;</span>
+            }
+<span class="pc bpc" id="L1600" title="1 of 2 branches missed.">            if (newcount &gt; buf.length) {</span>
+<span class="nc" id="L1601">                count = offset;</span>
+<span class="nc" id="L1602">                expandCapacity(newcount);</span>
+            }
+
+<span class="fc bfc" id="L1605" title="All 2 branches covered.">            if (i == 0) {</span>
+<span class="fc" id="L1606">                buf[offset++] = '[';</span>
+            } else {
+<span class="fc" id="L1608">                buf[offset++] = ',';</span>
+            }
+<span class="fc" id="L1610">            buf[offset++] = '&quot;';</span>
+<span class="fc" id="L1611">            text.getChars(0, text.length(), buf, offset);</span>
+<span class="fc" id="L1612">            offset += text.length();</span>
+<span class="fc" id="L1613">            buf[offset++] = '&quot;';</span>
+        }
+<span class="fc" id="L1615">        buf[offset++] = ']';</span>
+<span class="fc" id="L1616">        count = offset;</span>
+<span class="fc" id="L1617">    }</span>
+
+    
+    public void writeFieldValue(char seperator, String name, char value) {
+<span class="fc" id="L1621">        write(seperator);</span>
+<span class="fc" id="L1622">        writeFieldName(name);</span>
+<span class="pc bpc" id="L1623" title="1 of 2 branches missed.">        if (value == 0) {</span>
+<span class="fc" id="L1624">            writeString(&quot;\u0000&quot;);</span>
+        } else {
+<span class="nc" id="L1626">            writeString(Character.toString(value));</span>
+        }
+<span class="fc" id="L1628">    }</span>
+
+    public void writeFieldValue(char seperator, String name, boolean value) {
+<span class="fc bfc" id="L1631" title="All 2 branches covered.">        if (!quoteFieldNames) {</span>
+<span class="fc" id="L1632">            write(seperator);</span>
+<span class="fc" id="L1633">            writeFieldName(name);</span>
+<span class="fc" id="L1634">            write(value);</span>
+<span class="fc" id="L1635">            return;</span>
+        }
+<span class="fc bfc" id="L1637" title="All 2 branches covered.">        int intSize = value ? 4 : 5;</span>
+
+<span class="fc" id="L1639">        int nameLen = name.length();</span>
+<span class="fc" id="L1640">        int newcount = count + nameLen + 4 + intSize;</span>
+<span class="fc bfc" id="L1641" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="fc bfc" id="L1642" title="All 2 branches covered.">            if (writer != null) {</span>
+<span class="fc" id="L1643">                write(seperator);</span>
+<span class="fc" id="L1644">                writeString(name);</span>
+<span class="fc" id="L1645">                write(':');</span>
+<span class="fc" id="L1646">                write(value);</span>
+<span class="fc" id="L1647">                return;</span>
+            }
+<span class="fc" id="L1649">            expandCapacity(newcount);</span>
+        }
+
+<span class="fc" id="L1652">        int start = count;</span>
+<span class="fc" id="L1653">        count = newcount;</span>
+
+<span class="fc" id="L1655">        buf[start] = seperator;</span>
+
+<span class="fc" id="L1657">        int nameEnd = start + nameLen + 1;</span>
+
+<span class="fc" id="L1659">        buf[start + 1] = keySeperator;</span>
+
+<span class="fc" id="L1661">        name.getChars(0, nameLen, buf, start + 2);</span>
+
+<span class="fc" id="L1663">        buf[nameEnd + 1] = keySeperator;</span>
+
+<span class="fc bfc" id="L1665" title="All 2 branches covered.">        if (value) {</span>
+<span class="fc" id="L1666">            System.arraycopy(&quot;:true&quot;.toCharArray(), 0, buf, nameEnd + 2, 5);</span>
+        } else {
+<span class="fc" id="L1668">            System.arraycopy(&quot;:false&quot;.toCharArray(), 0, buf, nameEnd + 2, 6);</span>
+        }
+<span class="fc" id="L1670">    }</span>
+
+    public void write(boolean value) {
+<span class="fc bfc" id="L1673" title="All 2 branches covered.">        if (value) {</span>
+<span class="fc" id="L1674">            write(&quot;true&quot;);</span>
+        } else {
+<span class="fc" id="L1676">            write(&quot;false&quot;);</span>
+        }
+<span class="fc" id="L1678">    }</span>
+
+    public void writeFieldValue(char seperator, String name, int value) {
+<span class="pc bpc" id="L1681" title="1 of 4 branches missed.">        if (value == Integer.MIN_VALUE || !quoteFieldNames) {</span>
+<span class="fc" id="L1682">            write(seperator);</span>
+<span class="fc" id="L1683">            writeFieldName(name);</span>
+<span class="fc" id="L1684">            writeInt(value);</span>
+<span class="fc" id="L1685">            return;</span>
+        }
+
+<span class="fc bfc" id="L1688" title="All 2 branches covered.">        int intSize = (value &lt; 0) ? IOUtils.stringSize(-value) + 1 : IOUtils.stringSize(value);</span>
+
+<span class="fc" id="L1690">        int nameLen = name.length();</span>
+<span class="fc" id="L1691">        int newcount = count + nameLen + 4 + intSize;</span>
+<span class="fc bfc" id="L1692" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="fc bfc" id="L1693" title="All 2 branches covered.">            if (writer != null) {</span>
+<span class="fc" id="L1694">                write(seperator);</span>
+<span class="fc" id="L1695">                writeFieldName(name);</span>
+<span class="fc" id="L1696">                writeInt(value);</span>
+<span class="fc" id="L1697">                return;</span>
+            }
+<span class="fc" id="L1699">            expandCapacity(newcount);</span>
+        }
+
+<span class="fc" id="L1702">        int start = count;</span>
+<span class="fc" id="L1703">        count = newcount;</span>
+
+<span class="fc" id="L1705">        buf[start] = seperator;</span>
+
+<span class="fc" id="L1707">        int nameEnd = start + nameLen + 1;</span>
+
+<span class="fc" id="L1709">        buf[start + 1] = keySeperator;</span>
+
+<span class="fc" id="L1711">        name.getChars(0, nameLen, buf, start + 2);</span>
+
+<span class="fc" id="L1713">        buf[nameEnd + 1] = keySeperator;</span>
+<span class="fc" id="L1714">        buf[nameEnd + 2] = ':';</span>
+
+<span class="fc" id="L1716">        IOUtils.getChars(value, count, buf);</span>
+<span class="fc" id="L1717">    }</span>
+
+    public void writeFieldValue(char seperator, String name, long value) {
+<span class="pc bpc" id="L1720" title="2 of 4 branches missed.">        if (value == Long.MIN_VALUE || !quoteFieldNames) {</span>
+<span class="nc" id="L1721">            write(seperator);</span>
+<span class="nc" id="L1722">            writeFieldName(name);</span>
+<span class="nc" id="L1723">            writeLong(value);</span>
+<span class="nc" id="L1724">            return;</span>
+        }
+
+<span class="pc bpc" id="L1727" title="1 of 2 branches missed.">        int intSize = (value &lt; 0) ? IOUtils.stringSize(-value) + 1 : IOUtils.stringSize(value);</span>
+
+<span class="fc" id="L1729">        int nameLen = name.length();</span>
+<span class="fc" id="L1730">        int newcount = count + nameLen + 4 + intSize;</span>
+<span class="fc bfc" id="L1731" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="pc bpc" id="L1732" title="1 of 2 branches missed.">            if (writer != null) {</span>
+<span class="fc" id="L1733">                write(seperator);</span>
+<span class="fc" id="L1734">                writeFieldName(name);</span>
+<span class="fc" id="L1735">                writeLong(value);</span>
+<span class="fc" id="L1736">                return;</span>
+            }
+<span class="nc" id="L1738">            expandCapacity(newcount);</span>
+        }
+
+<span class="fc" id="L1741">        int start = count;</span>
+<span class="fc" id="L1742">        count = newcount;</span>
+
+<span class="fc" id="L1744">        buf[start] = seperator;</span>
+
+<span class="fc" id="L1746">        int nameEnd = start + nameLen + 1;</span>
+
+<span class="fc" id="L1748">        buf[start + 1] = keySeperator;</span>
+
+<span class="fc" id="L1750">        name.getChars(0, nameLen, buf, start + 2);</span>
+
+<span class="fc" id="L1752">        buf[nameEnd + 1] = keySeperator;</span>
+<span class="fc" id="L1753">        buf[nameEnd + 2] = ':';</span>
+
+<span class="fc" id="L1755">        IOUtils.getChars(value, count, buf);</span>
+<span class="fc" id="L1756">    }</span>
+
+    public void writeFieldValue(char seperator, String name, float value) {
+<span class="fc" id="L1759">        write(seperator);</span>
+<span class="fc" id="L1760">        writeFieldName(name);</span>
+<span class="fc" id="L1761">        writeFloat(value, false);</span>
+<span class="fc" id="L1762">    }</span>
+
+    public void writeFieldValue(char seperator, String name, double value) {
+<span class="fc" id="L1765">        write(seperator);</span>
+<span class="fc" id="L1766">        writeFieldName(name);</span>
+<span class="fc" id="L1767">        writeDouble(value, false);</span>
+<span class="fc" id="L1768">    }</span>
+
+    public void writeFieldValue(char seperator, String name, String value) {
+<span class="fc bfc" id="L1771" title="All 2 branches covered.">        if (quoteFieldNames) {</span>
+<span class="fc bfc" id="L1772" title="All 2 branches covered.">            if (useSingleQuotes) {</span>
+<span class="fc" id="L1773">                write(seperator);</span>
+<span class="fc" id="L1774">                writeFieldName(name);</span>
+<span class="fc bfc" id="L1775" title="All 2 branches covered.">                if (value == null) {</span>
+<span class="fc" id="L1776">                    writeNull();</span>
+                } else {
+<span class="fc" id="L1778">                    writeString(value);</span>
+                }
+            } else {
+<span class="fc bfc" id="L1781" title="All 2 branches covered.">                if (isEnabled(SerializerFeature.BrowserCompatible)) {</span>
+<span class="fc" id="L1782">                    write(seperator);</span>
+<span class="fc" id="L1783">                    writeStringWithDoubleQuote(name, ':');</span>
+<span class="fc" id="L1784">                    writeStringWithDoubleQuote(value, (char) 0);</span>
+                } else {
+<span class="fc" id="L1786">                    writeFieldValueStringWithDoubleQuoteCheck(seperator, name, value);</span>
+                }
+            }
+        } else {
+<span class="fc" id="L1790">            write(seperator);</span>
+<span class="fc" id="L1791">            writeFieldName(name);</span>
+<span class="fc bfc" id="L1792" title="All 2 branches covered.">            if (value == null) {</span>
+<span class="fc" id="L1793">                writeNull();</span>
+            } else {
+<span class="fc" id="L1795">                writeString(value);</span>
+            }
+        }
+<span class="fc" id="L1798">    }</span>
+
+    public void writeFieldValueStringWithDoubleQuoteCheck(char seperator, String name, String value) {
+<span class="fc" id="L1801">        int nameLen = name.length();</span>
+        int valueLen;
+
+<span class="fc" id="L1804">        int newcount = count;</span>
+
+<span class="fc bfc" id="L1806" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L1807">            valueLen = 4;</span>
+<span class="fc" id="L1808">            newcount += nameLen + 8;</span>
+        } else {
+<span class="fc" id="L1810">            valueLen = value.length();</span>
+<span class="fc" id="L1811">            newcount += nameLen + valueLen + 6;</span>
+        }
+
+<span class="fc bfc" id="L1814" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="fc bfc" id="L1815" title="All 2 branches covered.">            if (writer != null) {</span>
+<span class="fc" id="L1816">                write(seperator);</span>
+<span class="fc" id="L1817">                writeStringWithDoubleQuote(name, ':');</span>
+<span class="fc" id="L1818">                writeStringWithDoubleQuote(value, (char) 0);</span>
+<span class="fc" id="L1819">                return;</span>
+            }
+<span class="fc" id="L1821">            expandCapacity(newcount);</span>
+        }
+
+<span class="fc" id="L1824">        buf[count] = seperator;</span>
+
+<span class="fc" id="L1826">        int nameStart = count + 2;</span>
+<span class="fc" id="L1827">        int nameEnd = nameStart + nameLen;</span>
+
+<span class="fc" id="L1829">        buf[count + 1] = '\&quot;';</span>
+<span class="fc" id="L1830">        name.getChars(0, nameLen, buf, nameStart);</span>
+
+<span class="fc" id="L1832">        count = newcount;</span>
+
+<span class="fc" id="L1834">        buf[nameEnd] = '\&quot;';</span>
+
+<span class="fc" id="L1836">        int index = nameEnd + 1;</span>
+<span class="fc" id="L1837">        buf[index++] = ':';</span>
+
+<span class="fc bfc" id="L1839" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L1840">            buf[index++] = 'n';</span>
+<span class="fc" id="L1841">            buf[index++] = 'u';</span>
+<span class="fc" id="L1842">            buf[index++] = 'l';</span>
+<span class="fc" id="L1843">            buf[index++] = 'l';</span>
+<span class="fc" id="L1844">            return;</span>
+        }
+
+<span class="fc" id="L1847">        buf[index++] = '&quot;';</span>
+
+<span class="fc" id="L1849">        int valueStart = index;</span>
+<span class="fc" id="L1850">        int valueEnd = valueStart + valueLen;</span>
+
+<span class="fc" id="L1852">        value.getChars(0, valueLen, buf, valueStart);</span>
+
+<span class="fc" id="L1854">        int specialCount = 0;</span>
+<span class="fc" id="L1855">        int lastSpecialIndex = -1;</span>
+<span class="fc" id="L1856">        int firstSpecialIndex = -1;</span>
+<span class="fc" id="L1857">        char lastSpecial = '\0';</span>
+
+<span class="fc bfc" id="L1859" title="All 2 branches covered.">        for (int i = valueStart; i &lt; valueEnd; ++i) {</span>
+<span class="fc" id="L1860">            char ch = buf[i];</span>
+
+<span class="fc bfc" id="L1862" title="All 2 branches covered.">            if (ch &gt;= ']') {</span>
+<span class="pc bpc" id="L1863" title="1 of 8 branches missed.">                if (ch &gt;= 0x7F //</span>
+                    &amp;&amp; (ch == '\u2028' //
+                        || ch == '\u2029' //
+                        || ch &lt; 0xA0)) {
+<span class="fc bfc" id="L1867" title="All 2 branches covered.">                    if (firstSpecialIndex == -1) {</span>
+<span class="fc" id="L1868">                        firstSpecialIndex = i;</span>
+                    }
+
+<span class="fc" id="L1871">                    specialCount++;</span>
+<span class="fc" id="L1872">                    lastSpecialIndex = i;</span>
+<span class="fc" id="L1873">                    lastSpecial = ch;</span>
+<span class="fc" id="L1874">                    newcount += 4;</span>
+                }
+                continue;
+            }
+
+<span class="fc bfc" id="L1879" title="All 6 branches covered.">            boolean special = (ch &lt; 64 &amp;&amp; (sepcialBits &amp; (1L &lt;&lt; ch)) != 0) || ch == '\\';</span>
+<span class="fc bfc" id="L1880" title="All 2 branches covered.">            if (special) {</span>
+<span class="fc" id="L1881">                specialCount++;</span>
+<span class="fc" id="L1882">                lastSpecialIndex = i;</span>
+<span class="fc" id="L1883">                lastSpecial = ch;</span>
+
+<span class="pc bpc" id="L1885" title="5 of 12 branches missed.">                if (ch == '('</span>
+                        || ch == ')'
+                        || ch == '&lt;'
+                        || ch == '&gt;'
+                        || (ch &lt; IOUtils.specicalFlags_doubleQuotes.length //
+                        &amp;&amp; IOUtils.specicalFlags_doubleQuotes[ch] == 4) //
+                        ) {
+<span class="fc" id="L1892">                    newcount += 4;</span>
+                }
+
+<span class="fc bfc" id="L1895" title="All 2 branches covered.">                if (firstSpecialIndex == -1) {</span>
+<span class="fc" id="L1896">                    firstSpecialIndex = i;</span>
+                }
+            }
+        }
+
+<span class="fc bfc" id="L1901" title="All 2 branches covered.">        if (specialCount &gt; 0) {</span>
+<span class="fc" id="L1902">            newcount += specialCount;</span>
+<span class="fc bfc" id="L1903" title="All 2 branches covered.">            if (newcount &gt; buf.length) {</span>
+<span class="fc" id="L1904">                expandCapacity(newcount);</span>
+            }
+<span class="fc" id="L1906">            count = newcount;</span>
+
+<span class="fc bfc" id="L1908" title="All 2 branches covered.">            if (specialCount == 1) {</span>
+<span class="pc bpc" id="L1909" title="1 of 2 branches missed.">                if (lastSpecial == '\u2028') {</span>
+<span class="nc" id="L1910">                    int srcPos = lastSpecialIndex + 1;</span>
+<span class="nc" id="L1911">                    int destPos = lastSpecialIndex + 6;</span>
+<span class="nc" id="L1912">                    int LengthOfCopy = valueEnd - lastSpecialIndex - 1;</span>
+<span class="nc" id="L1913">                    System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+<span class="nc" id="L1914">                    buf[lastSpecialIndex] = '\\';</span>
+<span class="nc" id="L1915">                    buf[++lastSpecialIndex] = 'u';</span>
+<span class="nc" id="L1916">                    buf[++lastSpecialIndex] = '2';</span>
+<span class="nc" id="L1917">                    buf[++lastSpecialIndex] = '0';</span>
+<span class="nc" id="L1918">                    buf[++lastSpecialIndex] = '2';</span>
+<span class="nc" id="L1919">                    buf[++lastSpecialIndex] = '8';</span>
+<span class="pc bpc" id="L1920" title="1 of 2 branches missed.">                } else if (lastSpecial == '\u2029') {</span>
+<span class="nc" id="L1921">                    int srcPos = lastSpecialIndex + 1;</span>
+<span class="nc" id="L1922">                    int destPos = lastSpecialIndex + 6;</span>
+<span class="nc" id="L1923">                    int LengthOfCopy = valueEnd - lastSpecialIndex - 1;</span>
+<span class="nc" id="L1924">                    System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+<span class="nc" id="L1925">                    buf[lastSpecialIndex] = '\\';</span>
+<span class="nc" id="L1926">                    buf[++lastSpecialIndex] = 'u';</span>
+<span class="nc" id="L1927">                    buf[++lastSpecialIndex] = '2';</span>
+<span class="nc" id="L1928">                    buf[++lastSpecialIndex] = '0';</span>
+<span class="nc" id="L1929">                    buf[++lastSpecialIndex] = '2';</span>
+<span class="nc" id="L1930">                    buf[++lastSpecialIndex] = '9';</span>
+<span class="pc bpc" id="L1931" title="4 of 8 branches missed.">                } else if (lastSpecial == '(' || lastSpecial == ')' || lastSpecial == '&lt;' || lastSpecial == '&gt;') {</span>
+<span class="nc" id="L1932">                    final char ch = lastSpecial;</span>
+<span class="nc" id="L1933">                    int srcPos = lastSpecialIndex + 1;</span>
+<span class="nc" id="L1934">                    int destPos = lastSpecialIndex + 6;</span>
+<span class="nc" id="L1935">                    int LengthOfCopy = valueEnd - lastSpecialIndex - 1;</span>
+<span class="nc" id="L1936">                    System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+
+<span class="nc" id="L1938">                    int bufIndex = lastSpecialIndex;</span>
+<span class="nc" id="L1939">                    buf[bufIndex++] = '\\';</span>
+<span class="nc" id="L1940">                    buf[bufIndex++] = 'u';</span>
+<span class="nc" id="L1941">                    buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="nc" id="L1942">                    buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="nc" id="L1943">                    buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="nc" id="L1944">                    buf[bufIndex++] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="nc" id="L1945">                } else {</span>
+<span class="fc" id="L1946">                    final char ch = lastSpecial;</span>
+<span class="pc bpc" id="L1947" title="2 of 4 branches missed.">                    if (ch &lt; IOUtils.specicalFlags_doubleQuotes.length //</span>
+                        &amp;&amp; IOUtils.specicalFlags_doubleQuotes[ch] == 4) {
+<span class="nc" id="L1949">                        int srcPos = lastSpecialIndex + 1;</span>
+<span class="nc" id="L1950">                        int destPos = lastSpecialIndex + 6;</span>
+<span class="nc" id="L1951">                        int LengthOfCopy = valueEnd - lastSpecialIndex - 1;</span>
+<span class="nc" id="L1952">                        System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+
+<span class="nc" id="L1954">                        int bufIndex = lastSpecialIndex;</span>
+<span class="nc" id="L1955">                        buf[bufIndex++] = '\\';</span>
+<span class="nc" id="L1956">                        buf[bufIndex++] = 'u';</span>
+<span class="nc" id="L1957">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="nc" id="L1958">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="nc" id="L1959">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="nc" id="L1960">                        buf[bufIndex++] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="nc" id="L1961">                    } else {</span>
+<span class="fc" id="L1962">                        int srcPos = lastSpecialIndex + 1;</span>
+<span class="fc" id="L1963">                        int destPos = lastSpecialIndex + 2;</span>
+<span class="fc" id="L1964">                        int LengthOfCopy = valueEnd - lastSpecialIndex - 1;</span>
+<span class="fc" id="L1965">                        System.arraycopy(buf, srcPos, buf, destPos, LengthOfCopy);</span>
+<span class="fc" id="L1966">                        buf[lastSpecialIndex] = '\\';</span>
+<span class="fc" id="L1967">                        buf[++lastSpecialIndex] = replaceChars[(int) ch];</span>
+                    }
+<span class="fc" id="L1969">                }</span>
+<span class="pc bpc" id="L1970" title="1 of 2 branches missed.">            } else if (specialCount &gt; 1) {</span>
+<span class="fc" id="L1971">                int textIndex = firstSpecialIndex - valueStart;</span>
+<span class="fc" id="L1972">                int bufIndex = firstSpecialIndex;</span>
+<span class="fc bfc" id="L1973" title="All 2 branches covered.">                for (int i = textIndex; i &lt; value.length(); ++i) {</span>
+<span class="fc" id="L1974">                    char ch = value.charAt(i);</span>
+
+<span class="pc bpc" id="L1976" title="9 of 10 branches missed.">                    if (browserSecure &amp;&amp; (ch == '('</span>
+                            || ch == ')'
+                            || ch == '&lt;'
+                            || ch == '&gt;')) {
+<span class="nc" id="L1980">                        buf[bufIndex++] = '\\';</span>
+<span class="nc" id="L1981">                        buf[bufIndex++] = 'u';</span>
+<span class="nc" id="L1982">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="nc" id="L1983">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="nc" id="L1984">                        buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="nc" id="L1985">                        buf[bufIndex++] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="nc" id="L1986">                        valueEnd += 5;</span>
+<span class="pc bpc" id="L1987" title="1 of 6 branches missed.">                    } else if (ch &lt; IOUtils.specicalFlags_doubleQuotes.length //</span>
+                        &amp;&amp; IOUtils.specicalFlags_doubleQuotes[ch] != 0 //
+<span class="nc bnc" id="L1989" title="All 2 branches missed.">                        || (ch == '/' &amp;&amp; isEnabled(SerializerFeature.WriteSlashAsSpecial))) {</span>
+<span class="fc" id="L1990">                        buf[bufIndex++] = '\\';</span>
+<span class="fc bfc" id="L1991" title="All 2 branches covered.">                        if (IOUtils.specicalFlags_doubleQuotes[ch] == 4) {</span>
+<span class="fc" id="L1992">                            buf[bufIndex++] = 'u';</span>
+<span class="fc" id="L1993">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="fc" id="L1994">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="fc" id="L1995">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="fc" id="L1996">                            buf[bufIndex++] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="fc" id="L1997">                            valueEnd += 5;</span>
+                        } else {
+<span class="fc" id="L1999">                            buf[bufIndex++] = replaceChars[(int) ch];</span>
+<span class="fc" id="L2000">                            valueEnd++;</span>
+                        }
+                    } else {
+<span class="fc bfc" id="L2003" title="All 4 branches covered.">                        if (ch == '\u2028' || ch == '\u2029') {</span>
+<span class="fc" id="L2004">                            buf[bufIndex++] = '\\';</span>
+<span class="fc" id="L2005">                            buf[bufIndex++] = 'u';</span>
+<span class="fc" id="L2006">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 12) &amp; 15];</span>
+<span class="fc" id="L2007">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 8) &amp; 15];</span>
+<span class="fc" id="L2008">                            buf[bufIndex++] = IOUtils.DIGITS[(ch &gt;&gt;&gt; 4) &amp; 15];</span>
+<span class="fc" id="L2009">                            buf[bufIndex++] = IOUtils.DIGITS[ch &amp; 15];</span>
+<span class="fc" id="L2010">                            valueEnd += 5;</span>
+                        } else {
+<span class="fc" id="L2012">                            buf[bufIndex++] = ch;</span>
+                        }
+                    }
+                }
+            }
+        }
+        
+
+<span class="fc" id="L2020">        buf[count - 1] = '\&quot;';</span>
+<span class="fc" id="L2021">    }</span>
+
+    public void writeFieldValueStringWithDoubleQuote(char seperator, String name, String value) {
+<span class="fc" id="L2024">        int nameLen = name.length();</span>
+        int valueLen;
+
+<span class="fc" id="L2027">        int newcount = count;</span>
+
+<span class="fc" id="L2029">        valueLen = value.length();</span>
+<span class="fc" id="L2030">        newcount += nameLen + valueLen + 6;</span>
+
+<span class="pc bpc" id="L2032" title="1 of 2 branches missed.">        if (newcount &gt; buf.length) {</span>
+<span class="nc bnc" id="L2033" title="All 2 branches missed.">            if (writer != null) {</span>
+<span class="nc" id="L2034">                write(seperator);</span>
+<span class="nc" id="L2035">                writeStringWithDoubleQuote(name, ':');</span>
+<span class="nc" id="L2036">                writeStringWithDoubleQuote(value, (char) 0);</span>
+<span class="nc" id="L2037">                return;</span>
+            }
+<span class="nc" id="L2039">            expandCapacity(newcount);</span>
+        }
+
+<span class="fc" id="L2042">        buf[count] = seperator;</span>
+
+<span class="fc" id="L2044">        int nameStart = count + 2;</span>
+<span class="fc" id="L2045">        int nameEnd = nameStart + nameLen;</span>
+
+<span class="fc" id="L2047">        buf[count + 1] = '\&quot;';</span>
+<span class="fc" id="L2048">        name.getChars(0, nameLen, buf, nameStart);</span>
+
+<span class="fc" id="L2050">        count = newcount;</span>
+
+<span class="fc" id="L2052">        buf[nameEnd] = '\&quot;';</span>
+
+<span class="fc" id="L2054">        int index = nameEnd + 1;</span>
+<span class="fc" id="L2055">        buf[index++] = ':';</span>
+<span class="fc" id="L2056">        buf[index++] = '&quot;';</span>
+
+<span class="fc" id="L2058">        int valueStart = index;</span>
+<span class="fc" id="L2059">        value.getChars(0, valueLen, buf, valueStart);</span>
+<span class="fc" id="L2060">        buf[count - 1] = '\&quot;';</span>
+<span class="fc" id="L2061">    }</span>
+
+
+    
+    public void writeFieldValue(char seperator, String name, Enum&lt;?&gt; value) {
+<span class="pc bpc" id="L2066" title="1 of 2 branches missed.">        if (value == null) {</span>
+<span class="fc" id="L2067">            write(seperator);</span>
+<span class="fc" id="L2068">            writeFieldName(name);</span>
+<span class="fc" id="L2069">            writeNull();</span>
+<span class="fc" id="L2070">            return;</span>
+        }
+
+<span class="nc bnc" id="L2073" title="All 4 branches missed.">        if (writeEnumUsingName &amp;&amp; !writeEnumUsingToString) {</span>
+<span class="nc" id="L2074">            writeEnumFieldValue(seperator, name, value.name());</span>
+<span class="nc bnc" id="L2075" title="All 2 branches missed.">        } else if (writeEnumUsingToString) {</span>
+<span class="nc" id="L2076">            writeEnumFieldValue(seperator, name, value.toString());</span>
+        } else {
+<span class="nc" id="L2078">            writeFieldValue(seperator, name, value.ordinal());</span>
+        }
+<span class="nc" id="L2080">    }</span>
+
+    private void writeEnumFieldValue(char seperator, String name, String value) {
+<span class="nc bnc" id="L2083" title="All 2 branches missed.">        if (useSingleQuotes) {</span>
+<span class="nc" id="L2084">            writeFieldValue(seperator, name, value);</span>
+        } else {
+<span class="nc" id="L2086">            writeFieldValueStringWithDoubleQuote(seperator, name, value);</span>
+        }
+<span class="nc" id="L2088">    }</span>
+
+    public void writeFieldValue(char seperator, String name, BigDecimal value) {
+<span class="fc" id="L2091">        write(seperator);</span>
+<span class="fc" id="L2092">        writeFieldName(name);</span>
+<span class="pc bpc" id="L2093" title="1 of 2 branches missed.">        if (value == null) {</span>
+<span class="fc" id="L2094">            writeNull();</span>
+        } else {
+<span class="nc" id="L2096">            write(value.toString());</span>
+        }
+<span class="fc" id="L2098">    }</span>
+
+    public void writeString(String text, char seperator) {
+<span class="pc bpc" id="L2101" title="1 of 2 branches missed.">        if (useSingleQuotes) {</span>
+<span class="nc" id="L2102">            writeStringWithSingleQuote(text);</span>
+<span class="nc" id="L2103">            write(seperator);</span>
+        } else {
+<span class="fc" id="L2105">            writeStringWithDoubleQuote(text, seperator);</span>
+        }
+<span class="fc" id="L2107">    }</span>
+
+    public void writeString(String text) {
+<span class="fc bfc" id="L2110" title="All 2 branches covered.">        if (useSingleQuotes) {</span>
+<span class="fc" id="L2111">            writeStringWithSingleQuote(text);</span>
+        } else {
+<span class="fc" id="L2113">            writeStringWithDoubleQuote(text, (char) 0);</span>
+        }
+<span class="fc" id="L2115">    }</span>
+
+    public void writeString(char[] chars) {
+<span class="pc bpc" id="L2118" title="1 of 2 branches missed.">        if (useSingleQuotes) {</span>
+<span class="nc" id="L2119">            writeStringWithSingleQuote(chars);</span>
+        } else {
+<span class="fc" id="L2121">            String text = new String(chars);</span>
+<span class="fc" id="L2122">            writeStringWithDoubleQuote(text, (char) 0);</span>
+        }
+<span class="fc" id="L2124">    }</span>
+
+    protected void writeStringWithSingleQuote(String text) {
+<span class="fc bfc" id="L2127" title="All 2 branches covered.">        if (text == null) {</span>
+<span class="fc" id="L2128">            int newcount = count + 4;</span>
+<span class="fc bfc" id="L2129" title="All 2 branches covered.">            if (newcount &gt; buf.length) {</span>
+<span class="fc" id="L2130">                expandCapacity(newcount);</span>
+            }
+<span class="fc" id="L2132">            &quot;null&quot;.getChars(0, 4, buf, count);</span>
+<span class="fc" id="L2133">            count = newcount;</span>
+<span class="fc" id="L2134">            return;</span>
+        }
+
+<span class="fc" id="L2137">        int len = text.length();</span>
+<span class="fc" id="L2138">        int newcount = count + len + 2;</span>
+<span class="fc bfc" id="L2139" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="fc bfc" id="L2140" title="All 2 branches covered.">            if (writer != null) {</span>
+<span class="fc" id="L2141">                write('\'');</span>
+<span class="fc bfc" id="L2142" title="All 2 branches covered.">                for (int i = 0; i &lt; text.length(); ++i) {</span>
+<span class="fc" id="L2143">                    char ch = text.charAt(i);</span>
+<span class="fc bfc" id="L2144" title="All 8 branches covered.">                    if (ch &lt;= 13 || ch == '\\' || ch == '\'' //</span>
+<span class="pc bpc" id="L2145" title="1 of 2 branches missed.">                        || (ch == '/' &amp;&amp; isEnabled(SerializerFeature.WriteSlashAsSpecial))) {</span>
+<span class="fc" id="L2146">                        write('\\');</span>
+<span class="fc" id="L2147">                        write(replaceChars[(int) ch]);</span>
+                    } else {
+<span class="fc" id="L2149">                        write(ch);</span>
+                    }
+                }
+<span class="fc" id="L2152">                write('\'');</span>
+<span class="fc" id="L2153">                return;</span>
+            }
+<span class="fc" id="L2155">            expandCapacity(newcount);</span>
+        }
+
+<span class="fc" id="L2158">        int start = count + 1;</span>
+<span class="fc" id="L2159">        int end = start + len;</span>
+
+<span class="fc" id="L2161">        buf[count] = '\'';</span>
+<span class="fc" id="L2162">        text.getChars(0, len, buf, start);</span>
+<span class="fc" id="L2163">        count = newcount;</span>
+
+<span class="fc" id="L2165">        int specialCount = 0;</span>
+<span class="fc" id="L2166">        int lastSpecialIndex = -1;</span>
+<span class="fc" id="L2167">        char lastSpecial = '\0';</span>
+<span class="fc bfc" id="L2168" title="All 2 branches covered.">        for (int i = start; i &lt; end; ++i) {</span>
+<span class="fc" id="L2169">            char ch = buf[i];</span>
+<span class="pc bpc" id="L2170" title="1 of 8 branches missed.">            if (ch &lt;= 13 || ch == '\\' || ch == '\'' //</span>
+<span class="nc bnc" id="L2171" title="All 2 branches missed.">                || (ch == '/' &amp;&amp; isEnabled(SerializerFeature.WriteSlashAsSpecial))) {</span>
+<span class="fc" id="L2172">                specialCount++;</span>
+<span class="fc" id="L2173">                lastSpecialIndex = i;</span>
+<span class="fc" id="L2174">                lastSpecial = ch;</span>
+            }
+        }
+
+<span class="fc" id="L2178">        newcount += specialCount;</span>
+<span class="fc bfc" id="L2179" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="fc" id="L2180">            expandCapacity(newcount);</span>
+        }
+<span class="fc" id="L2182">        count = newcount;</span>
+
+<span class="fc bfc" id="L2184" title="All 2 branches covered.">        if (specialCount == 1) {</span>
+<span class="fc" id="L2185">            System.arraycopy(buf, lastSpecialIndex + 1, buf, lastSpecialIndex + 2, end - lastSpecialIndex - 1);</span>
+<span class="fc" id="L2186">            buf[lastSpecialIndex] = '\\';</span>
+<span class="fc" id="L2187">            buf[++lastSpecialIndex] = replaceChars[(int) lastSpecial];</span>
+<span class="fc bfc" id="L2188" title="All 2 branches covered.">        } else if (specialCount &gt; 1) {</span>
+<span class="fc" id="L2189">            System.arraycopy(buf, lastSpecialIndex + 1, buf, lastSpecialIndex + 2, end - lastSpecialIndex - 1);</span>
+<span class="fc" id="L2190">            buf[lastSpecialIndex] = '\\';</span>
+<span class="fc" id="L2191">            buf[++lastSpecialIndex] = replaceChars[(int) lastSpecial];</span>
+<span class="fc" id="L2192">            end++;</span>
+<span class="fc bfc" id="L2193" title="All 2 branches covered.">            for (int i = lastSpecialIndex - 2; i &gt;= start; --i) {</span>
+<span class="fc" id="L2194">                char ch = buf[i];</span>
+
+<span class="pc bpc" id="L2196" title="3 of 8 branches missed.">                if (ch &lt;= 13 || ch == '\\' || ch == '\'' //</span>
+<span class="nc bnc" id="L2197" title="All 2 branches missed.">                    || (ch == '/' &amp;&amp; isEnabled(SerializerFeature.WriteSlashAsSpecial))) {</span>
+<span class="fc" id="L2198">                    System.arraycopy(buf, i + 1, buf, i + 2, end - i - 1);</span>
+<span class="fc" id="L2199">                    buf[i] = '\\';</span>
+<span class="fc" id="L2200">                    buf[i + 1] = replaceChars[(int) ch];</span>
+<span class="fc" id="L2201">                    end++;</span>
+                }
+            }
+        }
+
+<span class="fc" id="L2206">        buf[count - 1] = '\'';</span>
+<span class="fc" id="L2207">    }</span>
+
+    protected void writeStringWithSingleQuote(char[] chars) {
+<span class="nc bnc" id="L2210" title="All 2 branches missed.">        if (chars == null) {</span>
+<span class="nc" id="L2211">            int newcount = count + 4;</span>
+<span class="nc bnc" id="L2212" title="All 2 branches missed.">            if (newcount &gt; buf.length) {</span>
+<span class="nc" id="L2213">                expandCapacity(newcount);</span>
+            }
+<span class="nc" id="L2215">            &quot;null&quot;.getChars(0, 4, buf, count);</span>
+<span class="nc" id="L2216">            count = newcount;</span>
+<span class="nc" id="L2217">            return;</span>
+        }
+
+<span class="nc" id="L2220">        int len = chars.length;</span>
+<span class="nc" id="L2221">        int newcount = count + len + 2;</span>
+<span class="nc bnc" id="L2222" title="All 2 branches missed.">        if (newcount &gt; buf.length) {</span>
+<span class="nc bnc" id="L2223" title="All 2 branches missed.">            if (writer != null) {</span>
+<span class="nc" id="L2224">                write('\'');</span>
+<span class="nc bnc" id="L2225" title="All 2 branches missed.">                for (int i = 0; i &lt; chars.length; ++i) {</span>
+<span class="nc" id="L2226">                    char ch = chars[i];</span>
+<span class="nc bnc" id="L2227" title="All 8 branches missed.">                    if (ch &lt;= 13 || ch == '\\' || ch == '\'' //</span>
+<span class="nc bnc" id="L2228" title="All 2 branches missed.">                            || (ch == '/' &amp;&amp; isEnabled(SerializerFeature.WriteSlashAsSpecial))) {</span>
+<span class="nc" id="L2229">                        write('\\');</span>
+<span class="nc" id="L2230">                        write(replaceChars[(int) ch]);</span>
+                    } else {
+<span class="nc" id="L2232">                        write(ch);</span>
+                    }
+                }
+<span class="nc" id="L2235">                write('\'');</span>
+<span class="nc" id="L2236">                return;</span>
+            }
+<span class="nc" id="L2238">            expandCapacity(newcount);</span>
+        }
+
+<span class="nc" id="L2241">        int start = count + 1;</span>
+<span class="nc" id="L2242">        int end = start + len;</span>
+
+<span class="nc" id="L2244">        buf[count] = '\'';</span>
+//        text.getChars(0, len, buf, start);
+<span class="nc" id="L2246">        System.arraycopy(chars, 0, buf, start, chars.length);</span>
+<span class="nc" id="L2247">        count = newcount;</span>
+
+<span class="nc" id="L2249">        int specialCount = 0;</span>
+<span class="nc" id="L2250">        int lastSpecialIndex = -1;</span>
+<span class="nc" id="L2251">        char lastSpecial = '\0';</span>
+<span class="nc bnc" id="L2252" title="All 2 branches missed.">        for (int i = start; i &lt; end; ++i) {</span>
+<span class="nc" id="L2253">            char ch = buf[i];</span>
+<span class="nc bnc" id="L2254" title="All 8 branches missed.">            if (ch &lt;= 13 || ch == '\\' || ch == '\'' //</span>
+<span class="nc bnc" id="L2255" title="All 2 branches missed.">                    || (ch == '/' &amp;&amp; isEnabled(SerializerFeature.WriteSlashAsSpecial))) {</span>
+<span class="nc" id="L2256">                specialCount++;</span>
+<span class="nc" id="L2257">                lastSpecialIndex = i;</span>
+<span class="nc" id="L2258">                lastSpecial = ch;</span>
+            }
+        }
+
+<span class="nc" id="L2262">        newcount += specialCount;</span>
+<span class="nc bnc" id="L2263" title="All 2 branches missed.">        if (newcount &gt; buf.length) {</span>
+<span class="nc" id="L2264">            expandCapacity(newcount);</span>
+        }
+<span class="nc" id="L2266">        count = newcount;</span>
+
+<span class="nc bnc" id="L2268" title="All 2 branches missed.">        if (specialCount == 1) {</span>
+<span class="nc" id="L2269">            System.arraycopy(buf, lastSpecialIndex + 1, buf, lastSpecialIndex + 2, end - lastSpecialIndex - 1);</span>
+<span class="nc" id="L2270">            buf[lastSpecialIndex] = '\\';</span>
+<span class="nc" id="L2271">            buf[++lastSpecialIndex] = replaceChars[(int) lastSpecial];</span>
+<span class="nc bnc" id="L2272" title="All 2 branches missed.">        } else if (specialCount &gt; 1) {</span>
+<span class="nc" id="L2273">            System.arraycopy(buf, lastSpecialIndex + 1, buf, lastSpecialIndex + 2, end - lastSpecialIndex - 1);</span>
+<span class="nc" id="L2274">            buf[lastSpecialIndex] = '\\';</span>
+<span class="nc" id="L2275">            buf[++lastSpecialIndex] = replaceChars[(int) lastSpecial];</span>
+<span class="nc" id="L2276">            end++;</span>
+<span class="nc bnc" id="L2277" title="All 2 branches missed.">            for (int i = lastSpecialIndex - 2; i &gt;= start; --i) {</span>
+<span class="nc" id="L2278">                char ch = buf[i];</span>
+
+<span class="nc bnc" id="L2280" title="All 8 branches missed.">                if (ch &lt;= 13 || ch == '\\' || ch == '\'' //</span>
+<span class="nc bnc" id="L2281" title="All 2 branches missed.">                        || (ch == '/' &amp;&amp; isEnabled(SerializerFeature.WriteSlashAsSpecial))) {</span>
+<span class="nc" id="L2282">                    System.arraycopy(buf, i + 1, buf, i + 2, end - i - 1);</span>
+<span class="nc" id="L2283">                    buf[i] = '\\';</span>
+<span class="nc" id="L2284">                    buf[i + 1] = replaceChars[(int) ch];</span>
+<span class="nc" id="L2285">                    end++;</span>
+                }
+            }
+        }
+
+<span class="nc" id="L2290">        buf[count - 1] = '\'';</span>
+<span class="nc" id="L2291">    }</span>
+
+    public void writeFieldName(String key) {
+<span class="fc" id="L2294">        writeFieldName(key, false);</span>
+<span class="fc" id="L2295">    }</span>
+
+    public void writeFieldName(String key, boolean checkSpecial) {
+<span class="pc bpc" id="L2298" title="1 of 2 branches missed.">        if (key == null) {</span>
+<span class="nc" id="L2299">            write(&quot;null:&quot;);</span>
+<span class="nc" id="L2300">            return;</span>
+        }
+
+<span class="fc bfc" id="L2303" title="All 2 branches covered.">        if (useSingleQuotes) {</span>
+<span class="fc bfc" id="L2304" title="All 2 branches covered.">            if (quoteFieldNames) {</span>
+<span class="fc" id="L2305">                writeStringWithSingleQuote(key);</span>
+<span class="fc" id="L2306">                write(':');</span>
+            } else {
+<span class="fc" id="L2308">                writeKeyWithSingleQuoteIfHasSpecial(key);</span>
+            }
+        } else {
+<span class="fc bfc" id="L2311" title="All 2 branches covered.">            if (quoteFieldNames) {</span>
+<span class="fc" id="L2312">                writeStringWithDoubleQuote(key, ':');</span>
+            } else {
+<span class="fc bfc" id="L2314" title="All 2 branches covered.">                boolean hashSpecial = key.length() == 0;</span>
+<span class="fc bfc" id="L2315" title="All 2 branches covered.">                for (int i = 0; i &lt; key.length(); ++i) {</span>
+<span class="fc" id="L2316">                    char ch = key.charAt(i);</span>
+<span class="pc bpc" id="L2317" title="1 of 6 branches missed.">                    boolean special = (ch &lt; 64 &amp;&amp; (sepcialBits &amp; (1L &lt;&lt; ch)) != 0) || ch == '\\';</span>
+<span class="fc bfc" id="L2318" title="All 2 branches covered.">                    if (special) {</span>
+<span class="fc" id="L2319">                        hashSpecial = true;</span>
+<span class="fc" id="L2320">                        break;</span>
+                    }
+                }
+<span class="fc bfc" id="L2323" title="All 2 branches covered.">                if (hashSpecial) {</span>
+<span class="fc" id="L2324">                    writeStringWithDoubleQuote(key, ':');</span>
+                } else {
+<span class="fc" id="L2326">                    write(key);</span>
+<span class="fc" id="L2327">                    write(':');</span>
+                }
+            }
+        }
+<span class="fc" id="L2331">    }</span>
+
+    private void writeKeyWithSingleQuoteIfHasSpecial(String text) {
+<span class="fc" id="L2334">        final byte[] specicalFlags_singleQuotes = IOUtils.specicalFlags_singleQuotes;</span>
+
+<span class="fc" id="L2336">        int len = text.length();</span>
+<span class="fc" id="L2337">        int newcount = count + len + 1;</span>
+<span class="fc bfc" id="L2338" title="All 2 branches covered.">        if (newcount &gt; buf.length) {</span>
+<span class="fc bfc" id="L2339" title="All 2 branches covered.">            if (writer != null) {</span>
+<span class="fc bfc" id="L2340" title="All 2 branches covered.">                if (len == 0) {</span>
+<span class="fc" id="L2341">                    write('\'');</span>
+<span class="fc" id="L2342">                    write('\'');</span>
+<span class="fc" id="L2343">                    write(':');</span>
+<span class="fc" id="L2344">                    return;</span>
+                }
+
+<span class="fc" id="L2347">                boolean hasSpecial = false;</span>
+<span class="fc bfc" id="L2348" title="All 2 branches covered.">                for (int i = 0; i &lt; len; ++i) {</span>
+<span class="fc" id="L2349">                    char ch = text.charAt(i);</span>
+<span class="fc bfc" id="L2350" title="All 4 branches covered.">                    if (ch &lt; specicalFlags_singleQuotes.length &amp;&amp; specicalFlags_singleQuotes[ch] != 0) {</span>
+<span class="fc" id="L2351">                        hasSpecial = true;</span>
+<span class="fc" id="L2352">                        break;</span>
+                    }
+                }
+
+<span class="fc bfc" id="L2356" title="All 2 branches covered.">                if (hasSpecial) {</span>
+<span class="fc" id="L2357">                    write('\'');</span>
+                }
+<span class="fc bfc" id="L2359" title="All 2 branches covered.">                for (int i = 0; i &lt; len; ++i) {</span>
+<span class="fc" id="L2360">                    char ch = text.charAt(i);</span>
+<span class="fc bfc" id="L2361" title="All 4 branches covered.">                    if (ch &lt; specicalFlags_singleQuotes.length &amp;&amp; specicalFlags_singleQuotes[ch] != 0) {</span>
+<span class="fc" id="L2362">                        write('\\');</span>
+<span class="fc" id="L2363">                        write(replaceChars[(int) ch]);</span>
+                    } else {
+<span class="fc" id="L2365">                        write(ch);</span>
+                    }
+                }
+<span class="fc bfc" id="L2368" title="All 2 branches covered.">                if (hasSpecial) {</span>
+<span class="fc" id="L2369">                    write('\'');</span>
+                }
+<span class="fc" id="L2371">                write(':');</span>
+<span class="fc" id="L2372">                return;</span>
+            }
+
+<span class="fc" id="L2375">            expandCapacity(newcount);</span>
+        }
+
+<span class="fc bfc" id="L2378" title="All 2 branches covered.">        if (len == 0) {</span>
+<span class="fc" id="L2379">            int newCount = count + 3;</span>
+<span class="fc bfc" id="L2380" title="All 2 branches covered.">            if (newCount &gt; buf.length) {</span>
+<span class="fc" id="L2381">                expandCapacity(count + 3);</span>
+            }
+<span class="fc" id="L2383">            buf[count++] = '\'';</span>
+<span class="fc" id="L2384">            buf[count++] = '\'';</span>
+<span class="fc" id="L2385">            buf[count++] = ':';</span>
+<span class="fc" id="L2386">            return;</span>
+        }
+
+<span class="fc" id="L2389">        int start = count;</span>
+<span class="fc" id="L2390">        int end = start + len;</span>
+
+<span class="fc" id="L2392">        text.getChars(0, len, buf, start);</span>
+<span class="fc" id="L2393">        count = newcount;</span>
+
+<span class="fc" id="L2395">        boolean hasSpecial = false;</span>
+
+<span class="fc bfc" id="L2397" title="All 2 branches covered.">        for (int i = start; i &lt; end; ++i) {</span>
+<span class="fc" id="L2398">            char ch = buf[i];</span>
+<span class="pc bpc" id="L2399" title="1 of 4 branches missed.">            if (ch &lt; specicalFlags_singleQuotes.length &amp;&amp; specicalFlags_singleQuotes[ch] != 0) {</span>
+<span class="fc bfc" id="L2400" title="All 2 branches covered.">                if (!hasSpecial) {</span>
+<span class="fc" id="L2401">                    newcount += 3;</span>
+<span class="fc bfc" id="L2402" title="All 2 branches covered.">                    if (newcount &gt; buf.length) {</span>
+<span class="fc" id="L2403">                        expandCapacity(newcount);</span>
+                    }
+<span class="fc" id="L2405">                    count = newcount;</span>
+
+<span class="fc" id="L2407">                    System.arraycopy(buf, i + 1, buf, i + 3, end - i - 1);</span>
+<span class="fc" id="L2408">                    System.arraycopy(buf, 0, buf, 1, i);</span>
+<span class="fc" id="L2409">                    buf[start] = '\'';</span>
+<span class="fc" id="L2410">                    buf[++i] = '\\';</span>
+<span class="fc" id="L2411">                    buf[++i] = replaceChars[(int) ch];</span>
+<span class="fc" id="L2412">                    end += 2;</span>
+<span class="fc" id="L2413">                    buf[count - 2] = '\'';</span>
+
+<span class="fc" id="L2415">                    hasSpecial = true;</span>
+                } else {
+<span class="fc" id="L2417">                    newcount++;</span>
+<span class="fc bfc" id="L2418" title="All 2 branches covered.">                    if (newcount &gt; buf.length) {</span>
+<span class="fc" id="L2419">                        expandCapacity(newcount);</span>
+                    }
+<span class="fc" id="L2421">                    count = newcount;</span>
+
+<span class="fc" id="L2423">                    System.arraycopy(buf, i + 1, buf, i + 2, end - i);</span>
+<span class="fc" id="L2424">                    buf[i] = '\\';</span>
+<span class="fc" id="L2425">                    buf[++i] = replaceChars[(int) ch];</span>
+<span class="fc" id="L2426">                    end++;</span>
+                }
+            }
+        }
+
+<span class="fc" id="L2431">        buf[newcount - 1] = ':';</span>
+<span class="fc" id="L2432">    }</span>
+
+    public void flush() {
+<span class="fc bfc" id="L2435" title="All 2 branches covered.">        if (writer == null) {</span>
+<span class="fc" id="L2436">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L2440">            writer.write(buf, 0, count);</span>
+<span class="fc" id="L2441">            writer.flush();</span>
+<span class="fc" id="L2442">        } catch (IOException e) {</span>
+<span class="fc" id="L2443">            throw new JSONException(e.getMessage(), e);</span>
+<span class="fc" id="L2444">        }</span>
+<span class="fc" id="L2445">        count = 0;</span>
+<span class="fc" id="L2446">    }</span>
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.5.201910111838</span></div></body></html>
