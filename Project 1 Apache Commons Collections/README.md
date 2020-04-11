@@ -36,7 +36,7 @@
 ```
 #### After adding dependency, do `mvn clean`, `mvn compile`, `mvn test`, report will be generated after the test.
 
-## PITest (Metric 3 only for Version 2.6):
+## PIT Test (Metric 3):
 #### Add maven dependency to pom.xml
 
 Steps to Install and Generate PIT via PIT Plugin in Eclipse
